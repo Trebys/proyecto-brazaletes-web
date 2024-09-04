@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export function LoginForm() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // Cambiar 'email' a 'identifier'
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false); // Para manejar el estado de carga
@@ -16,22 +16,23 @@ export function LoginForm() {
 
     try {
       const res = await axios.post("http://localhost:8000/api/login/", {
-        correo: email,
-        contrasena: password,
+        identifier, // Usar 'identifier' en lugar de 'correo'
+        password, // Usar 'password' en lugar de 'contrasena'
       });
 
-      if (res.data.status === "success") {
-        localStorage.setItem("access_token", res.data.access);
-        localStorage.setItem("refresh_token", res.data.refresh);
-        if (res.data.user === "client") {
-          alert(`Bienvenido, Cliente`);
-          localStorage.setItem("user_role", "client");
-          navigate("/inicio");
-        } else if (res.data.user === "admin") {
-          alert(`Bienvenido, administrador`);
-          localStorage.setItem("user_role", "admin");
-          navigate("/inicio");
-        }
+      if (res.status === 200) {
+        const { Token, User } = res.data;
+
+        // Guardar el token en el localStorage
+        localStorage.setItem("access_token", Token);
+
+        // Guardar los datos del usuario en localStorage o en el estado si es necesario
+        // Puedes personalizar esto según la estructura de tu usuario
+        localStorage.setItem("user_data", JSON.stringify(User));
+
+        // Navegar según el rol o tipo de usuario, si tienes lógica de roles
+        alert(`Bienvenido, ${User.username}`);
+        navigate("/inicio");
         setError("");
       } else {
         setError("Credenciales incorrectas");
@@ -63,10 +64,10 @@ export function LoginForm() {
         </h1>
         <div className="mb-4">
           <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text" // Cambiado a 'text' ya que puede ser username o email
+            placeholder="Email o Username"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             className="w-full p-2 text-teal-900 rounded bg-teal-700 placeholder-teal-200 focus:outline-none"
           />
         </div>

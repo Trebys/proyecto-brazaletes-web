@@ -1,11 +1,14 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework.decorators import api_view
+
 from rest_framework.response import Response
 from rest_framework import viewsets,permissions
 from .models import User
 from .serializers import UserSerializer
 from rest_framework.authtoken.models import Token
 from rest_framework import status
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
@@ -25,29 +28,26 @@ def login(request):
 
     # Validar que ambos campos están presentes
     if not identifier or not password:
-        return Response({'mensaje': 'Username/Email y contraseña son requeridos.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'Username/Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Intentar buscar al usuario ya sea por username o por email
     user = User.objects.filter(username=identifier).first() or User.objects.filter(email=identifier).first()
 
     # Validar si el usuario existe
     if not user:
-        return Response({'mensaje': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'User not found or not exist.'}, status=status.HTTP_404_NOT_FOUND)
 
     # Verificar la contraseña
     if not user.check_password(password):
-        return Response({'mensaje': 'Contraseña incorrecta'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'Wrong password.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Obtener o crear el token de autenticación
     token, created = Token.objects.get_or_create(user=user)
     serializer = UserSerializer(instance=user)
 
-    return Response({'Token': token.key, "user": serializer.data}, status=status.HTTP_200_OK)
+    return Response({'Token': token.key, "User": serializer.data}, status=status.HTTP_200_OK)
 
 
-        
-
-   
 
 @api_view(['POST'])
 def register_client(request):
@@ -78,7 +78,7 @@ def register_client(request):
         token = Token.objects.create(user=user)
 
         # Retornar una respuesta con el token y los datos del usuario
-        return Response({'Token': token.key, "user": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'Token': token.key, "User": serializer.data}, status=status.HTTP_201_CREATED)
     
     # Si el serializador no es válido, retornar los errores
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -87,5 +87,11 @@ def register_client(request):
 
 
 @api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def user_profile(request):
-    return Response({'mensaje':'user_profile'})
+    
+    serializer = UserSerializer(instance = request.user)
+    #return Response("You are login with {}".format(request.user.username), status=status.HTTP_200_OK)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)

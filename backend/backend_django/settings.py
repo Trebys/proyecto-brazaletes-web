@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'login',
+    'compra_brazaletes',
+    'atracciones_comidas',
     'corsheaders',
     #Estos puede que los elimine REVISAR
     'coreapi',
@@ -164,7 +166,7 @@ AUTH_USER_MODEL = 'login.User'
 # CORS Authorization
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-    #"http://localhost:3000",
+    'http://localhost:3000',
     #"http://localhost:8000",
 ]
 """
