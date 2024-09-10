@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import perfilIcon from "/images/perfil.svg";
+import useLogout from "../hooks/useLogout";
 
 export function MasterPageCliente({ children }) {
   const [token, setToken] = useState(localStorage.getItem("access_token"));
@@ -14,11 +15,10 @@ export function MasterPageCliente({ children }) {
   }, [token]); // Elimina navigate de las dependencias
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user_data");
     setToken(null);
     setUserData(null);
-    navigate("/login");
+    useLogout();
+    navigate("/login"); // Usar el hook de logout para manejar el cierre de sesión
   };
 
   const fetchUserData = async (accessToken) => {
@@ -43,6 +43,7 @@ export function MasterPageCliente({ children }) {
     }
   };
 
+  //Revisar ya que no se usa
   const handleProtectedRoute = (route) => {
     if (token) {
       navigate(route);
