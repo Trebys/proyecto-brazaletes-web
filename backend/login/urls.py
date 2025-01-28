@@ -1,6 +1,6 @@
 from rest_framework import routers
 from django.urls import path, re_path
-from .views import UserViewSet,login,register_client,user_profile,refresh_token
+from .views import UserViewSet,login,register_client,user_profile,refresh_token,logout,update_user_profile,delete_user
 
 
 # Crea una instancia de DefaultRouter
@@ -14,5 +14,8 @@ urlpatterns = router.urls + [
     re_path('login', login),
     re_path('register', register_client),
     re_path('user-profile', user_profile),
-    re_path('refresh-token', refresh_token)
+    re_path('refresh-token', refresh_token),
+    re_path('logout', logout),
+    re_path('edit-user', update_user_profile),
+    re_path('delete-user', delete_user),
 ]

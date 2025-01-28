@@ -2,11 +2,12 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
-import { UserContextProvider } from "./context/UserContext.jsx"; // Importa el UserProvider
+import { AutoLogout } from "./components/AutoLogout.jsx";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <UserContextProvider>
+    <AutoLogout>
       <App />
-    </UserContextProvider>
+    </AutoLogout>
   </React.StrictMode>
 );

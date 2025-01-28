@@ -1,54 +1,25 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import perfilIcon from "/images/perfil.svg";
-import useLogout from "../hooks/useLogout";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import perfilIcon from '/images/perfil.svg';
+import { Logout } from '../api/api.js'; // Importa la función Logout
 
 export function MasterPageCliente({ children }) {
-  const [token, setToken] = useState(localStorage.getItem("access_token"));
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(
+    JSON.parse(localStorage.getItem('user_data')) || null
+  );
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (token) {
-      fetchUserData(token);
-    }
-  }, [token]); // Elimina navigate de las dependencias
-
-  const handleLogout = () => {
-    setToken(null);
-    setUserData(null);
-    useLogout();
-    navigate("/login"); // Usar el hook de logout para manejar el cierre de sesión
-  };
-
-  const fetchUserData = async (accessToken) => {
+  const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/user-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${accessToken}`,
-        },
-      });
+      await Logout(); // Llamar a la función de Logout centralizada
 
-      if (response.ok) {
-        const data = await response.json();
-        setUserData(data);
-      } else {
-        handleLogout();
-      }
+      // Limpiar el estado local
+      setUserData(null);
+
+      // Redirigir al login
+      navigate('/login');
     } catch (error) {
-      console.error("Error de red al obtener los datos del usuario:", error);
-      handleLogout();
-    }
-  };
-
-  //Revisar ya que no se usa
-  const handleProtectedRoute = (route) => {
-    if (token) {
-      navigate(route);
-    } else {
-      navigate("/login");
+      console.error('Error al cerrar sesión:', error);
     }
   };
 
@@ -57,7 +28,7 @@ export function MasterPageCliente({ children }) {
       <nav className="bg-teal-700 text-white py-4 px-8 flex justify-between items-center sticky top-0 z-50">
         <div
           className="flex items-center space-x-4 cursor-pointer"
-          onClick={() => navigate("/inicio")}
+          onClick={() => navigate('/inicio')}
         >
           <img
             src="/images/logo.svg"
@@ -69,28 +40,28 @@ export function MasterPageCliente({ children }) {
         <div className="flex space-x-6">
           <a
             href="/inicio"
-            onClick={() => navigate("/inicio")}
+            onClick={() => navigate('/inicio')}
             className="cursor-pointer"
           >
             Inicio
           </a>
           <a
             href="/comprar-brazaletes"
-            onClick={() => navigate("/comprar-brazaletes")}
+            onClick={() => navigate('/comprar-brazaletes')}
             className="cursor-pointer"
           >
             Compra de Brazaletes
           </a>
           <a
             href="/atracciones-comidas"
-            onClick={() => navigate("/atracciones-comidas")}
+            onClick={() => navigate('/atracciones-comidas')}
             className="cursor-pointer"
           >
             Atracciones y Comidas
           </a>
           <a
             href="/contacto"
-            onClick={() => navigate("/contacto")}
+            onClick={() => navigate('/contacto')}
             className="cursor-pointer"
           >
             Contacto
@@ -100,7 +71,7 @@ export function MasterPageCliente({ children }) {
           {userData ? (
             <>
               <button
-                onClick={() => navigate("/mi-perfil")}
+                onClick={() => navigate('/mi-perfil')}
                 className="bg-white text-teal-700 px-3 py-1 rounded-full flex items-center"
               >
                 <img src={perfilIcon} alt="Perfil" className="w-5 h-5 mr-2" />
@@ -115,7 +86,7 @@ export function MasterPageCliente({ children }) {
             </>
           ) : (
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate('/login')}
               className="bg-white text-teal-700 px-3 py-1 rounded-full"
             >
               Iniciar Sesión
@@ -128,28 +99,52 @@ export function MasterPageCliente({ children }) {
 
       <footer className="bg-teal-700 text-white py-4">
         <div className="container mx-auto flex justify-between items-center">
-          <div>
+          {/* Columna 1: Logo y 'Sobre nosotros' */}
+          <div className="flex items-center space-x-2">
             <img
               src="/images/logo.svg"
               alt="Fantasy Land Logo"
-              className="h-10"
+              className="h-8" // Tamaño más pequeño
             />
-            <span className="text-lg font-bold">Fantasy Land</span>
-            <p>Sobre nosotros</p>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold">Fantasy Land</span>
+              <p className="text-sm">Sobre nosotros</p>
+            </div>
           </div>
-          <div className="flex space-x-4">
-            <a href="#">
-              <i className="fab fa-facebook"></i>
-            </a>
-            <a href="#">
-              <i className="fab fa-instagram"></i>
-            </a>
-            <a href="#">
-              <i className="fab fa-tiktok"></i>
-            </a>
+
+          {/* Columna 2: Redes Sociales */}
+          <div className="flex flex-col items-center">
+            <h2 className="text-lg font-bold mb-2">Redes Sociales</h2>
+            <div className="flex space-x-3">
+              <a href="#">
+                <img
+                  src="/images/facebook.svg"
+                  alt="Facebook Logo"
+                  className="h-6" // Tamaño reducido de íconos
+                />
+              </a>
+              <a href="#">
+                <img
+                  src="/images/instagram.svg"
+                  alt="Instagram Logo"
+                  className="h-6"
+                />
+              </a>
+              <a href="#">
+                <img
+                  src="/images/tiktok.svg"
+                  alt="TikTok Logo"
+                  className="h-6"
+                />
+              </a>
+            </div>
           </div>
-          <div>
-            <a href="/terminos-condiciones">Términos y condiciones</a>
+
+          {/* Columna 3: Términos y condiciones */}
+          <div className="flex items-center">
+            <a href="/terminos-condiciones" className="text-lg font-bold">
+              Términos y condiciones
+            </a>
           </div>
         </div>
       </footer>

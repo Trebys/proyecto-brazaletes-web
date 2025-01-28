@@ -13,9 +13,16 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
-
+from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Variables de Entorno
+load_dotenv(os.path.join(BASE_DIR, '.', '.env'))  # Ajusta ruta al .env
+
+PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID')
+PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET')
+PAYPAL_ENV = os.getenv('PAYPAL_ENV', 'sandbox')
 
 
 # Quick-start development settings - unsuitable for production
@@ -62,12 +69,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'login',
-    'compra_brazaletes',
+    # <--- no solo 'compra_brazaletes'
+    'compra_brazaletes.apps.CompraBrazaletesConfig',
     'atracciones_comidas',
     'corsheaders',
-    #Estos puede que los elimine REVISAR
+    # Estos puede que los elimine REVISAR
     'coreapi',
-    
+
+
 ]
 
 MIDDLEWARE = [
@@ -152,7 +161,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# Media files para poder subir imagenes
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -161,21 +173,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'login.User'
 
 
-
-#REVISAR SI LO NECESESITO
+# REVISAR SI LO NECESESITO
 
 # CORS Authorization
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
-    #"http://localhost:8000",
+    # "http://localhost:8000",
 ]
-"""
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
-}
-"""
-# Media files para poder subir imagenes
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    ],
+
+}

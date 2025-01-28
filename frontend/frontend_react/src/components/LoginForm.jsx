@@ -1,46 +1,52 @@
-import { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { loginUser } from '../api/api'; // <-- importamos nuestra función
+import api from '../api/api.js';
 
 export function LoginForm() {
-  const [identifier, setIdentifier] = useState(""); // Cambiar 'email' a 'identifier'
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Para manejar el estado de carga
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from || '/inicio';
+  const rememberedTipoId = location.state?.tipoId || null;
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true); // Activar el estado de carga
+    setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/login/", {
-        identifier, // Usar 'identifier' en lugar de 'correo'
-        password, // Usar 'password' en lugar de 'contrasena'
-      });
+      // Llamamos a nuestra función centralizada
+      const res = await loginUser(identifier, password);
 
       if (res.status === 200) {
         const { Token, User } = res.data;
-
-        // Guardar el token en el localStorage
-        localStorage.setItem("access_token", Token);
-
-        // Guardar los datos del usuario en localStorage o en el estado si es necesario
-        // Puedes personalizar esto según la estructura de tu usuario
-        localStorage.setItem("user_data", JSON.stringify(User));
-
-        // Navegar según el rol o tipo de usuario, si tienes lógica de roles
+        localStorage.setItem('access_token', Token);
+        localStorage.setItem('user_data', JSON.stringify(User));
         alert(`Bienvenido, ${User.username}`);
-        navigate("/inicio");
-        setError("");
+        setError('');
+
+        // Redirigimos a "from" o a /inicio
+        navigate(from, {
+          state: rememberedTipoId ? { tipoId: rememberedTipoId } : {},
+        });
       } else {
-        setError("Credenciales incorrectas");
+        setError('Credenciales incorrectas');
       }
     } catch (error) {
-      setError("Error en el servidor o credenciales incorrectas");
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('access_token');
+        setError('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+        navigate('/login');
+      } else {
+        setError('Error en el servidor o credenciales incorrectas');
+      }
     } finally {
-      setLoading(false); // Desactivar el estado de carga
+      setLoading(false);
     }
   };
 
@@ -51,11 +57,8 @@ export function LoginForm() {
         onSubmit={handleLogin}
       >
         <a
-          href=""
-          onClick={() => {
-            navigate("/inicio");
-          }}
-          className="text-white text-sm mb-4 inline-block"
+          onClick={() => navigate('/inicio')}
+          className="text-white text-sm mb-4 inline-block cursor-pointer"
         >
           ← Regresar
         </a>
@@ -64,7 +67,7 @@ export function LoginForm() {
         </h1>
         <div className="mb-4">
           <input
-            type="text" // Cambiado a 'text' ya que puede ser username o email
+            type="text"
             placeholder="Email o Username"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
@@ -81,7 +84,7 @@ export function LoginForm() {
           />
           <a
             href="#"
-            className="text-white  inline-block mt-2 hover:underline font-bold text-lg"
+            className="text-white inline-block mt-2 hover:underline font-bold text-lg"
           >
             ¿Olvidaste la contraseña?
           </a>
@@ -89,22 +92,21 @@ export function LoginForm() {
         <button
           type="submit"
           className={`w-full bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
+            loading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          disabled={loading} // Desactivar el botón si está cargando
+          disabled={loading}
         >
-          {loading ? "Cargando..." : "Iniciar sesión"}
+          {loading ? 'Cargando...' : 'Iniciar sesión'}
         </button>
         {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
+
         <div className="flex justify-between items-center mt-6">
           <span className="text-white font-bold text-lg">
             ¿No tienes cuenta?
           </span>
           <a
-            onClick={() => {
-              navigate("/registro");
-            }}
-            className="text-green-400 hover:underline font-bold text-lg"
+            onClick={() => navigate('/registro')}
+            className="text-green-400 hover:underline font-bold text-lg cursor-pointer"
           >
             Regístrate
           </a>

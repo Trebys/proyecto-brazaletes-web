@@ -1,53 +1,44 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  getClientData,
+  submitClientData,
+  deleteClientAccount,
+} from '../api/api.js'; // Asegúrate de que la ruta sea correcta
 
 export function PerfilClientePage() {
+  const navigate = useNavigate();
   const [userData, setUserData] = useState({
-    username: "",
-    first_name: "",
-    last_name: "",
-    email: "",
-    password: "",
-    account_balance: "",
+    username: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    account_balance: '',
   });
 
   const [bracelets, setBracelets] = useState([]);
 
-  // Suponiendo que guardas el token en localStorage
-  const token = localStorage.getItem("access_token");
-
   useEffect(() => {
-    // Fetch user data and bracelets data from the API
-    fetchUserData();
-    // fetchBraceletsData(); // Comentado hasta que la API esté disponible
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/api/user-profile", {
-        method: "POST", // Cambié de GET a POST porque tu API espera POST
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`, // Agrega el token al encabezado
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+    const loadUserData = async () => {
+      try {
+        const data = await getClientData();
         setUserData({
           username: data.username,
           first_name: data.first_name,
           last_name: data.last_name,
           email: data.email,
-          password: "******", // Do not expose the real password, just show ******
+          password: '******', // Do not expose the real password
           account_balance: data.account_balance,
         });
-      } else {
-        console.error("Failed to fetch user data:", response.status);
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        // Aquí podrías redirigir al login si es necesario
       }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  };
+    };
+
+    loadUserData();
+  }, []);
 
   // const fetchBraceletsData = async () => {
   //   try {
@@ -76,24 +67,35 @@ export function PerfilClientePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Submit the updated user data to the API
-    try {
-      const response = await fetch("http://localhost:8000/api/user-profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`, // Agrega el token al encabezado
-        },
-        body: JSON.stringify(userData),
-      });
 
-      if (response.ok) {
-        console.log("User data updated successfully");
+    try {
+      const result = await submitClientData(userData);
+
+      alert('User data updated successfully');
+      // Realiza otras acciones si es necesario
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      alert('Error updating user data');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      if (
+        window.confirm(
+          'Are you sure you want to delete your account? This action cannot be undone.'
+        )
+      ) {
+        await deleteClientAccount();
+        alert('Account deleted successfully');
+        window.location.href = '/inicio';
+        // Aquí puedes agregar lógica adicional si es necesario después de la eliminación
       } else {
-        console.error("Error updating user data");
+        alert('Account not deleted');
       }
     } catch (error) {
-      console.error("Network error while updating user data:", error);
+      console.error('Error deleting account:', error);
+      alert('Error deleting account');
     }
   };
 
@@ -172,6 +174,7 @@ export function PerfilClientePage() {
             <button
               type="button"
               className="bg-red-600 text-white px-4 py-2 rounded"
+              onClick={handleDeleteAccount}
             >
               Delete Account
             </button>

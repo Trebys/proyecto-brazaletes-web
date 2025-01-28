@@ -1,14 +1,16 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { LoginPage } from "./pages/LoginPage";
-import { AdministradorPage } from "./pages/AdministradorPage";
-import { Toaster } from "react-hot-toast";
-import { RegistroForm } from "./components/RegistroForm";
-import { InicioPage } from "./pages/InicioPage";
-import { MasterPageCliente } from "./components/MasterPageCliente";
-import { ComprarBrazaletesPage } from "./pages/ComprarBrazaletesPage";
-import PrivateRoutes from "./components/PrivateRoutes";
-import { PerfilClientePage } from "./pages/PerfilClientePage";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LoginPage } from './pages/LoginPage';
+import { AdministradorPage } from './pages/AdministradorPage';
+import { Toaster } from 'react-hot-toast';
+import { RegistroForm } from './components/RegistroForm';
+import { InicioPage } from './pages/InicioPage';
+import { MasterPageCliente } from './components/MasterPageCliente';
+import { ComprarBrazaletesPage } from './pages/ComprarBrazaletesPage';
+import PrivateRoutes from './components/PrivateRoutes';
+import { PerfilClientePage } from './pages/PerfilClientePage';
+import { AtraccionesComidasPage } from './pages/AtraccionesComidasPage';
+import { ContactoPage } from './pages/ContactoPage';
 
 function App() {
   return (
@@ -31,10 +33,16 @@ function App() {
                   element={<ComprarBrazaletesPage />}
                 />
 
+                <Route
+                  path="/atracciones-comidas"
+                  element={<AtraccionesComidasPage />}
+                />
+
+                <Route path="/contacto" element={<ContactoPage />} />
+
                 {/* Rutas protegidas */}
                 <Route element={<PrivateRoutes />}>
                   <Route path="/mi-perfil" element={<PerfilClientePage />} />
-
                   <Route
                     path="/administrador"
                     element={<AdministradorPage />}

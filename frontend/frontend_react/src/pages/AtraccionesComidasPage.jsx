@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export function AtraccionesComidasPage() {
   return (
@@ -6,6 +6,7 @@ export function AtraccionesComidasPage() {
       <h1 className="text-2xl font-bold">Atracciones y Comidas</h1>
 
       {/* Puedes agregar más contenido aquí */}
+      <h1> aaa</h1>
     </div>
   );
 }

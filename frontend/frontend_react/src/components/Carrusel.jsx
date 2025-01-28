@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 const images = [
-  "/images/FotoCarrusel.jpg",
-  "/images/FotoCarrusel2.jpeg",
-  "/images/FotoCarrusel3.jpg", // Añade las rutas de tus imágenes aquí
+  '/images/FotoCarrusel.jpg',
+  '/images/FotoCarrusel2.jpeg',
+  '/images/FotoCarrusel3.jpg', // Añade las rutas de tus imágenes aquí
 ];
 
 export function Carrusel() {

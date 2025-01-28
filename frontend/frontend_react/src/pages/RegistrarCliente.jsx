@@ -1,4 +1,4 @@
-import { FormRegistrar } from "../components/FormRegistro";
+import { FormRegistrar } from '../components/FormRegistro';
 
 export function RegistrarCliente() {
   return <FormRegistrar />;
