@@ -23,7 +23,7 @@ load_dotenv(os.path.join(BASE_DIR, '.', '.env'))  # Ajusta ruta al .env
 PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID')
 PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET')
 PAYPAL_ENV = os.getenv('PAYPAL_ENV', 'sandbox')
-
+PAYPAL_WEBHOOK_ID = os.getenv("PAYPAL_WEBHOOK_ID")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -34,7 +34,11 @@ SECRET_KEY = 'django-insecure-k46+j4+ahuw9=3r&bfux0^*)vem^4cx4_j1b_giclsnuv)8k&*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'b4a7-201-237-2-28.ngrok-free.app',
+    'localhost',
+    '127.0.0.1',
+]
 
 
 # Application definition
@@ -179,6 +183,7 @@ AUTH_USER_MODEL = 'login.User'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://b4a7-201-237-2-28.ngrok-free.app',
     # "http://localhost:8000",
 ]
 REST_FRAMEWORK = {

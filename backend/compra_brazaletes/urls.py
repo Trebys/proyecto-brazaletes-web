@@ -5,7 +5,8 @@ from .views import (
     BraceletViewSet,
     PurchaseReceiptViewSet,
     PayPalCaptureOrderView,
-    PayPalCreateOrderView
+    PayPalCreateOrderView,
+    paypal_webhook
 )
 
 router = DefaultRouter()
@@ -19,4 +20,5 @@ urlpatterns = [
          PayPalCreateOrderView.as_view(), name='paypal-create'),
     path('paypal/capture-order/',
          PayPalCaptureOrderView.as_view(), name='paypal-capture'),
+    path('paypal/webhook/', paypal_webhook, name='paypal-webhook'),
 ]

@@ -74,8 +74,37 @@ class PurchaseReceipt(models.Model):
     )
     purchase_date = models.DateTimeField(auto_now_add=True)
 
-    # We'll store a purchase_code automatically in signals
     purchase_code = models.CharField(max_length=50, blank=True, null=True)
 
+    PAYMENT_METHODS = (
+        ('INTERNAL', 'Saldo Interno'),
+        ('PAYPAL', 'PayPal'),
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHODS,
+        default='INTERNAL'
+    )
+    paypal_order_id = models.CharField(max_length=100, blank=True, null=True)
+    amount_paid = models.DecimalField(
+        max_digits=8, decimal_places=2, blank=True, null=True
+    )
+
+    # === NUEVO: Estado de la compra ===
+    STATUS_CHOICES = (
+        ('CREATED', 'Creado'),
+        ('CAPTURED', 'Capturado'),
+        ('REFUNDED', 'Reembolsado'),
+        # Agrega más si requieres
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='CREATED'
+    )
+
     def __str__(self):
-        return f"Purchase #{self.id} - {self.bracelet} - User: {self.user}"
+        return (
+            f"Purchase #{self.id} - {self.bracelet} - User: {self.user} "
+            f"- {self.payment_method} - Status: {self.status}"
+        )

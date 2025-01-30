@@ -3,6 +3,7 @@
 import os
 from paypalcheckoutsdk.core import PayPalHttpClient, SandboxEnvironment, LiveEnvironment
 from django.conf import settings
+import requests
 
 
 class PayPalClient:
@@ -16,11 +17,28 @@ class PayPalClient:
                 client_id=client_id,
                 client_secret=client_secret
             )
+            self.base_url = "https://api-m.sandbox.paypal.com"
         else:
             self.environment = LiveEnvironment(
                 client_id=client_id,
                 client_secret=client_secret
             )
+            self.base_url = "https://api-m.paypal.com"
 
-        # Creates the PayPalHttpClient object
+        self.client_id = client_id
+        self.client_secret = client_secret
         self.client = PayPalHttpClient(self.environment)
+
+    def get_access_token(self):
+        """
+        Obtiene un access_token via OAuth2 con client_id/client_secret.
+        """
+        url = f"{self.base_url}/v1/oauth2/token"
+        resp = requests.post(
+            url,
+            headers={"Accept": "application/json", "Accept-Language": "en_US"},
+            auth=(self.client_id, self.client_secret),
+            data={"grant_type": "client_credentials"},
+        )
+        data = resp.json()
+        return data["access_token"]
