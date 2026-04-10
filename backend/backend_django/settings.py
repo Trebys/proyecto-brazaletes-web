@@ -35,6 +35,7 @@ SECRET_KEY = 'django-insecure-k46+j4+ahuw9=3r&bfux0^*)vem^4cx4_j1b_giclsnuv)8k&*
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    # Recordar que cada vez que inicie el server de ngronk se cambia el host y debo cambiarlo aqui y en paypal dashboard
     'b4a7-201-237-2-28.ngrok-free.app',
     'localhost',
     '127.0.0.1',

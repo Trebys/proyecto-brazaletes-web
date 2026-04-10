@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Django / local runtime files
+db.sqlite3
+*.sqlite3
+media/
+
+# Node / frontend build artifacts
+node_modules/
+dist/
+dist-ssr/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log
+
+# Local helper scripts not intended for the repo
+start-dev.cmd
+
+# Source requirement document kept local
+Proyecto_Sistema_Venta_Tiquetes_Parque_Atracciones_Actualizado.docx

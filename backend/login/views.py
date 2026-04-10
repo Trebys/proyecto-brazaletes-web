@@ -12,13 +12,12 @@ from .serializers import UserSerializer
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.exceptions import AuthenticationFailed
+from .permissions import IsAdminUserReal, has_backoffice_access
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    permission_classes = [
-        permissions.AllowAny
-    ]
+    permission_classes = [IsAdminUserReal]
     serializer_class = UserSerializer
 
 
@@ -81,7 +80,7 @@ def register_client(request):
             email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            account_balance=validated_data['account_balance']
+            account_balance=validated_data.get('account_balance', 0)
         )
 
         user.set_password(validated_data['password'])
@@ -107,7 +106,9 @@ def update_user_profile(request):
     user.first_name = request.data.get('first_name', user.first_name)
     user.last_name = request.data.get('last_name', user.last_name)
     user.email = request.data.get('email', user.email)
-    user.account_balance = request.data.get('account_balance', user.account_balance)  # Asumiendo que tienes un perfil relacionado
+
+    if has_backoffice_access(request.user):
+        user.account_balance = request.data.get('account_balance', user.account_balance)
 
     # Verificar si se está actualizando la contraseña
     password = request.data.get('password', None)
@@ -116,13 +117,7 @@ def update_user_profile(request):
 
     user.save()  # Guardar los cambios en la base de datos
 
-    return Response({
-        'username': user.username,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'email': user.email,
-        'account_balance': user.account_balance,  # Asumiendo que tienes un perfil relacionado
-    })
+    return Response(UserSerializer(instance=user).data, status=status.HTTP_200_OK)
 
 # Eliminar el usuario autenticado
 @api_view(['DELETE'])

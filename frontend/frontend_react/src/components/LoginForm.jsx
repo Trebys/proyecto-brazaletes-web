@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { loginUser } from '../api/api'; // <-- importamos nuestra función
-import api from '../api/api.js';
+import { loginUser, persistUserData } from '../api/api';
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState('');
@@ -20,17 +19,15 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      // Llamamos a nuestra función centralizada
       const res = await loginUser(identifier, password);
 
       if (res.status === 200) {
         const { Token, User } = res.data;
         localStorage.setItem('access_token', Token);
-        localStorage.setItem('user_data', JSON.stringify(User));
+        persistUserData(User);
         alert(`Bienvenido, ${User.username}`);
         setError('');
 
-        // Redirigimos a "from" o a /inicio
         navigate(from, {
           state: rememberedTipoId ? { tipoId: rememberedTipoId } : {},
         });
@@ -40,7 +37,7 @@ export function LoginForm() {
     } catch (error) {
       if (error.response && error.response.status === 401) {
         localStorage.removeItem('access_token');
-        setError('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+        setError('Tu sesion ha expirado. Por favor, inicia sesion de nuevo.');
         navigate('/login');
       } else {
         setError('Error en el servidor o credenciales incorrectas');
@@ -60,10 +57,10 @@ export function LoginForm() {
           onClick={() => navigate('/inicio')}
           className="text-white text-sm mb-4 inline-block cursor-pointer"
         >
-          ← Regresar
+          Regresar
         </a>
         <h1 className="text-center text-white text-2xl mb-6 font-bold">
-          Iniciar sesión
+          Iniciar sesion
         </h1>
         <div className="mb-4">
           <input
@@ -77,7 +74,7 @@ export function LoginForm() {
         <div className="mb-4">
           <input
             type="password"
-            placeholder="Contraseña"
+            placeholder="Contrasena"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full p-2 text-teal-900 rounded bg-teal-700 placeholder-teal-200 focus:outline-none"
@@ -86,7 +83,7 @@ export function LoginForm() {
             href="#"
             className="text-white inline-block mt-2 hover:underline font-bold text-lg"
           >
-            ¿Olvidaste la contraseña?
+            Olvidaste la contrasena?
           </a>
         </div>
         <button
@@ -96,19 +93,17 @@ export function LoginForm() {
           }`}
           disabled={loading}
         >
-          {loading ? 'Cargando...' : 'Iniciar sesión'}
+          {loading ? 'Cargando...' : 'Iniciar sesion'}
         </button>
         {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
 
         <div className="flex justify-between items-center mt-6">
-          <span className="text-white font-bold text-lg">
-            ¿No tienes cuenta?
-          </span>
+          <span className="text-white font-bold text-lg">No tienes cuenta?</span>
           <a
             onClick={() => navigate('/registro')}
             className="text-green-400 hover:underline font-bold text-lg cursor-pointer"
           >
-            Regístrate
+            Registrate
           </a>
         </div>
       </form>

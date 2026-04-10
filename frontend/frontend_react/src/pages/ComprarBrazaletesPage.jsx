@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getTiposBrazaletes, createPurchaseReceipt } from '../api/api';
-import PayPalButton from '../components/PayPalButton';
+import { PayPalButton } from '../components/PayPalButton';
 import ModalMessage from '../components/ModalMessage';
 
 export function ComprarBrazaletesPage() {
@@ -57,10 +57,15 @@ export function ComprarBrazaletesPage() {
     // ... lógicas si sí está logueado
     try {
       console.log('Compra con saldo interno:', selectedTipo);
+      // Ejemplo al comprar con saldo interno:
       const result = await createPurchaseReceipt(selectedTipo.id);
+      // Supongamos que "result.id" es el ID del PurchaseReceipt
+      localStorage.setItem('receiptId', result.id);
       alert(
         `Compra exitosa con saldo interno. Recibo: ${result.purchase_code}`
       );
+
+      navigate('/recibo-compra');
     } catch (err) {
       console.error('Error en compra interna:', err);
     }

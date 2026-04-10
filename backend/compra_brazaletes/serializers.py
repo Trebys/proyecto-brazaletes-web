@@ -1,6 +1,16 @@
 # serializers.py
 from rest_framework import serializers
 from .models import BraceletType, Bracelet, PurchaseReceipt
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    """ Serializador para exponer datos básicos del usuario. """
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name']
 
 
 class BraceletTypeSerializer(serializers.ModelSerializer):
@@ -25,12 +35,13 @@ class BraceletSerializer(serializers.ModelSerializer):
             'bracelet_type_id',
             'bracelet_code',
             'current_balance',
+            'attraction_uses_remaining'
         ]
 
 
 class PurchaseReceiptSerializer(serializers.ModelSerializer):
     bracelet = BraceletSerializer(read_only=True)
-    user_name = serializers.ReadOnlyField(source='user.username')
+    user = UserBasicSerializer(read_only=True)
 
     class Meta:
         model = PurchaseReceipt
@@ -38,7 +49,6 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'user',
-            'user_name',
             'bracelet',
             'purchase_date',
             'purchase_code',

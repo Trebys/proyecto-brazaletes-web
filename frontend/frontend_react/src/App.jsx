@@ -11,6 +11,7 @@ import PrivateRoutes from './components/PrivateRoutes';
 import { PerfilClientePage } from './pages/PerfilClientePage';
 import { AtraccionesComidasPage } from './pages/AtraccionesComidasPage';
 import { ContactoPage } from './pages/ContactoPage';
+import { ReciboCompraPage } from './pages/ReciboCompraPage';
 
 function App() {
   return (
@@ -33,6 +34,8 @@ function App() {
                   element={<ComprarBrazaletesPage />}
                 />
 
+                <Route path="/recibo-compra" element={<ReciboCompraPage />} />
+
                 <Route
                   path="/atracciones-comidas"
                   element={<AtraccionesComidasPage />}
@@ -42,11 +45,10 @@ function App() {
 
                 {/* Rutas protegidas */}
                 <Route element={<PrivateRoutes />}>
-                  <Route path="/mi-perfil" element={<PerfilClientePage />} />
-                  <Route
-                    path="/administrador"
-                    element={<AdministradorPage />}
-                  />
+                  <Route path="/mi-perfil/*" element={<PerfilClientePage />} />
+                </Route>
+                <Route element={<PrivateRoutes requireAdmin />}>
+                  <Route path="/administrador" element={<AdministradorPage />} />
                 </Route>
               </Routes>
             </MasterPageCliente>

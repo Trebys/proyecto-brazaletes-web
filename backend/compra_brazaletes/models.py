@@ -76,9 +76,11 @@ class PurchaseReceipt(models.Model):
 
     purchase_code = models.CharField(max_length=50, blank=True, null=True)
 
+    PAYMENT_METHOD_INTERNAL = 'INTERNAL'
+    PAYMENT_METHOD_PAYPAL = 'PAYPAL'
     PAYMENT_METHODS = (
-        ('INTERNAL', 'Saldo Interno'),
-        ('PAYPAL', 'PayPal'),
+        (PAYMENT_METHOD_INTERNAL, 'Saldo Interno'),
+        (PAYMENT_METHOD_PAYPAL, 'PayPal'),
     )
     payment_method = models.CharField(
         max_length=20,
@@ -90,17 +92,20 @@ class PurchaseReceipt(models.Model):
         max_digits=8, decimal_places=2, blank=True, null=True
     )
 
-    # === NUEVO: Estado de la compra ===
+    STATUS_PENDING = 'PENDING'
+    STATUS_APPROVED = 'APPROVED'
+    STATUS_CAPTURED = 'CAPTURED'
+    STATUS_REFUNDED = 'REFUNDED'
     STATUS_CHOICES = (
-        ('CREATED', 'Creado'),
-        ('CAPTURED', 'Capturado'),
-        ('REFUNDED', 'Reembolsado'),
-        # Agrega más si requieres
+        (STATUS_PENDING, 'Pendiente'),
+        (STATUS_APPROVED, 'Aprobado'),
+        (STATUS_CAPTURED, 'Capturado'),
+        (STATUS_REFUNDED, 'Reembolsado'),
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='CREATED'
+        default=STATUS_PENDING
     )
 
     def __str__(self):

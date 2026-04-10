@@ -7,23 +7,20 @@ export function InicioPage() {
   const navigate = useNavigate();
   const [tipos, setTipos] = useState([]);
 
-  // Mapea nombre -> color de fondo
-  function getCardColor(nombre) {
-    if (!nombre) {
-      // Si nombre es undefined, null o string vacío
-      return 'bg-gray-100';
+  function getBraceletBgColor(typeName) {
+    if (!typeName) return 'bg-gray-100';
+    const lower = typeName.toLowerCase();
+
+    if (lower.includes('estándar') || lower.includes('estandar')) {
+      return 'bg-braceletEstandar';
     }
-    switch (nombre.toLowerCase()) {
-      case 'estándar':
-      case 'estandar':
-        return 'bg-[#bbf7d0]';
-      case 'especial':
-        return 'bg-[#fed7aa]';
-      case 'premium':
-        return 'bg-[#bfdbfe]';
-      default:
-        return 'bg-gray-100';
+    if (lower.includes('especial')) {
+      return 'bg-braceletEspecial';
     }
+    if (lower.includes('premium')) {
+      return 'bg-braceletPremium';
+    }
+    return 'bg-gray-100';
   }
 
   // Construye la URL de imagen
@@ -79,38 +76,39 @@ export function InicioPage() {
         </h2>
 
         <div className="flex flex-wrap justify-center gap-4">
-          {tipos.map((tipo) => (
-            <div
-              key={tipo.id}
-              className={`w-60 p-4 rounded-lg shadow-lg text-center ${getCardColor(
-                tipo.name
-              )}`}
-            >
-              {/* Imagen */}
-              <img
-                src={getImagenUrl(tipo.image)}
-                alt={tipo.name}
-                className="mx-auto mb-4 h-32 object-cover"
-              />
-              <h3 className="text-xl font-semibold text-black drop-shadow-lg">
-                {tipo.name}
-              </h3>
-              <p className="text-lg font-bold mt-2 text-gray-700 drop-shadow-lg">
-                ${tipo.price}
-              </p>
-              {tipo.description && (
-                <p className="mt-2 font-bold text-gray-700 drop-shadow-lg">
-                  {tipo.description}
-                </p>
-              )}
-              <button
-                className="mt-4 bg-teal-700 text-white px-4 py-2 rounded-full hover:bg-teal-800"
-                onClick={() => handleComprar(tipo.id)}
+          {tipos.map((tipo) => {
+            const bgClass = getBraceletBgColor(tipo.name);
+
+            return (
+              <div
+                key={tipo.id}
+                className={`w-60 p-4 rounded-lg shadow-lg text-center ${bgClass}`}
               >
-                Comprar
-              </button>
-            </div>
-          ))}
+                <img
+                  src={getImagenUrl(tipo.image)}
+                  alt={tipo.name}
+                  className="mx-auto mb-4 h-32 object-cover"
+                />
+                <h3 className="text-xl font-semibold text-black drop-shadow-lg">
+                  {tipo.name}
+                </h3>
+                <p className="text-lg font-bold mt-2 text-gray-700 drop-shadow-lg">
+                  ${tipo.price}
+                </p>
+                {tipo.description && (
+                  <p className="mt-2 font-bold text-gray-700 drop-shadow-lg">
+                    {tipo.description}
+                  </p>
+                )}
+                <button
+                  className="mt-4 bg-teal-700 text-white px-4 py-2 rounded-full hover:bg-teal-800"
+                  onClick={() => handleComprar(tipo.id)}
+                >
+                  Comprar
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
