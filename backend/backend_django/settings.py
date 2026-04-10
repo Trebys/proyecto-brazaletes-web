@@ -13,33 +13,45 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Variables de Entorno
-load_dotenv(os.path.join(BASE_DIR, '.', '.env'))  # Ajusta ruta al .env
+load_dotenv(BASE_DIR / '.env')
 
-PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID')
-PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET')
-PAYPAL_ENV = os.getenv('PAYPAL_ENV', 'sandbox')
-PAYPAL_WEBHOOK_ID = os.getenv("PAYPAL_WEBHOOK_ID")
+
+def get_bool_env(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def get_list_env(name, default=None):
+    value = os.getenv(name)
+    if not value:
+        return list(default or [])
+    return [item.strip() for item in value.split(',') if item.strip()]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-k46+j4+ahuw9=3r&bfux0^*)vem^4cx4_j1b_giclsnuv)8k&*'
+DEBUG = get_bool_env('DJANGO_DEBUG', True)
+
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-change-me'
+    else:
+        raise ImproperlyConfigured(
+            'DJANGO_SECRET_KEY is required when DJANGO_DEBUG is False.'
+        )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = [
-    # Recordar que cada vez que inicie el server de ngronk se cambia el host y debo cambiarlo aqui y en paypal dashboard
-    'b4a7-201-237-2-28.ngrok-free.app',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = get_list_env('DJANGO_ALLOWED_HOSTS', ['localhost', '127.0.0.1'])
 
 
 # Application definition
@@ -121,12 +133,12 @@ WSGI_APPLICATION = 'backend_django.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bd_brazaletes_web',
-        'USER': 'postgres',
-        'PASSWORD': 'TrebysPost20',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', ''),
+        'USER': os.getenv('DB_USER', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -181,12 +193,17 @@ AUTH_USER_MODEL = 'login.User'
 # REVISAR SI LO NECESESITO
 
 # CORS Authorization
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://b4a7-201-237-2-28.ngrok-free.app',
-    # "http://localhost:8000",
-]
+CORS_ALLOWED_ORIGINS = get_list_env(
+    'DJANGO_CORS_ALLOWED_ORIGINS',
+    ['http://localhost:5173', 'http://localhost:3000'],
+)
+CORS_ALLOW_CREDENTIALS = get_bool_env('DJANGO_CORS_ALLOW_CREDENTIALS', True)
+CSRF_TRUSTED_ORIGINS = get_list_env('DJANGO_CSRF_TRUSTED_ORIGINS', [])
+
+PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID')
+PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET')
+PAYPAL_ENV = os.getenv('PAYPAL_ENV', 'sandbox')
+PAYPAL_WEBHOOK_ID = os.getenv('PAYPAL_WEBHOOK_ID')
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
