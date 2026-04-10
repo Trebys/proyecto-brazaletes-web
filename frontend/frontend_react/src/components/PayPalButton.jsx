@@ -2,6 +2,7 @@ import React from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { createPayPalOrder, capturePayPalOrder } from '../api/api';
 import { useNavigate } from 'react-router-dom';
+import { PAYPAL_CLIENT_ID } from '../config/env';
 
 /**
  * @param {string} braceletTypeId - El ID del brazalete
@@ -48,8 +49,7 @@ export function PayPalButton({ braceletTypeId, price, onNotLoggedIn }) {
   return (
     <PayPalScriptProvider
       options={{
-        'client-id':
-          'AU0eVc0ia1q4vBWAIQtEX65Q3GO4OMMiV-GaCC6XkzJmcTpbd73XMsRm48v7Y1V3yzwwZaVyBulh6MVB',
+        'client-id': PAYPAL_CLIENT_ID,
         currency: 'USD',
       }}
     >
