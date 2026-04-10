@@ -112,7 +112,24 @@ Reglas:
 - usar verbo en presente;
 - describir que cambia, no todo el contexto;
 - referenciar Jira cuando exista;
+- si existe issue o tarea identificada, preferir incluir su clave en rama y commit;
 - evitar mensajes como `cambios`, `update`, `arreglos`, `cosas varias`.
+
+## Regla de documentacion sincronizada
+
+Si una tarea cambia comportamiento real del sistema, configuracion operativa, endpoints, permisos, variables de entorno o flujos importantes, la documentacion afectada debe actualizarse en la misma rama antes de subir o integrar el cambio.
+
+Esto aplica especialmente a archivos como:
+
+- `docs/backend-funcionamiento.md`
+- `docs/frontend-funcionamiento.md`
+- `docs/flujo-ramas-git.md`
+
+Regla practica:
+
+- no subir ni integrar una rama dejando documentacion conocida como desactualizada si esa documentacion forma parte del alcance real de la tarea;
+- si un cambio corrige deuda tecnica o cierra un requerimiento documentado, el documento debe reflejar que ya quedo resuelto o describir el nuevo estado vigente;
+- si la tarea no afecta documentacion funcional ni operativa, no hace falta forzar cambios en `docs/`.
 
 ## Flujo recomendado de trabajo
 
@@ -121,10 +138,11 @@ Reglas:
 1. actualizar `main`;
 2. crear rama nueva desde `main`;
 3. implementar el cambio;
-4. probar;
-5. hacer uno o varios commits pequenos;
-6. subir la rama si el usuario lo pide o si hace falta respaldo remoto;
-7. integrar a `main` cuando el cambio este estable.
+4. actualizar la documentacion relacionada si el cambio modifica comportamiento o configuracion documentada;
+5. probar;
+6. hacer uno o varios commits pequenos;
+7. subir la rama si el usuario lo pide o si hace falta respaldo remoto;
+8. integrar a `main` cuando el cambio este estable.
 
 Ejemplo:
 
@@ -234,9 +252,10 @@ El agente debe:
 
 1. crear o usar una rama de trabajo;
 2. implementar el cambio;
-3. hacer commit local si el usuario lo solicito o si la tarea incluye dejar historial listo;
-4. no hacer `push` automatico;
-5. resumir que rama uso y que commit dejo.
+3. actualizar documentacion si el cambio la afecta;
+4. hacer commit local si el usuario lo solicito o si la tarea incluye dejar historial listo;
+5. no hacer `push` automatico;
+6. resumir que rama uso y que commit dejo.
 
 ### Si el usuario pide implementar y dejar listo para subir
 
@@ -244,9 +263,10 @@ El agente debe:
 
 1. crear rama de trabajo;
 2. implementar y validar;
-3. hacer commit;
-4. subir la rama con `git push -u origin <rama>`;
-5. informar el nombre de la rama y el commit.
+3. actualizar documentacion si el cambio la afecta;
+4. hacer commit;
+5. subir la rama con `git push -u origin <rama>`;
+6. informar el nombre de la rama y el commit.
 
 ### Si el usuario pide integrar a `main`
 
@@ -254,9 +274,10 @@ El agente debe:
 
 1. confirmar que el cambio ya esta estable;
 2. actualizar `main`;
-3. fusionar la rama;
-4. resolver conflictos si aparecen;
-5. hacer `push` de `main` solo si el usuario lo pidio o el flujo del proyecto lo requiere.
+3. verificar que la documentacion relevante tambien quedo al dia;
+4. fusionar la rama;
+5. resolver conflictos si aparecen;
+6. hacer `push` de `main` solo si el usuario lo pidio o el flujo del proyecto lo requiere.
 
 ### Si el usuario pide cerrar una issue o dejar una entrega estable
 

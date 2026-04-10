@@ -62,20 +62,21 @@ Puntos importantes:
 
 - usa `login.User` como modelo de usuario personalizado;
 - activa `rest_framework` y `rest_framework.authtoken`;
-- carga variables de entorno para PayPal;
-- configura PostgreSQL como base de datos principal;
+- carga desde variables de entorno la configuracion sensible y dependiente del entorno, incluyendo PayPal, `SECRET_KEY`, `DEBUG`, base de datos, `ALLOWED_HOSTS`, CORS y CSRF;
+- configura PostgreSQL como base de datos principal usando variables de entorno;
 - habilita `TokenAuthentication` y `SessionAuthentication`;
-- permite CORS para los hosts locales del frontend.
+- permite CORS para los hosts configurados por entorno, manteniendo valores locales razonables para desarrollo.
 
 Observaciones del estado actual:
 
-- `DEBUG = True`;
-- `SECRET_KEY` esta hardcodeada;
-- las credenciales de PostgreSQL estan hardcodeadas;
-- hay un host de `ngrok` configurado manualmente;
+- `DEBUG` ya no esta fijo en codigo; se controla con `DJANGO_DEBUG`;
+- `SECRET_KEY` ya no esta hardcodeada en el repositorio; se lee desde `DJANGO_SECRET_KEY`;
+- las credenciales de PostgreSQL ya no estan hardcodeadas; se leen desde variables `DB_*`;
+- `ALLOWED_HOSTS`, CORS y CSRF confiables tambien salen de variables de entorno;
+- existe `backend/.env.example` como base para desarrollo local;
 - `TIME_ZONE` esta en `UTC`.
 
-Todo eso esta bien para una fase de desarrollo inicial, pero deberia moverse a variables de entorno antes de despliegue real.
+Con esto, el backend ya quedo preparado para mantener una configuracion local simple sin acoplar secretos reales al codigo versionado.
 
 ### `backend_django/urls.py`
 
@@ -584,8 +585,7 @@ Notas practicas:
 
 ### Riesgos y deuda tecnica visible
 
-- credenciales sensibles en codigo;
-- `DEBUG` activo;
+- la seguridad final depende de que cada entorno productivo defina correctamente sus variables y no reutilice valores de desarrollo;
 - expiracion de token con comentarios y tiempos inconsistentes;
 - prefijos de rutas inconsistentes;
 - aun depende de la semantica de eventos que entregue PayPal;

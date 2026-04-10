@@ -77,7 +77,7 @@ Este archivo concentra casi toda la comunicacion con el backend.
 
 Responsabilidades:
 
-- crea una instancia de Axios con `baseURL = http://localhost:8000/api/`
+- crea una instancia de Axios cuya `baseURL` sale de `VITE_API_BASE_URL`
 - adjunta automaticamente el token desde `localStorage`
 - sincroniza `user_data` en `localStorage` cuando el perfil cambia o se consulta de nuevo
 - expone helpers para limpiar sesion y detectar si el usuario actual es admin
@@ -104,7 +104,8 @@ Decisiones actuales a tener presentes:
 - parte del estado del usuario tambien se guarda en `localStorage` como `user_data`;
 - `user_data` incluye informacion de privilegios como `is_admin`, `is_staff` e `is_superuser`;
 - para la UI, la bandera canonica es `is_admin`, que el backend deriva desde `is_staff`;
-- el `baseURL` esta fijo a `localhost`, asi que no hay configuracion por entorno;
+- el `baseURL` ya no esta fijo en codigo; se toma de `VITE_API_BASE_URL`;
+- el frontend falla temprano si faltan variables de entorno obligatorias, lo que evita builds con configuracion incompleta;
 - la redireccion global por error `401` esta comentada para evitar saltos de pagina automaticos.
 
 Regla administrativa vigente en frontend:
@@ -249,7 +250,7 @@ Responsabilidades:
 - capturar la orden aprobada;
 - redirigir al recibo luego del pago.
 
-Observacion importante: el `client-id` de PayPal esta hardcodeado en el frontend. En un proyecto mas maduro conviene moverlo a variables de entorno del frontend.
+Observacion importante: el `client-id` de PayPal ya no esta hardcodeado. Ahora se toma de `VITE_PAYPAL_CLIENT_ID`, lo que permite separar credenciales por entorno y mantener el repo sin configuracion sensible embebida.
 
 ### `src/pages/ReciboCompraPage.jsx`
 
@@ -341,7 +342,6 @@ Notas practicas:
 
 ### Deuda tecnica visible
 
-- configuraciones sensibles fijas en codigo (`baseURL`, `PayPal client id`);
 - uso intensivo de `localStorage` como fuente de verdad;
 - ausencia de contexto global para autenticacion;
 - helpers repetidos para construir URLs de imagen;
