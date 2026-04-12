@@ -239,6 +239,12 @@ Flujo con PayPal:
 5. guarda `receiptId` en `localStorage`;
 6. navega a `/recibo-compra`.
 
+Nota de alcance vigente:
+
+- el frontend actual solo cubre la compra inicial del brazalete y la consulta del recibo;
+- la logica nueva del proyecto ya definio que los futuros consumos de comida y atracciones no se modelaran como nuevas ventas de brazalete;
+- cuando esa parte se implemente, la interfaz probablemente necesitara vistas de historial de movimientos o consumos del brazalete, ademas del recibo de compra.
+
 ### `src/components/PayPalButton.jsx`
 
 Encapsula la integracion con PayPal.
@@ -332,6 +338,16 @@ Notas practicas:
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
 - listado de compras del usuario
 
+### Logica ya definida pero aun no visible en UI
+
+El proyecto ya dejo definido el modelo de dominio para la siguiente etapa:
+
+- `PurchaseReceipt` seguira representando el pago de la compra inicial;
+- la venta de brazaletes se separara conceptualmente del historial operativo del brazalete;
+- los consumos de comida y atracciones deberan aparecer como movimientos del brazalete, no como nuevas compras del mismo.
+
+Esto todavia no cambio el frontend real porque no existen aun endpoints ni pantallas para ese historial, pero ya es la logica vigente a respetar cuando se implemente `AtraccionesComidasPage` o cualquier flujo operativo de consumo.
+
 ### Partes incompletas o minimas
 
 - `AdministradorPage.jsx`
@@ -346,7 +362,8 @@ Notas practicas:
 - ausencia de contexto global para autenticacion;
 - helpers repetidos para construir URLs de imagen;
 - mezcla de `href` y `navigate`;
-- varios textos del codigo muestran problemas de codificacion de caracteres.
+- varios textos del codigo muestran problemas de codificacion de caracteres;
+- la interfaz aun no expone historial transaccional del brazalete, porque esa parte del backend solo esta definida a nivel de diseno.
 
 ## Como seguir documentando bien este frontend
 
