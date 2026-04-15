@@ -306,6 +306,25 @@ Y estos estados:
 - `CAPTURED`
 - `REFUNDED`
 
+### Decision de modelo transaccional ya definida
+
+Ademas del estado actual del codigo, el proyecto ya dejo resuelta la logica de dominio para la siguiente etapa de consumo y auditoria.
+
+Decision vigente:
+
+- `PurchaseReceipt` se mantiene como comprobante de pago;
+- la venta de brazaletes debe modelarse aparte como `Sale` y `SaleLine`;
+- el historial operativo del brazalete debe vivir en una entidad tipo `BraceletTransaction`;
+- el brazalete debe quedar relacionado de forma directa con el usuario, en lugar de depender solo del recibo para inferir propiedad.
+
+Separacion de responsabilidades acordada:
+
+- `PurchaseReceipt` responde como se pago;
+- `Sale` y `SaleLine` responden que se vendio;
+- `BraceletTransaction` responde que movimientos afectaron al brazalete.
+
+Importante: esta logica ya quedo definida como diseno del modelo, pero todavia no esta implementada en los modelos Django actuales. El detalle completo quedo documentado en [docs/modelo-transaccional-brazaletes.md](/C:/Users/3st3b/Dev/brazaletes_web_agentes_IA/proyecto-brazaletes-web/docs/modelo-transaccional-brazaletes.md).
+
 ### Signals
 
 Archivo: `compra_brazaletes/signals.py`
@@ -377,6 +396,12 @@ Flujo:
 7. devuelve el recibo serializado.
 
 Observacion: la compra con saldo interno queda en `status = CAPTURED`, porque el cobro se ejecuta en el mismo flujo.
+
+Nota de alcance vigente:
+
+- hoy el backend implementa la venta inicial del brazalete y su recibo;
+- el consumo posterior todavia no tiene modelo transaccional persistente en codigo;
+- la logica aprobada es que la comida y las atracciones no generen una nueva venta del brazalete, sino movimientos operativos del brazalete.
 
 ## Integracion con PayPal
 
@@ -486,6 +511,12 @@ Endpoints actuales:
 
 Observacion importante: `getFoods()` usa `AttractionsSerializer` en lugar de `FoodSerializer`. Eso es un error funcional que conviene corregir cuando trabajemos esta app.
 
+Nota de dominio ya definida:
+
+- cuando se implemente el consumo de servicios, `Food` y `Attractions` no deberian reutilizar `PurchaseReceipt` como historial;
+- esos consumos deberian registrarse como movimientos del brazalete, por ejemplo mediante `BraceletTransaction`;
+- eso permitira auditar saldo, usos restantes, operador y motivo del cambio sin solapar la logica de compra inicial.
+
 ### Rutas
 
 Archivo: `atracciones_comidas/urls.py`
@@ -522,6 +553,16 @@ Endpoints:
 4. backend captura la orden
 5. backend crea brazalete y recibo con `status = CAPTURED`
 6. si PayPal envia eventos intermedios o finales, el webhook solo actualiza el recibo con estados validos y sin degradar estados ya consolidados
+
+### Modelo logico acordado para la siguiente etapa
+
+Aunque el codigo actual todavia no lo materializa, el proyecto ya definio esta evolucion del flujo:
+
+1. una compra de brazalete seguira produciendo recibo y brazalete;
+2. esa compra deberia quedar representada comercialmente por una `Sale` y su `SaleLine`;
+3. la activacion inicial del saldo y de los usos del brazalete deberia registrarse como una transaccion operativa;
+4. los consumos de comida y atracciones deberian registrarse como movimientos del brazalete, no como nuevas ventas de brazalete;
+5. el saldo actual del brazalete seguira sirviendo como estado rapido, mientras que el historial detallado quedara en el ledger transaccional.
 
 ## Matriz de permisos
 
@@ -581,7 +622,8 @@ Notas practicas:
 - estados de `PurchaseReceipt` alineados con el flujo real de compra y captura;
 - webhook de PayPal alineado con estados persistibles del modelo;
 - serializacion anidada util para el frontend;
-- uso de signals para codigos automaticos.
+- uso de signals para codigos automaticos;
+- logica objetivo del modelo transaccional ya definida y documentada para la siguiente etapa.
 
 ### Riesgos y deuda tecnica visible
 
@@ -589,7 +631,8 @@ Notas practicas:
 - expiracion de token con comentarios y tiempos inconsistentes;
 - prefijos de rutas inconsistentes;
 - aun depende de la semantica de eventos que entregue PayPal;
-- `getFoods()` serializa con el serializer equivocado.
+- `getFoods()` serializa con el serializer equivocado;
+- el modelo transaccional de consumos y auditoria ya esta definido, pero todavia no fue implementado en entidades y endpoints reales.
 
 ## Como seguir documentando bien este backend
 
