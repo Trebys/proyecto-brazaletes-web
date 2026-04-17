@@ -14,6 +14,19 @@ export const clearStoredAuth = () => {
   localStorage.removeItem('user_data');
 };
 
+export const buildMediaUrl = (path) => {
+  if (!path) {
+    return '';
+  }
+
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  const normalizedPath = path.replace(/^\/+/, '').replace(/^media\//, '');
+  return new URL(`/media/${normalizedPath}`, API_BASE_URL).toString();
+};
+
 export const getStoredUser = () => {
   const rawUser = localStorage.getItem('user_data');
 
@@ -174,6 +187,37 @@ export const getTiposBrazaletes = async () => {
     console.error('Error obteniendo tipos de brazaletes:', error);
     throw error;
   }
+};
+
+export const getAttractions = async () => {
+  const response = await api.get('atracciones-comidas/attractions/');
+  return response.data;
+};
+
+export const getFoods = async () => {
+  const response = await api.get('atracciones-comidas/foods/');
+  return response.data;
+};
+
+export const consumeAttraction = async (attractionId, braceletId) => {
+  const response = await api.post(
+    `atracciones-comidas/attractions/${attractionId}/consume/`,
+    {
+      bracelet_id: braceletId,
+    }
+  );
+  return response.data;
+};
+
+export const purchaseFood = async (foodId, braceletId, paymentSource) => {
+  const response = await api.post(
+    `atracciones-comidas/foods/${foodId}/purchase/`,
+    {
+      bracelet_id: braceletId,
+      payment_source: paymentSource,
+    }
+  );
+  return response.data;
 };
 
 export const createPurchaseReceipt = async (braceletTypeId) => {

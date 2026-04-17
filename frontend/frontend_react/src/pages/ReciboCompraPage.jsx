@@ -1,16 +1,8 @@
-// ReciboCompraPage.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPurchaseReceiptById } from '../api/api';
 
-// Función para convertir la ruta de la BD a una URL absoluta
-const getImagenUrl = (path) => {
-  if (!path) return '';
-  if (path.startsWith('http')) return path;
-  return `http://localhost:8000/media/${path}`;
-};
+import { buildMediaUrl, getPurchaseReceiptById } from '../api/api';
 
-// Traductor de método de pago
 const getMethodLabel = (method) => {
   switch (method) {
     case 'INTERNAL':
@@ -30,7 +22,7 @@ export function ReciboCompraPage() {
   useEffect(() => {
     const storedReceiptId = localStorage.getItem('receiptId');
     if (!storedReceiptId) {
-      console.warn('No se encontró "receiptId" en localStorage.');
+      console.warn('No se encontro "receiptId" en localStorage.');
       setLoading(false);
       return;
     }
@@ -51,7 +43,7 @@ export function ReciboCompraPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-white">
+      <div className="flex min-h-screen flex-col items-center justify-center text-white">
         Cargando recibo...
       </div>
     );
@@ -59,13 +51,12 @@ export function ReciboCompraPage() {
 
   if (!receiptData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-white">
-        No se encontró información del recibo.
+      <div className="flex min-h-screen flex-col items-center justify-center text-white">
+        No se encontro informacion del recibo.
       </div>
     );
   }
 
-  // Desestructuramos lo que nos devuelve el endpoint
   const {
     id,
     user,
@@ -73,17 +64,15 @@ export function ReciboCompraPage() {
     purchase_date,
     purchase_code,
     amount_paid,
-    payment_method, // <--- método de pago
+    payment_method,
   } = receiptData;
 
-  // Nombre del usuario
   const { first_name, last_name, username } = user || {};
   const fullName =
     first_name || last_name
       ? `${first_name ?? ''} ${last_name ?? ''}`.trim()
       : username || 'No especificado';
 
-  // Datos del brazalete
   const { bracelet_code, bracelet_type } = bracelet || {};
   const {
     name: typeName,
@@ -92,38 +81,33 @@ export function ReciboCompraPage() {
     image,
     attraction_uses,
   } = bracelet_type || {};
-
-  // Imagen
-  const imageUrl = getImagenUrl(image);
-
-  // Fecha de compra formateada
+  const imageUrl = buildMediaUrl(image);
   const fechaCompra = purchase_date
     ? new Date(purchase_date).toLocaleDateString('es-ES')
     : 'No especificado';
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="text-white text-3xl font-bold mb-6">Recibo de Compra</div>
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="mb-6 text-3xl font-bold text-white">Recibo de Compra</div>
 
-      <div className="bg-teal-900 rounded-2xl shadow-lg p-6 w-full max-w-md">
-        <h3 className="text-white text-2xl font-semibold mb-4">
+      <div className="w-full max-w-md rounded-2xl bg-teal-900 p-6 shadow-lg">
+        <h3 className="mb-4 text-2xl font-semibold text-white">
           Resumen de la compra
         </h3>
 
-        <div className="flex items-center mb-4">
-          {/* Mostrar imagen del brazalete */}
+        <div className="mb-4 flex items-center">
           <img
             src={imageUrl}
             alt={typeName || 'Brazalete'}
-            className="w-20 h-20 rounded"
+            className="h-20 w-20 rounded object-cover"
           />
-          <div className="text-white text-lg font-medium ml-4">
+          <div className="ml-4 text-lg font-medium text-white">
             {typeName || 'Brazalete'}
           </div>
         </div>
 
-        <div className="bg-teal-800 p-4 rounded-lg">
-          <table className="w-full text-white text-sm">
+        <div className="rounded-lg bg-teal-800 p-4">
+          <table className="w-full text-sm text-white">
             <tbody>
               <tr>
                 <td className="py-2 font-semibold">Comprador</td>
@@ -138,11 +122,11 @@ export function ReciboCompraPage() {
                 <td className="text-right">{id}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Código brazalete</td>
+                <td className="py-2 font-semibold">Codigo brazalete</td>
                 <td className="text-right">{bracelet_code || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Número Compra</td>
+                <td className="py-2 font-semibold">Numero Compra</td>
                 <td className="text-right">{purchase_code || 'N/A'}</td>
               </tr>
               <tr>
@@ -155,19 +139,22 @@ export function ReciboCompraPage() {
               </tr>
               <tr>
                 <td className="py-2 font-semibold">Usos atracciones</td>
-                <td className="text-right">{attraction_uses ?? 0}</td>
+                <td className="text-right">
+                  {bracelet?.attraction_uses_remaining ?? attraction_uses ?? 0}
+                </td>
               </tr>
               <tr>
                 <td className="py-2 font-semibold">Saldo Comidas</td>
-                <td className="text-right">${food_balance ?? '0.00'}</td>
+                <td className="text-right">
+                  ${bracelet?.current_balance ?? food_balance ?? '0.00'}
+                </td>
               </tr>
               <tr>
                 <td className="py-2 font-semibold">Total Pagado</td>
                 <td className="text-right">${amount_paid ?? '0.00'}</td>
               </tr>
-              {/* Nueva fila Método de Pago */}
               <tr>
-                <td className="py-2 font-semibold">Método de Pago</td>
+                <td className="py-2 font-semibold">Metodo de Pago</td>
                 <td className="text-right">{getMethodLabel(payment_method)}</td>
               </tr>
             </tbody>
@@ -175,11 +162,11 @@ export function ReciboCompraPage() {
         </div>
       </div>
 
-      <div className="mt-6 text-white text-lg font-bold">
-        ¡Gracias por su compra!
+      <div className="mt-6 text-lg font-bold text-white">
+        Gracias por tu compra.
       </div>
       <button
-        className="mt-4 bg-black text-white py-2 px-6 rounded hover:bg-gray-800 transition"
+        className="mt-4 rounded bg-black px-6 py-2 text-white transition hover:bg-gray-800"
         onClick={() => navigate('/inicio')}
       >
         Volver al Inicio

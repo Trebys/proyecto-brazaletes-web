@@ -25,5 +25,5 @@ urlpatterns = [
     path('docs/', include_docs_urls(title='Backend Django API')),
     path('api/', include('login.urls')),
     path('api/compra_brazaletes/', include('compra_brazaletes.urls')),
-    path('', include('atracciones_comidas.urls')),
+    path('api/atracciones-comidas/', include('atracciones_comidas.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -35,6 +35,39 @@ def get_list_env(name, default=None):
         return list(default or [])
     return [item.strip() for item in value.split(',') if item.strip()]
 
+
+def get_database_config():
+    db_engine = os.getenv('DB_ENGINE')
+    db_name = os.getenv('DB_NAME')
+
+    if not db_engine and not db_name and DEBUG:
+        return {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+
+    engine = db_engine or 'django.db.backends.postgresql'
+
+    if engine == 'django.db.backends.sqlite3':
+        return {
+            'ENGINE': engine,
+            'NAME': db_name or BASE_DIR / 'db.sqlite3',
+        }
+
+    if not db_name:
+        raise ImproperlyConfigured(
+            'DB_NAME is required when using a non-sqlite database.'
+        )
+
+    return {
+        'ENGINE': engine,
+        'NAME': db_name,
+        'USER': os.getenv('DB_USER', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -132,14 +165,7 @@ WSGI_APPLICATION = 'backend_django.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', ''),
-        'USER': os.getenv('DB_USER', ''),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
+    'default': get_database_config()
 }
 
 
