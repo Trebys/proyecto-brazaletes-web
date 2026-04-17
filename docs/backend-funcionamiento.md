@@ -72,11 +72,12 @@ Observaciones del estado actual:
 - `DEBUG` ya no esta fijo en codigo; se controla con `DJANGO_DEBUG`;
 - `SECRET_KEY` ya no esta hardcodeada en el repositorio; se lee desde `DJANGO_SECRET_KEY`;
 - las credenciales de PostgreSQL ya no estan hardcodeadas; se leen desde variables `DB_*`;
+- si no existe configuracion `DB_*` y `DEBUG=True`, el backend cae a SQLite local para evitar errores 500 durante desarrollo;
 - `ALLOWED_HOSTS`, CORS y CSRF confiables tambien salen de variables de entorno;
 - existe `backend/.env.example` como base para desarrollo local;
 - `TIME_ZONE` esta en `UTC`.
 
-Con esto, el backend ya quedo preparado para mantener una configuracion local simple sin acoplar secretos reales al codigo versionado.
+Con esto, el backend ya quedo preparado para mantener una configuracion local simple sin acoplar secretos reales al codigo versionado. Si se quiere usar PostgreSQL local con datos reales, se debe crear `backend/.env` a partir de `backend/.env.example`.
 
 ### `backend_django/urls.py`
 
@@ -86,9 +87,9 @@ Centraliza las rutas:
 - `/docs/`
 - `/api/` -> app `login`
 - `/api/compra_brazaletes/` -> app `compra_brazaletes`
-- `/` -> app `atracciones_comidas`
+- `/api/atracciones-comidas/` -> app `atracciones_comidas`
 
-Observacion importante: `atracciones_comidas` no esta bajo `/api/`, asi que la API no es totalmente consistente en su prefijo.
+Observacion importante: el catalogo de atracciones y comidas ya quedo alineado con el mismo prefijo `/api/` del resto del backend.
 
 ## App `login`
 
@@ -469,7 +470,7 @@ Observaciones importantes del estado actual:
 
 ## App `atracciones_comidas`
 
-Esta app existe, pero todavia se ve mas temprana que `compra_brazaletes`.
+Esta app ya expone el catalogo publico de atracciones y comidas, ademas de un flujo minimo de consumo real sobre brazaletes existentes.
 
 ### Modelos
 
@@ -489,6 +490,24 @@ Archivo: `atracciones_comidas/models.py`
 - `photo`
 - `price`
 
+### Datos base y carpeta `media`
+
+El proyecto usa `backend/media/` como almacenamiento local de imagenes servidas por Django durante desarrollo.
+
+Carpetas relevantes:
+
+- `backend/media/attractions/` guarda imagenes de atracciones;
+- `backend/media/foods/` guarda imagenes de comidas;
+- `backend/media/bracelets/` guarda imagenes de tipos de brazalete.
+
+Para cargar el catalogo base usado en el mockup, existe el comando:
+
+```powershell
+python manage.py seed_atracciones_comidas
+```
+
+Este comando es idempotente: crea o actualiza las 3 atracciones y 3 comidas base usando las imagenes existentes en `media`.
+
 ### Serializadores
 
 Archivo: `atracciones_comidas/serializers.py`
@@ -498,24 +517,46 @@ Hay dos serializadores:
 - `AttractionsSerializer`
 - `FoodSerializer`
 
+Detalle practico del estado actual:
+
+- cada serializer expone su propio esquema correcto;
+- `FoodSerializer` ya no reutiliza por error el serializer de atracciones;
+- ambos exponen `photo_url` para que el frontend pueda consumir imagenes sin reconstruir manualmente rutas relativas.
+
 ### Vistas
 
 Archivo: `atracciones_comidas/views.py`
 
-Endpoints actuales:
+La app ya usa `ModelViewSet` y permisos consistentes con el resto del backend.
 
-- listar atracciones
-- crear atracciones
-- listar comidas
-- crear comidas
+Endpoints y acciones actuales:
 
-Observacion importante: `getFoods()` usa `AttractionsSerializer` en lugar de `FoodSerializer`. Eso es un error funcional que conviene corregir cuando trabajemos esta app.
+- listar y consultar atracciones;
+- crear, editar y eliminar atracciones;
+- listar y consultar comidas;
+- crear, editar y eliminar comidas;
+- consumir una atraccion descontando usos del brazalete;
+- comprar una comida usando saldo del brazalete o saldo interno de la cuenta.
+
+Permisos actuales:
+
+- lectura publica para catalogo;
+- escritura del catalogo solo para administradores;
+- acciones de consumo y compra solo para usuarios autenticados con un brazalete propio.
+
+Reglas de negocio del flujo minimo actual:
+
+- el consumo de atracciones exige `bracelet_id` y descuenta `usage_points` del brazalete;
+- la compra de comida exige `bracelet_id`;
+- si el pago usa `BRACELET_BALANCE`, se descuenta de `Bracelet.current_balance`;
+- si el pago usa `ACCOUNT_BALANCE`, se descuenta de `User.account_balance`;
+- el backend valida que el brazalete pertenezca al usuario autenticado antes de permitir la operacion.
 
 Nota de dominio ya definida:
 
-- cuando se implemente el consumo de servicios, `Food` y `Attractions` no deberian reutilizar `PurchaseReceipt` como historial;
-- esos consumos deberian registrarse como movimientos del brazalete, por ejemplo mediante `BraceletTransaction`;
-- eso permitira auditar saldo, usos restantes, operador y motivo del cambio sin solapar la logica de compra inicial.
+- el consumo minimo actual descuenta saldo/usos directamente del brazalete y sirve como MVP funcional para pruebas de negocio;
+- mas adelante, esos consumos deberian registrarse tambien como movimientos del brazalete, por ejemplo mediante `BraceletTransaction`;
+- esa mejora permitira auditar saldo, usos restantes, operador y motivo del cambio sin solapar la logica de compra inicial.
 
 ### Rutas
 
@@ -523,10 +564,34 @@ Archivo: `atracciones_comidas/urls.py`
 
 Endpoints:
 
-- `/attractions/`
-- `/attractions/add/`
-- `/foods/`
-- `/foods/add/`
+- `GET /api/atracciones-comidas/attractions/`
+- `POST /api/atracciones-comidas/attractions/`
+- `GET /api/atracciones-comidas/attractions/{id}/`
+- `POST /api/atracciones-comidas/attractions/{id}/consume/`
+- `GET /api/atracciones-comidas/foods/`
+- `POST /api/atracciones-comidas/foods/`
+- `GET /api/atracciones-comidas/foods/{id}/`
+- `POST /api/atracciones-comidas/foods/{id}/purchase/`
+
+### Requerimiento completado: modulo de atracciones y comidas
+
+El requerimiento "Completar modulo de atracciones y comidas desde backend hasta frontend" quedo cerrado como MVP funcional.
+
+Criterios resueltos:
+
+- el backend lista, crea y serializa correctamente atracciones y comidas;
+- `FoodSerializer` corrige el bug donde comidas se serializaban con `AttractionsSerializer`;
+- las rutas del modulo usan el prefijo consistente `/api/atracciones-comidas/`;
+- el catalogo base puede cargarse con `seed_atracciones_comidas`;
+- el frontend consume el catalogo real y muestra informacion util de atracciones y comidas;
+- la pagina dejo de estar en estado placeholder;
+- las atracciones descuentan usos del brazalete;
+- las comidas descuentan saldo del brazalete o saldo interno de la cuenta como fallback.
+
+Comentario de continuidad:
+
+- esta version se considera completa para pruebas funcionales del MVP;
+- mas adelante se recomienda mejorar el comportamiento con historial transaccional (`BraceletTransaction`), vista de consumos y reglas mas avanzadas de pagos o recargas.
 
 ## Flujo de datos entre backend y frontend
 
@@ -600,6 +665,19 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | `POST /api/compra_brazaletes/paypal/create-order/` | `401` | permitido | permitido |
 | `POST /api/compra_brazaletes/paypal/capture-order/` | `401` | permitido | permitido |
 
+### Atracciones y comidas
+
+| Endpoint | Sin autenticacion | Cliente autenticado | Administrador |
+| --- | --- | --- | --- |
+| `GET /api/atracciones-comidas/attractions/` | permitido | permitido | permitido |
+| `POST /api/atracciones-comidas/attractions/` | `401` | `403` | permitido |
+| `PUT/PATCH/DELETE /api/atracciones-comidas/attractions/{id}/` | `401` | `403` | permitido |
+| `POST /api/atracciones-comidas/attractions/{id}/consume/` | `401` | permitido si el brazalete es suyo y tiene usos | permitido si el brazalete es suyo y tiene usos |
+| `GET /api/atracciones-comidas/foods/` | permitido | permitido | permitido |
+| `POST /api/atracciones-comidas/foods/` | `401` | `403` | permitido |
+| `PUT/PATCH/DELETE /api/atracciones-comidas/foods/{id}/` | `401` | `403` | permitido |
+| `POST /api/atracciones-comidas/foods/{id}/purchase/` | `401` | permitido si el brazalete es suyo y tiene saldo o saldo de cuenta | permitido si el brazalete es suyo y tiene saldo o saldo de cuenta |
+
 Notas practicas:
 
 - `401` significa que falta autenticacion o el token no fue aceptado.
@@ -619,6 +697,8 @@ Notas practicas:
 - endpoints de PayPal alineados con autenticacion obligatoria;
 - flujo funcional de compra interna;
 - flujo funcional de compra por PayPal;
+- catalogo funcional de atracciones y comidas bajo rutas consistentes;
+- consumo minimo de atracciones y comidas conectado al estado real del brazalete;
 - estados de `PurchaseReceipt` alineados con el flujo real de compra y captura;
 - webhook de PayPal alineado con estados persistibles del modelo;
 - serializacion anidada util para el frontend;
@@ -629,9 +709,8 @@ Notas practicas:
 
 - la seguridad final depende de que cada entorno productivo defina correctamente sus variables y no reutilice valores de desarrollo;
 - expiracion de token con comentarios y tiempos inconsistentes;
-- prefijos de rutas inconsistentes;
 - aun depende de la semantica de eventos que entregue PayPal;
-- `getFoods()` serializa con el serializer equivocado;
+- el flujo minimo de consumo actual esta completo para pruebas MVP, pero aun no persiste historial transaccional;
 - el modelo transaccional de consumos y auditoria ya esta definido, pero todavia no fue implementado en entidades y endpoints reales.
 
 ## Como seguir documentando bien este backend

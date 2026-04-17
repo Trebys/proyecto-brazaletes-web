@@ -82,6 +82,7 @@ Responsabilidades:
 - sincroniza `user_data` en `localStorage` cuando el perfil cambia o se consulta de nuevo
 - expone helpers para limpiar sesion y detectar si el usuario actual es admin
 - expone funciones para login, registro, perfil, compra interna y compra por PayPal
+- expone tambien helpers para construir URLs de media y consumir atracciones/comidas
 
 Funciones principales:
 
@@ -97,6 +98,11 @@ Funciones principales:
 - `capturePayPalOrder(orderID, braceletTypeId)`
 - `getPurchaseReceiptById(receiptId)`
 - `getUserPurchaseReceipts()`
+- `getAttractions()`
+- `getFoods()`
+- `consumeAttraction(attractionId, braceletId)`
+- `purchaseFood(foodId, braceletId, paymentSource)`
+- `buildMediaUrl(path)`
 
 Decisiones actuales a tener presentes:
 
@@ -268,6 +274,11 @@ Flujo:
 2. consulta el endpoint del recibo;
 3. renderiza datos del usuario, brazalete, monto, metodo de pago y estado de la compra.
 
+Detalle practico del estado actual:
+
+- si el brazalete ya tuvo consumos, la pagina ya muestra `current_balance` y `attraction_uses_remaining` reales del brazalete;
+- si todavia no hubo consumos, sigue mostrando el estado inicial esperado.
+
 ### `src/pages/PerfilClientePage.jsx`
 
 Es una pagina contenedora con rutas internas:
@@ -293,6 +304,50 @@ Responsabilidades:
 - mostrar datos resumidos del brazalete comprado;
 - guardar `receiptId` en `localStorage` cuando el usuario pulsa "Ver Recibo";
 - redirigir a `ReciboCompraPage`.
+
+Detalle practico del estado actual:
+
+- la tarjeta ya no muestra solo los valores iniciales del tipo de brazalete;
+- ahora refleja el saldo y los usos restantes reales del brazalete.
+
+### `src/pages/AtraccionesComidasPage.jsx`
+
+Esta pagina dejo de ser placeholder y ahora resuelve el catalogo operativo de atracciones y comidas.
+
+Responsabilidades:
+
+- cargar el catalogo publico de atracciones y comidas;
+- si el usuario tiene sesion, cargar tambien sus recibos y perfil para obtener brazaletes y saldo de cuenta;
+- permitir seleccionar un brazalete activo;
+- consumir atracciones descontando usos del brazalete;
+- comprar comidas con saldo del brazalete y, si no alcanza, con saldo interno de la cuenta;
+- reflejar en pantalla el nuevo estado del brazalete sin recargar toda la aplicacion.
+
+Decision vigente del flujo minimo:
+
+- las atracciones solo consumen usos del brazalete;
+- las comidas pueden cobrarse con saldo del brazalete o con saldo interno de la cuenta;
+- PayPal no se reutiliza todavia para comidas, porque el flujo actual de PayPal sigue acoplado a la compra inicial del brazalete.
+
+### Requerimiento completado: modulo de atracciones y comidas
+
+El requerimiento "Completar modulo de atracciones y comidas desde backend hasta frontend" quedo cerrado como MVP funcional desde la perspectiva del frontend.
+
+Criterios resueltos:
+
+- `AtraccionesComidasPage.jsx` dejo de ser placeholder;
+- la pagina consume datos reales de `/api/atracciones-comidas/attractions/` y `/api/atracciones-comidas/foods/`;
+- la interfaz muestra imagen, nombre, descripcion, usos requeridos y precio segun corresponda;
+- el diseno vuelve a respetar la estructura del mockup original: secciones simples de atracciones y comidas con tarjetas centradas;
+- al iniciar sesion, el usuario puede seleccionar un brazalete y ver sus usos/saldo actuales;
+- usar una atraccion actualiza los usos restantes;
+- comprar comida actualiza el saldo del brazalete o el saldo interno de cuenta;
+- `MyBracelets` y `ReciboCompraPage` muestran el estado actual del brazalete, no solo los valores iniciales del tipo.
+
+Comentario de continuidad:
+
+- esta version queda lista para pruebas funcionales del MVP;
+- mas adelante conviene agregar historial de consumos, una vista para movimientos del brazalete y mejoras de administracion visual del catalogo.
 
 ## Componentes secundarios
 
@@ -337,8 +392,10 @@ Notas practicas:
 - visualizacion y edicion basica del perfil
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
 - listado de compras del usuario
+- catalogo funcional de atracciones y comidas
+- consumo minimo de atracciones y comidas sobre el estado real del brazalete
 
-### Logica ya definida pero aun no visible en UI
+### Siguiente mejora definida
 
 El proyecto ya dejo definido el modelo de dominio para la siguiente etapa:
 
@@ -346,12 +403,11 @@ El proyecto ya dejo definido el modelo de dominio para la siguiente etapa:
 - la venta de brazaletes se separara conceptualmente del historial operativo del brazalete;
 - los consumos de comida y atracciones deberan aparecer como movimientos del brazalete, no como nuevas compras del mismo.
 
-Esto todavia no cambio el frontend real porque no existen aun endpoints ni pantallas para ese historial, pero ya es la logica vigente a respetar cuando se implemente `AtraccionesComidasPage` o cualquier flujo operativo de consumo.
+La interfaz ya consume el estado actual del brazalete para atracciones y comidas. Lo que queda para una mejora posterior es exponer una vista de historial transaccional cuando exista el ledger en backend.
 
 ### Partes incompletas o minimas
 
 - `AdministradorPage.jsx`
-- `AtraccionesComidasPage.jsx`
 - varias paginas vacias en `src/pages/`
 - `MasterPageAdmin.jsx`
 - `FormularioCompra.jsx`
@@ -360,10 +416,10 @@ Esto todavia no cambio el frontend real porque no existen aun endpoints ni panta
 
 - uso intensivo de `localStorage` como fuente de verdad;
 - ausencia de contexto global para autenticacion;
-- helpers repetidos para construir URLs de imagen;
+- parte del estado del usuario sigue viviendo duplicado entre backend, memoria y `localStorage`;
 - mezcla de `href` y `navigate`;
 - varios textos del codigo muestran problemas de codificacion de caracteres;
-- la interfaz aun no expone historial transaccional del brazalete, porque esa parte del backend solo esta definida a nivel de diseno.
+- el modulo de atracciones y comidas esta completo como MVP, pero aun no expone historial transaccional del brazalete porque esa parte queda para una iteracion posterior.
 
 ## Como seguir documentando bien este frontend
 

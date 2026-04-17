@@ -82,14 +82,15 @@ export function MyBracelets() {
                   <tr>
                     <td className="py-1 font-semibold">Usos atracciones</td>
                     <td className="text-right">
-                      {bracelet?.bracelet_type?.attraction_uses ?? 'No aplica'}
+                      {bracelet?.attraction_uses_remaining ?? 'No aplica'}
                     </td>
                   </tr>
                   <tr>
                     <td className="py-1 font-semibold">Saldo brazalete</td>
                     <td className="text-right">
-                      {bracelet?.bracelet_type?.food_balance
-                        ? `$${bracelet.bracelet_type.food_balance}`
+                      {bracelet?.current_balance !== undefined &&
+                      bracelet?.current_balance !== null
+                        ? `$${bracelet.current_balance}`
                         : 'No aplica'}
                     </td>
                   </tr>
