@@ -64,3 +64,25 @@ class UserPermissionsTests(APITestCase):
 
         self.assertTrue(superuser.is_staff)
         self.assertTrue(superuser.is_admin_user)
+
+    def test_register_client_returns_created_user_data(self):
+        payload = {
+            'username': 'nuevo_cliente',
+            'first_name': 'Nuevo',
+            'last_name': 'Cliente',
+            'email': 'nuevo@test.com',
+            'password': 'secret123',
+            'account_balance': '150.00',
+        }
+
+        response = self.client.post('/api/register/', payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('Token', response.data)
+        self.assertEqual(response.data['User']['username'], payload['username'])
+        self.assertEqual(response.data['User']['email'], payload['email'])
+        self.assertFalse(response.data['User']['is_admin'])
+        self.assertNotIn('password', response.data['User'])
+
+        created_user = User.objects.get(username=payload['username'])
+        self.assertTrue(created_user.check_password(payload['password']))

@@ -189,6 +189,98 @@ export const getTiposBrazaletes = async () => {
   }
 };
 
+export const getAdminClients = async () => {
+  const response = await api.get('Users/');
+  return response.data;
+};
+
+export const createAdminClient = async (clientData) => {
+  const response = await registerClient(clientData);
+  return response.data;
+};
+
+export const updateAdminClient = async (clientId, clientData) => {
+  const response = await api.patch(`Users/${clientId}/`, clientData);
+  return response.data;
+};
+
+export const deleteAdminClient = async (clientId) => {
+  await api.delete(`Users/${clientId}/`);
+};
+
+export const getAdminBracelets = async () => {
+  const response = await api.get('compra_brazaletes/brazaletes/');
+  return response.data;
+};
+
+export const createAdminBracelet = async (braceletData) => {
+  const response = await api.post('compra_brazaletes/brazaletes/', braceletData);
+  return response.data;
+};
+
+export const updateAdminBracelet = async (braceletId, braceletData) => {
+  const response = await api.patch(
+    `compra_brazaletes/brazaletes/${braceletId}/`,
+    braceletData
+  );
+  return response.data;
+};
+
+export const deleteAdminBracelet = async (braceletId) => {
+  await api.delete(`compra_brazaletes/brazaletes/${braceletId}/`);
+};
+
+export const getAdminReceipts = async () => {
+  const response = await api.get('compra_brazaletes/recibos/');
+  return response.data;
+};
+
+export const updateAdminReceipt = async (receiptId, receiptData) => {
+  const response = await api.patch(
+    `compra_brazaletes/recibos/${receiptId}/`,
+    receiptData
+  );
+  return response.data;
+};
+
+export const deleteAdminReceipt = async (receiptId) => {
+  await api.delete(`compra_brazaletes/recibos/${receiptId}/`);
+};
+
+export const createAdminAttraction = async (attractionData) => {
+  const response = await api.post('atracciones-comidas/attractions/', attractionData);
+  return response.data;
+};
+
+export const updateAdminAttraction = async (attractionId, attractionData) => {
+  const response = await api.patch(
+    `atracciones-comidas/attractions/${attractionId}/`,
+    attractionData
+  );
+  return response.data;
+};
+
+export const deleteAdminAttraction = async (attractionId) => {
+  await api.delete(`atracciones-comidas/attractions/${attractionId}/`);
+};
+
+export const createAdminFood = async (foodData) => {
+  const response = await api.post('atracciones-comidas/foods/', foodData);
+  return response.data;
+};
+
+export const updateAdminFood = async (foodId, foodData) => {
+  const response = await api.patch(
+    `atracciones-comidas/foods/${foodId}/`,
+    foodData
+  );
+  return response.data;
+};
+
+export const deleteAdminFood = async (foodId) => {
+  await api.delete(`atracciones-comidas/foods/${foodId}/`);
+};
+
 export const getAttractions = async () => {
   const response = await api.get('atracciones-comidas/attractions/');
   return response.data;

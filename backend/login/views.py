@@ -87,8 +87,9 @@ def register_client(request):
         user.save()
 
         token = ExpiringToken.objects.create(user=user)
+        response_serializer = UserSerializer(instance=user)
 
-        return Response({'Token': token.key, "User": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'Token': token.key, "User": response_serializer.data}, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

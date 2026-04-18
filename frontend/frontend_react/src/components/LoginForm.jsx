@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { loginUser, persistUserData } from '../api/api';
+import { isAdminUser, loginUser, persistUserData } from '../api/api';
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState('');
@@ -28,7 +28,11 @@ export function LoginForm() {
         alert(`Bienvenido, ${User.username}`);
         setError('');
 
-        navigate(from, {
+        const targetPath = isAdminUser(User) && from === '/inicio'
+          ? '/administrador'
+          : from;
+
+        navigate(targetPath, {
           state: rememberedTipoId ? { tipoId: rememberedTipoId } : {},
         });
       } else {
