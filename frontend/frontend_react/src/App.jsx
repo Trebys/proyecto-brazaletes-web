@@ -20,6 +20,9 @@ function App() {
         {/* Rutas sin navbar y footer */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegistroForm />} />
+        <Route element={<PrivateRoutes requireAdmin />}>
+          <Route path="/administrador" element={<AdministradorPage />} />
+        </Route>
 
         {/* Rutas con navbar y footer */}
         <Route
@@ -46,9 +49,6 @@ function App() {
                 {/* Rutas protegidas */}
                 <Route element={<PrivateRoutes />}>
                   <Route path="/mi-perfil/*" element={<PerfilClientePage />} />
-                </Route>
-                <Route element={<PrivateRoutes requireAdmin />}>
-                  <Route path="/administrador" element={<AdministradorPage />} />
                 </Route>
               </Routes>
             </MasterPageCliente>

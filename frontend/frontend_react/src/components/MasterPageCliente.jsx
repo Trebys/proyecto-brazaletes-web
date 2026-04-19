@@ -25,7 +25,7 @@ export function MasterPageCliente({ children }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-fondoPrincipal">
-      <nav className="bg-teal-700 text-white py-4 px-8 flex justify-between items-center sticky top-0 z-50">
+      <nav className="bg-fondoLogin text-white py-4 px-8 flex justify-between items-center sticky top-0 z-50">
         <div
           className="flex items-center space-x-4 cursor-pointer"
           onClick={() => navigate('/inicio')}
@@ -72,7 +72,7 @@ export function MasterPageCliente({ children }) {
             <>
               <button
                 onClick={() => navigate('/mi-perfil')}
-                className="bg-white text-teal-700 px-3 py-1 rounded-full flex items-center"
+                className="bg-white text-fondoLogin px-3 py-1 rounded-full flex items-center"
               >
                 <img src={perfilIcon} alt="Perfil" className="w-5 h-5 mr-2" />
                 <span>{userData.username}</span>
@@ -87,7 +87,7 @@ export function MasterPageCliente({ children }) {
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="bg-white text-teal-700 px-3 py-1 rounded-full"
+              className="bg-white text-fondoLogin px-3 py-1 rounded-full"
             >
               Iniciar Sesión
             </button>
@@ -97,7 +97,7 @@ export function MasterPageCliente({ children }) {
 
       <main className="flex-grow">{children}</main>
 
-      <footer className="bg-teal-700 text-white py-4">
+      <footer className="bg-fondoLogin text-white py-4">
         <div className="container mx-auto flex justify-between items-center">
           {/* Columna 1: Logo y 'Sobre nosotros' */}
           <div className="flex items-center space-x-2">

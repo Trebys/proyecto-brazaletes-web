@@ -63,9 +63,9 @@ Define el enrutamiento principal.
 
 - `/login` muestra `LoginPage`
 - `/registro` muestra `RegistroForm`
+- `/administrador` se renderiza fuera del layout del cliente y queda protegido con `PrivateRoutes requireAdmin`
 - el resto de rutas se renderiza dentro de `MasterPageCliente`
 - `PrivateRoutes` protege `/mi-perfil/*`
-- `PrivateRoutes` con validacion administrativa protege `/administrador`
 
 Observacion importante: dentro de la ruta principal se anidan otros `Routes` directamente dentro del `element`. Funciona, pero no es la forma mas limpia ni la mas escalable en React Router v6. A futuro conviene migrarlo a rutas anidadas declarativas con `Outlet`.
 
@@ -83,6 +83,7 @@ Responsabilidades:
 - expone helpers para limpiar sesion y detectar si el usuario actual es admin
 - expone funciones para login, registro, perfil, compra interna y compra por PayPal
 - expone tambien helpers para construir URLs de media y consumir atracciones/comidas
+- expone helpers administrativos para consultar y gestionar clientes, brazaletes, recibos, comidas y atracciones
 
 Funciones principales:
 
@@ -103,6 +104,7 @@ Funciones principales:
 - `consumeAttraction(attractionId, braceletId)`
 - `purchaseFood(foodId, braceletId, paymentSource)`
 - `buildMediaUrl(path)`
+- helpers administrativos: `getAdminClients`, `updateAdminClient`, `deleteAdminClient`, `getAdminBracelets`, `updateAdminBracelet`, `deleteAdminBracelet`, `getAdminReceipts`, `updateAdminReceipt`, `deleteAdminReceipt`, `createAdminFood`, `updateAdminFood`, `deleteAdminFood`, `createAdminAttraction`, `updateAdminAttraction`, `deleteAdminAttraction`
 
 Decisiones actuales a tener presentes:
 
@@ -131,7 +133,8 @@ Flujo:
 1. el usuario escribe `identifier` y `password`;
 2. `handleLogin` llama `loginUser`;
 3. si el backend responde bien, se guardan `Token` y `User` en `localStorage`;
-4. se redirige al usuario a la ruta previa o a `/inicio`.
+4. se redirige al usuario a la ruta previa;
+5. si el usuario es administrador e inicio sesion sin una ruta previa especifica, se redirige a `/administrador`.
 
 ### Registro
 
@@ -196,6 +199,7 @@ Incluye:
 - boton de perfil o de login segun exista `user_data`;
 - boton de cerrar sesion;
 - footer con branding y redes.
+- usa el color `fondoLogin` (`#00565F`) para mantener consistencia con los mockups.
 
 Detalles practicos:
 
@@ -329,6 +333,32 @@ Decision vigente del flujo minimo:
 - las comidas pueden cobrarse con saldo del brazalete o con saldo interno de la cuenta;
 - PayPal no se reutiliza todavia para comidas, porque el flujo actual de PayPal sigue acoplado a la compra inicial del brazalete.
 
+### `src/pages/AdministradorPage.jsx`
+
+Es el panel operativo del sistema para administradores. Ya no es un placeholder y esta separado visualmente del flujo del cliente.
+
+Responsabilidades:
+
+- cargar en paralelo clientes, brazaletes, recibos, tipos de brazalete, comidas y atracciones;
+- mostrar un resumen operativo con totales de clientes, brazaletes, ventas e ingresos registrados;
+- ofrecer accesos directos a clientes, brazaletes, ventas, comidas y atracciones;
+- consultar clientes y gestionar alta, edicion de datos basicos, saldo y eliminacion de clientes no administradores;
+- consultar y gestionar brazaletes, incluyendo tipo, saldo y usos restantes;
+- consultar ventas/recibos y editar su estado operativo;
+- consultar y gestionar comidas y atracciones, incluyendo imagenes;
+- mantener botones de perfil y cierre de sesion consistentes con el layout principal;
+- mostrar footer con anio actual calculado automaticamente.
+
+Detalle practico:
+
+- la ruta `/administrador` esta protegida por `PrivateRoutes requireAdmin`;
+- la interfaz usa `is_admin` desde `user_data` y revalidacion con `user-profile` si hace falta;
+- el panel reutiliza los endpoints administrativos existentes del backend;
+- la tabla administrativa incluye busqueda local, ordenamiento ascendente/descendente por columna con indicadores visuales, paginacion local y selector de filas por pagina;
+- las secciones con muchas columnas, como clientes y ventas, priorizan el ancho de la tabla y mueven el formulario debajo hasta pantallas mas amplias para mejorar lectura;
+- las acciones de eliminacion piden confirmacion antes de llamar al backend;
+- los roles administrativos no se editan desde este panel por seguridad; `is_staff` e `is_superuser` siguen siendo de solo lectura desde la API publica del backoffice.
+
 ### Requerimiento completado: modulo de atracciones y comidas
 
 El requerimiento "Completar modulo de atracciones y comidas desde backend hasta frontend" quedo cerrado como MVP funcional desde la perspectiva del frontend.
@@ -371,6 +401,7 @@ Esta matriz resume que deberia pasar en la interfaz segun el tipo de usuario.
 | inicio de flujo PayPal | bloqueado por falta de sesion | permitido | permitido |
 | `/mi-perfil/*` | redirige a `/login` | permitido | permitido |
 | `/administrador` | redirige a `/login` | redirige a `/inicio` | permitido |
+| gestion en `/administrador` | no disponible | no disponible | permitido |
 
 Notas practicas:
 
@@ -391,6 +422,8 @@ Notas practicas:
 - visualizacion de recibo
 - visualizacion y edicion basica del perfil
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
+- panel operativo administrativo para clientes, brazaletes, ventas, comidas y atracciones
+- tablas administrativas con busqueda, ordenamiento visual, paginacion y mejor distribucion de espacio en secciones densas
 - listado de compras del usuario
 - catalogo funcional de atracciones y comidas
 - consumo minimo de atracciones y comidas sobre el estado real del brazalete
@@ -407,7 +440,6 @@ La interfaz ya consume el estado actual del brazalete para atracciones y comidas
 
 ### Partes incompletas o minimas
 
-- `AdministradorPage.jsx`
 - varias paginas vacias en `src/pages/`
 - `MasterPageAdmin.jsx`
 - `FormularioCompra.jsx`

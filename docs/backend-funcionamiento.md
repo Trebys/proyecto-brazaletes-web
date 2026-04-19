@@ -165,7 +165,9 @@ Flujo:
 2. crea un `User`;
 3. cifra la password con `set_password`;
 4. crea un `ExpiringToken`;
-5. devuelve token y datos del usuario.
+5. devuelve token y datos del usuario serializando la instancia real creada.
+
+Detalle practico: la respuesta ya no usa `serializer.data` del serializer de entrada despues de crear el usuario. Esto evita que el campo derivado `is_admin` intente resolverse sobre un `dict` de `validated_data`, caso que podia provocar error 500 aunque el usuario hubiera quedado guardado.
 
 #### `user_profile`
 
@@ -219,6 +221,13 @@ Endpoints relevantes:
 Tambien existe un `UserViewSet` registrado como router.
 
 Observacion importante: ese `UserViewSet` ya no esta abierto. Ahora exige la misma regla administrativa centralizada que el resto del backoffice: `user.is_admin_user`.
+
+Uso administrativo actual:
+
+- permite al panel operativo listar usuarios;
+- permite crear, editar y eliminar usuarios desde endpoints protegidos;
+- mantiene `is_staff` e `is_superuser` como campos de solo lectura en el serializer;
+- por seguridad, la promocion o degradacion de roles administrativos no se hace desde el formulario operativo del panel.
 
 ### Flujo administrativo definido
 
@@ -638,11 +647,12 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | Endpoint | Sin autenticacion | Cliente autenticado | Administrador |
 | --- | --- | --- | --- |
 | `POST /api/login` | permitido | permitido | permitido |
-| `POST /api/register` | permitido | permitido | permitido |
+| `POST /api/register` | permitido, devuelve token y usuario creado | permitido, devuelve token y usuario creado | permitido, devuelve token y usuario creado |
 | `POST /api/user-profile` | `401` | permitido | permitido |
 | `PATCH /api/edit-user` | `401` | permitido para sus datos basicos, sin cambiar saldo | permitido |
 | `DELETE /api/delete-user` | `401` | permitido sobre su propia cuenta | permitido sobre su propia cuenta |
 | `GET /api/Users/` | `401` | `403` | permitido |
+| `POST/PATCH/DELETE /api/Users/` | `401` | `403` | permitido |
 
 ### Catalogo y brazaletes
 
@@ -692,6 +702,7 @@ Notas practicas:
 - modelo de usuario propio;
 - distincion clara entre cliente y administrador usando una sola regla de dominio;
 - `UserViewSet` protegido con la misma regla administrativa centralizada;
+- registro de clientes devuelve correctamente token y usuario serializado, incluyendo `is_admin`, sin exponer password;
 - `BraceletTypeViewSet` con lectura publica y escritura administrativa consistente;
 - `BraceletViewSet` restringido a administradores con la misma convencion;
 - endpoints de PayPal alineados con autenticacion obligatoria;
