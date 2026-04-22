@@ -15,7 +15,6 @@ import {
 } from '../api/api';
 
 const PAYMENT_SOURCE_BRACELET = 'BRACELET_BALANCE';
-const PAYMENT_SOURCE_ACCOUNT = 'ACCOUNT_BALANCE';
 
 const formatCurrency = (value) => {
   const numericValue = Number(value ?? 0);
@@ -171,7 +170,7 @@ export function AtraccionesComidasPage() {
     try {
       const result = await consumeAttraction(attraction.id, selectedBracelet.id);
       syncBraceletState(result.bracelet);
-      toast.success(result.detail);
+      toast.success(`${result.detail} Movimiento #${result.transaction_id}`);
     } catch (error) {
       const detail =
         error.response?.data?.detail ||
@@ -199,7 +198,7 @@ export function AtraccionesComidasPage() {
       const result = await purchaseFood(food.id, selectedBracelet.id, paymentSource);
       syncBraceletState(result.bracelet);
       syncAccountBalanceState(result.account_balance);
-      toast.success(result.detail);
+      toast.success(`${result.detail} Movimiento #${result.transaction_id}`);
     } catch (error) {
       const detail =
         error.response?.data?.detail || 'No fue posible completar la compra.';
@@ -357,22 +356,11 @@ export function AtraccionesComidasPage() {
                 const braceletBalance = Number(
                   selectedBracelet?.current_balance ?? 0
                 );
-                const userBalance = Number(accountBalance ?? 0);
                 const foodPrice = Number(food.price ?? 0);
                 const canPayWithBracelet =
                   hasSession && selectedBracelet && braceletBalance >= foodPrice;
-                const canPayWithAccount =
-                  hasSession &&
-                  selectedBracelet &&
-                  braceletBalance < foodPrice &&
-                  userBalance >= foodPrice;
-                const paymentSource = canPayWithAccount
-                  ? PAYMENT_SOURCE_ACCOUNT
-                  : PAYMENT_SOURCE_BRACELET;
-                const canBuy =
-                  !hasSession ||
-                  canPayWithBracelet ||
-                  canPayWithAccount;
+                const paymentSource = PAYMENT_SOURCE_BRACELET;
+                const canBuy = !hasSession || canPayWithBracelet;
                 const isProcessing =
                   activeAction === `food-${food.id}-${paymentSource}`;
 
@@ -403,8 +391,7 @@ export function AtraccionesComidasPage() {
                     </p>
                     {hasSession && selectedBracelet ? (
                       <p className="mt-1 min-h-[32px] text-xs text-white/80">
-                        Brazalete {formatCurrency(braceletBalance)} / Cuenta{' '}
-                        {formatCurrency(userBalance)}
+                        Saldo disponible {formatCurrency(braceletBalance)}
                       </p>
                     ) : (
                       <p className="mt-1 min-h-[32px] text-xs text-white/80">
@@ -419,9 +406,7 @@ export function AtraccionesComidasPage() {
                     >
                       {isProcessing
                         ? 'Procesando...'
-                        : canPayWithAccount
-                          ? 'Pagar con Cuenta'
-                          : canBuy
+                        : canBuy
                             ? 'Comprar'
                             : 'Sin saldo'}
                     </button>

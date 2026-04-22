@@ -316,6 +316,34 @@ Y estos estados:
 - `CAPTURED`
 - `REFUNDED`
 
+#### `BraceletTransaction`
+
+Representa el historial operativo auditable del brazalete para consumos posteriores a la venta.
+
+Campos importantes:
+
+- `bracelet`
+- `owner`
+- `performed_by`
+- `attraction`
+- `food`
+- `transaction_type`
+- `concept`
+- `balance_delta`
+- `uses_delta`
+- `balance_before`
+- `balance_after`
+- `uses_before`
+- `uses_after`
+- `occurred_at`
+
+Tipos vigentes:
+
+- `ATTRACTION_CONSUMPTION`
+- `FOOD_CONSUMPTION`
+
+Detalle practico: los consumos de atracciones y comidas crean esta transaccion en la misma operacion atomica que actualiza el estado del brazalete.
+
 ### Decision de modelo transaccional ya definida
 
 Ademas del estado actual del codigo, el proyecto ya dejo resuelta la logica de dominio para la siguiente etapa de consumo y auditoria.
@@ -333,7 +361,7 @@ Separacion de responsabilidades acordada:
 - `Sale` y `SaleLine` responden que se vendio;
 - `BraceletTransaction` responde que movimientos afectaron al brazalete.
 
-Importante: esta logica ya quedo definida como diseno del modelo, pero todavia no esta implementada en los modelos Django actuales. El detalle completo quedo documentado en [docs/modelo-transaccional-brazaletes.md](/C:/Users/3st3b/Dev/brazaletes_web_agentes_IA/proyecto-brazaletes-web/docs/modelo-transaccional-brazaletes.md).
+Importante: la primera pieza real de esta logica ya quedo implementada mediante `BraceletTransaction` para consumos. `Sale`, `SaleLine` y la relacion directa `Bracelet -> User` siguen como evolucion futura documentada en [docs/modelo-transaccional-brazaletes.md](/C:/Users/3st3b/Dev/brazaletes_web_agentes_IA/proyecto-brazaletes-web/docs/modelo-transaccional-brazaletes.md).
 
 ### Signals
 
@@ -545,7 +573,8 @@ Endpoints y acciones actuales:
 - listar y consultar comidas;
 - crear, editar y eliminar comidas;
 - consumir una atraccion descontando usos del brazalete;
-- comprar una comida usando saldo del brazalete o saldo interno de la cuenta.
+- comprar una comida usando saldo del brazalete;
+- consultar transacciones auditadas del brazalete desde `/api/compra_brazaletes/transacciones/`.
 
 Permisos actuales:
 
@@ -558,14 +587,14 @@ Reglas de negocio del flujo minimo actual:
 - el consumo de atracciones exige `bracelet_id` y descuenta `usage_points` del brazalete;
 - la compra de comida exige `bracelet_id`;
 - si el pago usa `BRACELET_BALANCE`, se descuenta de `Bracelet.current_balance`;
-- si el pago usa `ACCOUNT_BALANCE`, se descuenta de `User.account_balance`;
+- el consumo de comida ya no usa `ACCOUNT_BALANCE` como fallback, porque esta historia exige descontar saldo del brazalete;
 - el backend valida que el brazalete pertenezca al usuario autenticado antes de permitir la operacion.
+- cada consumo exitoso crea un `BraceletTransaction` con fecha, tipo, monto o usos descontados, estado anterior/posterior y referencia al brazalete.
 
 Nota de dominio ya definida:
 
-- el consumo minimo actual descuenta saldo/usos directamente del brazalete y sirve como MVP funcional para pruebas de negocio;
-- mas adelante, esos consumos deberian registrarse tambien como movimientos del brazalete, por ejemplo mediante `BraceletTransaction`;
-- esa mejora permitira auditar saldo, usos restantes, operador y motivo del cambio sin solapar la logica de compra inicial.
+- el consumo actual descuenta saldo/usos del brazalete y registra movimientos auditables mediante `BraceletTransaction`;
+- el estado actual del brazalete sigue funcionando como lectura rapida, mientras el historial queda persistido para trazabilidad.
 
 ### Rutas
 
@@ -595,12 +624,13 @@ Criterios resueltos:
 - el frontend consume el catalogo real y muestra informacion util de atracciones y comidas;
 - la pagina dejo de estar en estado placeholder;
 - las atracciones descuentan usos del brazalete;
-- las comidas descuentan saldo del brazalete o saldo interno de la cuenta como fallback.
+- las comidas descuentan saldo del brazalete.
+- cada consumo queda auditado como `BraceletTransaction`.
 
 Comentario de continuidad:
 
 - esta version se considera completa para pruebas funcionales del MVP;
-- mas adelante se recomienda mejorar el comportamiento con historial transaccional (`BraceletTransaction`), vista de consumos y reglas mas avanzadas de pagos o recargas.
+- mas adelante se recomienda sumar vistas especificas de historial de consumos y reglas mas avanzadas de pagos o recargas.
 
 ## Flujo de datos entre backend y frontend
 
@@ -672,6 +702,7 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | `GET /api/compra_brazaletes/recibos/` | `401` | permitido, solo ve los suyos | permitido, ve todos |
 | `GET /api/compra_brazaletes/recibos/{id}/` | `401` | permitido si el recibo es suyo | permitido |
 | `POST /api/compra_brazaletes/recibos/` | `401` | permitido | permitido |
+| `GET /api/compra_brazaletes/transacciones/` | `401` | permitido, solo ve las suyas | permitido, ve todas |
 | `POST /api/compra_brazaletes/paypal/create-order/` | `401` | permitido | permitido |
 | `POST /api/compra_brazaletes/paypal/capture-order/` | `401` | permitido | permitido |
 
@@ -686,7 +717,7 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | `GET /api/atracciones-comidas/foods/` | permitido | permitido | permitido |
 | `POST /api/atracciones-comidas/foods/` | `401` | `403` | permitido |
 | `PUT/PATCH/DELETE /api/atracciones-comidas/foods/{id}/` | `401` | `403` | permitido |
-| `POST /api/atracciones-comidas/foods/{id}/purchase/` | `401` | permitido si el brazalete es suyo y tiene saldo o saldo de cuenta | permitido si el brazalete es suyo y tiene saldo o saldo de cuenta |
+| `POST /api/atracciones-comidas/foods/{id}/purchase/` | `401` | permitido si el brazalete es suyo y tiene saldo | permitido si el brazalete es suyo y tiene saldo |
 
 Notas practicas:
 
@@ -710,6 +741,7 @@ Notas practicas:
 - flujo funcional de compra por PayPal;
 - catalogo funcional de atracciones y comidas bajo rutas consistentes;
 - consumo minimo de atracciones y comidas conectado al estado real del brazalete;
+- consumos de atracciones y comidas auditados con `BraceletTransaction`;
 - estados de `PurchaseReceipt` alineados con el flujo real de compra y captura;
 - webhook de PayPal alineado con estados persistibles del modelo;
 - serializacion anidada util para el frontend;
@@ -721,8 +753,8 @@ Notas practicas:
 - la seguridad final depende de que cada entorno productivo defina correctamente sus variables y no reutilice valores de desarrollo;
 - expiracion de token con comentarios y tiempos inconsistentes;
 - aun depende de la semantica de eventos que entregue PayPal;
-- el flujo minimo de consumo actual esta completo para pruebas MVP, pero aun no persiste historial transaccional;
-- el modelo transaccional de consumos y auditoria ya esta definido, pero todavia no fue implementado en entidades y endpoints reales.
+- el flujo de consumo actual ya persiste historial transaccional para atracciones y comidas;
+- el modelo transaccional completo aun tiene pendiente `Sale`, `SaleLine` y relacion directa `Bracelet -> User`.
 
 ## Como seguir documentando bien este backend
 

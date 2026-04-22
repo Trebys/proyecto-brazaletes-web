@@ -113,3 +113,76 @@ class PurchaseReceipt(models.Model):
             f"Purchase #{self.id} - {self.bracelet} - User: {self.user} "
             f"- {self.payment_method} - Status: {self.status}"
         )
+
+
+class BraceletTransaction(models.Model):
+    TYPE_ATTRACTION_CONSUMPTION = 'ATTRACTION_CONSUMPTION'
+    TYPE_FOOD_CONSUMPTION = 'FOOD_CONSUMPTION'
+    TRANSACTION_TYPES = (
+        (TYPE_ATTRACTION_CONSUMPTION, 'Consumo de atraccion'),
+        (TYPE_FOOD_CONSUMPTION, 'Consumo de comida'),
+    )
+
+    bracelet = models.ForeignKey(
+        Bracelet,
+        on_delete=models.CASCADE,
+        related_name='transactions'
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bracelet_transactions'
+    )
+    performed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='performed_bracelet_transactions'
+    )
+    attraction = models.ForeignKey(
+        'atracciones_comidas.Attractions',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bracelet_transactions'
+    )
+    food = models.ForeignKey(
+        'atracciones_comidas.Food',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bracelet_transactions'
+    )
+    transaction_type = models.CharField(
+        max_length=40,
+        choices=TRANSACTION_TYPES
+    )
+    concept = models.CharField(max_length=150)
+    balance_delta = models.DecimalField(
+        max_digits=9,
+        decimal_places=2,
+        default=0
+    )
+    uses_delta = models.IntegerField(default=0)
+    balance_before = models.DecimalField(
+        max_digits=9,
+        decimal_places=2,
+        default=0
+    )
+    balance_after = models.DecimalField(
+        max_digits=9,
+        decimal_places=2,
+        default=0
+    )
+    uses_before = models.PositiveIntegerField(default=0)
+    uses_after = models.PositiveIntegerField(default=0)
+    occurred_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-occurred_at', '-id']
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.bracelet} - {self.occurred_at}"

@@ -17,10 +17,11 @@ from rest_framework.views import APIView
 
 from login.permissions import IsAdminUserReal, ReadOnlyOrAdminUser, has_backoffice_access
 
-from .models import Bracelet, BraceletType, PurchaseReceipt
+from .models import Bracelet, BraceletTransaction, BraceletType, PurchaseReceipt
 from .paypal_client import PayPalClient
 from .serializers import (
     BraceletSerializer,
+    BraceletTransactionSerializer,
     BraceletTypeSerializer,
     PurchaseReceiptSerializer,
 )
@@ -121,6 +122,26 @@ class BraceletViewSet(viewsets.ModelViewSet):
     queryset = Bracelet.objects.all()
     serializer_class = BraceletSerializer
     permission_classes = [IsAdminUserReal]
+
+
+class BraceletTransactionViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = BraceletTransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = BraceletTransaction.objects.select_related(
+            'bracelet',
+            'bracelet__bracelet_type',
+            'owner',
+            'performed_by',
+            'attraction',
+            'food',
+        )
+
+        if has_backoffice_access(self.request.user):
+            return queryset
+
+        return queryset.filter(owner=self.request.user)
 
 
 class PurchaseReceiptViewSet(viewsets.ModelViewSet):
