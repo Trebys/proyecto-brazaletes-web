@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     BraceletTypeViewSet,
     BraceletViewSet,
+    BraceletTransactionViewSet,
     PurchaseReceiptViewSet,
     PayPalCaptureOrderView,
     PayPalCreateOrderView,
@@ -13,6 +14,7 @@ router = DefaultRouter()
 router.register(r'tipos', BraceletTypeViewSet, basename='tipo_brazalete')
 router.register(r'brazaletes', BraceletViewSet, basename='brazalete')
 router.register(r'recibos', PurchaseReceiptViewSet, basename='recibo')
+router.register(r'transacciones', BraceletTransactionViewSet, basename='transaccion_brazalete')
 
 urlpatterns = [
     path('', include(router.urls)),

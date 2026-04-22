@@ -103,6 +103,7 @@ Funciones principales:
 - `getFoods()`
 - `consumeAttraction(attractionId, braceletId)`
 - `purchaseFood(foodId, braceletId, paymentSource)`
+- `getBraceletTransactions()`
 - `buildMediaUrl(path)`
 - helpers administrativos: `getAdminClients`, `updateAdminClient`, `deleteAdminClient`, `getAdminBracelets`, `updateAdminBracelet`, `deleteAdminBracelet`, `getAdminReceipts`, `updateAdminReceipt`, `deleteAdminReceipt`, `createAdminFood`, `updateAdminFood`, `deleteAdminFood`, `createAdminAttraction`, `updateAdminAttraction`, `deleteAdminAttraction`
 
@@ -324,13 +325,15 @@ Responsabilidades:
 - si el usuario tiene sesion, cargar tambien sus recibos y perfil para obtener brazaletes y saldo de cuenta;
 - permitir seleccionar un brazalete activo;
 - consumir atracciones descontando usos del brazalete;
-- comprar comidas con saldo del brazalete y, si no alcanza, con saldo interno de la cuenta;
+- comprar comidas descontando saldo del brazalete;
 - reflejar en pantalla el nuevo estado del brazalete sin recargar toda la aplicacion.
+- mostrar feedback de exito con el identificador del movimiento auditado.
 
 Decision vigente del flujo minimo:
 
 - las atracciones solo consumen usos del brazalete;
-- las comidas pueden cobrarse con saldo del brazalete o con saldo interno de la cuenta;
+- las comidas solo pueden cobrarse con saldo del brazalete;
+- si no hay saldo suficiente, la interfaz bloquea la accion y el backend tambien rechaza la operacion;
 - PayPal no se reutiliza todavia para comidas, porque el flujo actual de PayPal sigue acoplado a la compra inicial del brazalete.
 
 ### `src/pages/AdministradorPage.jsx`
@@ -371,7 +374,7 @@ Criterios resueltos:
 - el diseno vuelve a respetar la estructura del mockup original: secciones simples de atracciones y comidas con tarjetas centradas;
 - al iniciar sesion, el usuario puede seleccionar un brazalete y ver sus usos/saldo actuales;
 - usar una atraccion actualiza los usos restantes;
-- comprar comida actualiza el saldo del brazalete o el saldo interno de cuenta;
+- comprar comida actualiza el saldo del brazalete;
 - `MyBracelets` y `ReciboCompraPage` muestran el estado actual del brazalete, no solo los valores iniciales del tipo.
 
 Comentario de continuidad:
@@ -427,6 +430,7 @@ Notas practicas:
 - listado de compras del usuario
 - catalogo funcional de atracciones y comidas
 - consumo minimo de atracciones y comidas sobre el estado real del brazalete
+- feedback de consumos con numero de movimiento auditado
 
 ### Siguiente mejora definida
 
@@ -434,9 +438,9 @@ El proyecto ya dejo definido el modelo de dominio para la siguiente etapa:
 
 - `PurchaseReceipt` seguira representando el pago de la compra inicial;
 - la venta de brazaletes se separara conceptualmente del historial operativo del brazalete;
-- los consumos de comida y atracciones deberan aparecer como movimientos del brazalete, no como nuevas compras del mismo.
+- los consumos de comida y atracciones ya aparecen como movimientos del brazalete, no como nuevas compras del mismo.
 
-La interfaz ya consume el estado actual del brazalete para atracciones y comidas. Lo que queda para una mejora posterior es exponer una vista de historial transaccional cuando exista el ledger en backend.
+La interfaz ya consume el estado actual del brazalete para atracciones y comidas y muestra el numero de transaccion devuelto por el backend. Lo que queda para una mejora posterior es exponer una vista de historial transaccional completa.
 
 ### Partes incompletas o minimas
 
@@ -451,7 +455,7 @@ La interfaz ya consume el estado actual del brazalete para atracciones y comidas
 - parte del estado del usuario sigue viviendo duplicado entre backend, memoria y `localStorage`;
 - mezcla de `href` y `navigate`;
 - varios textos del codigo muestran problemas de codificacion de caracteres;
-- el modulo de atracciones y comidas esta completo como MVP, pero aun no expone historial transaccional del brazalete porque esa parte queda para una iteracion posterior.
+- el modulo de atracciones y comidas esta completo como MVP, pero aun no expone una vista dedicada de historial transaccional del brazalete.
 
 ## Como seguir documentando bien este frontend
 

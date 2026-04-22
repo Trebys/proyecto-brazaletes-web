@@ -235,6 +235,11 @@ export const getAdminReceipts = async () => {
   return response.data;
 };
 
+export const getBraceletTransactions = async () => {
+  const response = await api.get('compra_brazaletes/transacciones/');
+  return response.data;
+};
+
 export const updateAdminReceipt = async (receiptId, receiptData) => {
   const response = await api.patch(
     `compra_brazaletes/recibos/${receiptId}/`,

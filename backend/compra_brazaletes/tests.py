@@ -6,7 +6,12 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from compra_brazaletes.models import Bracelet, BraceletType, PurchaseReceipt
+from compra_brazaletes.models import (
+    Bracelet,
+    BraceletTransaction,
+    BraceletType,
+    PurchaseReceipt,
+)
 from login.models import User
 
 
@@ -38,6 +43,13 @@ class BraceletPermissionsTests(APITestCase):
             bracelet_type=self.bracelet_type,
             current_balance=Decimal('100.00'),
             attraction_uses_remaining=10,
+        )
+        self.receipt = PurchaseReceipt.objects.create(
+            user=self.client_user,
+            bracelet=self.bracelet,
+            payment_method=PurchaseReceipt.PAYMENT_METHOD_INTERNAL,
+            amount_paid=self.bracelet_type.price,
+            status=PurchaseReceipt.STATUS_CAPTURED,
         )
 
     def authenticate_client(self):
@@ -102,6 +114,49 @@ class BraceletPermissionsTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_client_can_only_list_own_bracelet_transactions(self):
+        other_user = User.objects.create_user(
+            username='otro-cliente',
+            email='otro@test.com',
+            password='secret123',
+        )
+        other_bracelet = Bracelet.objects.create(
+            bracelet_type=self.bracelet_type,
+            current_balance=Decimal('25.00'),
+            attraction_uses_remaining=2,
+        )
+        BraceletTransaction.objects.create(
+            bracelet=self.bracelet,
+            owner=self.client_user,
+            performed_by=self.client_user,
+            transaction_type=BraceletTransaction.TYPE_FOOD_CONSUMPTION,
+            concept='Compra de comida: Pizza',
+            balance_delta=Decimal('-8.00'),
+            balance_before=Decimal('100.00'),
+            balance_after=Decimal('92.00'),
+            uses_before=10,
+            uses_after=10,
+        )
+        BraceletTransaction.objects.create(
+            bracelet=other_bracelet,
+            owner=other_user,
+            performed_by=other_user,
+            transaction_type=BraceletTransaction.TYPE_ATTRACTION_CONSUMPTION,
+            concept='Uso de atraccion: Carrusel',
+            uses_delta=-1,
+            balance_before=Decimal('25.00'),
+            balance_after=Decimal('25.00'),
+            uses_before=2,
+            uses_after=1,
+        )
+        self.authenticate_client()
+
+        response = self.client.get('/api/compra_brazaletes/transacciones/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['owner']['id'], self.client_user.id)
 
     def test_internal_purchase_creates_captured_receipt_and_debits_balance(self):
         self.authenticate_client()

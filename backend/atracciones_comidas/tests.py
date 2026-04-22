@@ -7,7 +7,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from atracciones_comidas.models import Attractions, Food
-from compra_brazaletes.models import Bracelet, BraceletType, PurchaseReceipt
+from compra_brazaletes.models import (
+    Bracelet,
+    BraceletTransaction,
+    BraceletType,
+    PurchaseReceipt,
+)
 from login.models import User
 
 
@@ -145,8 +150,52 @@ class AtraccionesComidasApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.bracelet.refresh_from_db()
         self.assertEqual(self.bracelet.attraction_uses_remaining, 3)
+        movement = BraceletTransaction.objects.get(
+            transaction_type=BraceletTransaction.TYPE_ATTRACTION_CONSUMPTION
+        )
+        self.assertEqual(movement.bracelet, self.bracelet)
+        self.assertEqual(movement.owner, self.user)
+        self.assertEqual(movement.attraction, attraction)
+        self.assertEqual(movement.uses_delta, -2)
+        self.assertEqual(movement.uses_before, 5)
+        self.assertEqual(movement.uses_after, 3)
 
-    def test_food_purchase_can_fallback_to_account_balance(self):
+    def test_food_purchase_requires_bracelet_balance_and_audits_consumption(self):
+        food = Food.objects.create(
+            name='Pizza grande',
+            description='Porcion grande',
+            photo=build_test_image('pizza-grande.png'),
+            price=Decimal('8.00'),
+        )
+        self.authenticate_user()
+
+        response = self.client.post(
+            f'/api/atracciones-comidas/foods/{food.id}/purchase/',
+            {
+                'bracelet_id': self.bracelet.id,
+                'payment_source': 'BRACELET_BALANCE',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.user.refresh_from_db()
+        self.bracelet.refresh_from_db()
+        self.assertEqual(self.user.account_balance, Decimal('30.00'))
+        self.assertEqual(self.bracelet.current_balance, Decimal('4.00'))
+
+        movement = BraceletTransaction.objects.get(
+            transaction_type=BraceletTransaction.TYPE_FOOD_CONSUMPTION
+        )
+        self.assertEqual(movement.bracelet, self.bracelet)
+        self.assertEqual(movement.owner, self.user)
+        self.assertEqual(movement.food, food)
+        self.assertEqual(movement.balance_delta, Decimal('-8.00'))
+        self.assertEqual(movement.balance_before, Decimal('12.00'))
+        self.assertEqual(movement.balance_after, Decimal('4.00'))
+
+    def test_food_purchase_is_blocked_when_bracelet_balance_is_not_enough(self):
         food = Food.objects.create(
             name='Pizza grande',
             description='Porcion grande',
@@ -155,7 +204,7 @@ class AtraccionesComidasApiTests(APITestCase):
         )
         self.authenticate_user()
 
-        bracelet_response = self.client.post(
+        response = self.client.post(
             f'/api/atracciones-comidas/foods/{food.id}/purchase/',
             {
                 'bracelet_id': self.bracelet.id,
@@ -163,20 +212,12 @@ class AtraccionesComidasApiTests(APITestCase):
             },
             format='json',
         )
-        account_response = self.client.post(
-            f'/api/atracciones-comidas/foods/{food.id}/purchase/',
-            {
-                'bracelet_id': self.bracelet.id,
-                'payment_source': 'ACCOUNT_BALANCE',
-            },
-            format='json',
-        )
 
-        self.assertEqual(bracelet_response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue(bracelet_response.data['fallback_available'])
-        self.assertEqual(account_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data['fallback_available'])
 
         self.user.refresh_from_db()
         self.bracelet.refresh_from_db()
-        self.assertEqual(self.user.account_balance, Decimal('15.00'))
+        self.assertEqual(self.user.account_balance, Decimal('30.00'))
         self.assertEqual(self.bracelet.current_balance, Decimal('12.00'))
+        self.assertEqual(BraceletTransaction.objects.count(), 0)

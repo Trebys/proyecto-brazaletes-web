@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import BraceletType, Bracelet, PurchaseReceipt
+from .models import BraceletType, Bracelet, BraceletTransaction, PurchaseReceipt
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -67,3 +67,34 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
             'paypal_order_id',
             'amount_paid',
         ]
+
+
+class BraceletTransactionSerializer(serializers.ModelSerializer):
+    bracelet = BraceletSerializer(read_only=True)
+    owner = UserBasicSerializer(read_only=True)
+    performed_by = UserBasicSerializer(read_only=True)
+    attraction_name = serializers.CharField(source='attraction.name', read_only=True)
+    food_name = serializers.CharField(source='food.name', read_only=True)
+
+    class Meta:
+        model = BraceletTransaction
+        fields = [
+            'id',
+            'bracelet',
+            'owner',
+            'performed_by',
+            'transaction_type',
+            'concept',
+            'balance_delta',
+            'uses_delta',
+            'balance_before',
+            'balance_after',
+            'uses_before',
+            'uses_after',
+            'attraction',
+            'attraction_name',
+            'food',
+            'food_name',
+            'occurred_at',
+        ]
+        read_only_fields = fields
