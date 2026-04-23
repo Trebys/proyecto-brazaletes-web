@@ -277,6 +277,9 @@ Campos importantes:
 - `food_balance`
 - `description`
 - `image`
+- `is_active`
+
+Detalle practico: `is_active` permite retirar un tipo de brazalete de la experiencia de compra sin eliminar su historial operativo. Los tipos desactivados siguen disponibles para administradores cuando consultan el catalogo con fines de mantenimiento.
 
 #### `Bracelet`
 
@@ -400,6 +403,13 @@ Permisos actuales:
 - lectura publica para listar o consultar el catalogo;
 - creacion, edicion y eliminacion solo para administradores.
 
+Reglas vigentes:
+
+- la lectura publica solo devuelve tipos activos;
+- un administrador puede consultar activos e inactivos usando `include_inactive=1`;
+- crear y modificar permite ajustar nombre, precio, saldo de comida, usos de atraccion, descripcion, imagen y estado activo;
+- eliminar solo procede si el tipo no tiene brazaletes asociados; si ya hay historial, debe desactivarse para retirarlo de la compra.
+
 #### `BraceletViewSet`
 
 CRUD de brazaletes.
@@ -426,7 +436,7 @@ Implementado en `PurchaseReceiptViewSet.create()`.
 Flujo:
 
 1. recibe `bracelet_type_id`;
-2. busca el `BraceletType`;
+2. busca el `BraceletType` activo;
 3. valida el saldo del usuario;
 4. descuenta el precio de `account_balance`;
 5. crea un `Bracelet` con saldo de comida y usos iniciales;
@@ -435,11 +445,28 @@ Flujo:
 
 Observacion: la compra con saldo interno queda en `status = CAPTURED`, porque el cobro se ejecuta en el mismo flujo.
 
+Detalle practico: la compra solo acepta tipos de brazalete activos. Si un administrador desactiva un tipo, el catalogo publico deja de ofrecerlo y el backend tambien rechaza intentos de compra con ese `bracelet_type_id`.
+
 Nota de alcance vigente:
 
 - hoy el backend implementa la venta inicial del brazalete y su recibo;
 - el consumo posterior todavia no tiene modelo transaccional persistente en codigo;
 - la logica aprobada es que la comida y las atracciones no generen una nueva venta del brazalete, sino movimientos operativos del brazalete.
+
+### Requerimiento completado: gestion administrativa de tipos de brazalete
+
+El requerimiento "Implementar gestion administrativa de tipos de brazalete" quedo cerrado desde backend.
+
+Criterios resueltos:
+
+- el modelo `BraceletType` soporta estado activo/inactivo mediante `is_active`;
+- la API permite a administradores crear, editar, activar/desactivar y eliminar tipos de brazalete;
+- la eliminacion fisica se bloquea cuando el tipo ya tiene brazaletes asociados, para no romper historial de compras o brazaletes emitidos;
+- los administradores pueden consultar tipos activos e inactivos con `include_inactive=1`;
+- clientes y usuarios anonimos solo ven tipos activos en el catalogo publico;
+- compra interna y captura PayPal solo aceptan tipos activos;
+- los campos administrables cubren precio, saldo de comida, usos de atraccion, descripcion e imagen;
+- los permisos de escritura quedan restringidos a administradores usando la regla centralizada de backoffice.
 
 ## Integracion con PayPal
 
@@ -688,9 +715,9 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 
 | Endpoint | Sin autenticacion | Cliente autenticado | Administrador |
 | --- | --- | --- | --- |
-| `GET /api/compra_brazaletes/tipos/` | permitido | permitido | permitido |
+| `GET /api/compra_brazaletes/tipos/` | permitido, solo activos | permitido, solo activos | permitido, activos o inactivos con `include_inactive=1` |
 | `POST /api/compra_brazaletes/tipos/` | `401` | `403` | permitido |
-| `PUT/PATCH/DELETE /api/compra_brazaletes/tipos/{id}/` | `401` | `403` | permitido |
+| `PUT/PATCH/DELETE /api/compra_brazaletes/tipos/{id}/` | `401` | `403` | permitido; `DELETE` se bloquea si el tipo ya tiene brazaletes asociados |
 | `GET /api/compra_brazaletes/brazaletes/` | `401` | `403` | permitido |
 | `GET /api/compra_brazaletes/brazaletes/{id}/` | `401` | `403` | permitido |
 | `POST /api/compra_brazaletes/brazaletes/` | `401` | `403` | permitido |
@@ -735,6 +762,7 @@ Notas practicas:
 - `UserViewSet` protegido con la misma regla administrativa centralizada;
 - registro de clientes devuelve correctamente token y usuario serializado, incluyendo `is_admin`, sin exponer password;
 - `BraceletTypeViewSet` con lectura publica y escritura administrativa consistente;
+- tipos de brazalete con estado activo/inactivo para retirar catalogo de compra sin perder historial;
 - `BraceletViewSet` restringido a administradores con la misma convencion;
 - endpoints de PayPal alineados con autenticacion obligatoria;
 - flujo funcional de compra interna;

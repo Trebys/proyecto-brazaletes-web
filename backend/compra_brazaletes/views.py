@@ -113,9 +113,37 @@ def extract_paypal_order_id(event_type, resource):
 
 
 class BraceletTypeViewSet(viewsets.ModelViewSet):
-    queryset = BraceletType.objects.all()
     serializer_class = BraceletTypeSerializer
     permission_classes = [ReadOnlyOrAdminUser]
+
+    def get_queryset(self):
+        queryset = BraceletType.objects.all().order_by('id')
+
+        if has_backoffice_access(self.request.user):
+            if self.action != 'list':
+                return queryset
+
+            include_inactive = self.request.query_params.get('include_inactive')
+            if include_inactive in ('1', 'true', 'True', 'yes'):
+                return queryset
+
+        return queryset.filter(is_active=True)
+
+    def destroy(self, request, *args, **kwargs):
+        bracelet_type = self.get_object()
+
+        if bracelet_type.bracelets.exists():
+            return Response(
+                {
+                    "detail": (
+                        "Este tipo ya tiene brazaletes asociados. "
+                        "Desactivalo para retirarlo de la compra sin perder historial."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().destroy(request, *args, **kwargs)
 
 
 class BraceletViewSet(viewsets.ModelViewSet):
@@ -167,7 +195,7 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            bracelet_type = BraceletType.objects.get(pk=bracelet_type_id)
+            bracelet_type = BraceletType.objects.get(pk=bracelet_type_id, is_active=True)
         except BraceletType.DoesNotExist:
             return Response(
                 {"detail": f"BraceletType {bracelet_type_id} does not exist."},
@@ -278,7 +306,7 @@ class PayPalCaptureOrderView(APIView):
             )
 
         try:
-            bracelet_type = BraceletType.objects.get(pk=bracelet_type_id)
+            bracelet_type = BraceletType.objects.get(pk=bracelet_type_id, is_active=True)
         except BraceletType.DoesNotExist:
             return Response(
                 {"detail": f"BraceletType {bracelet_type_id} does not exist."},

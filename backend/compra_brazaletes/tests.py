@@ -60,6 +60,76 @@ class BraceletPermissionsTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_public_bracelet_type_list_hides_inactive_types(self):
+        BraceletType.objects.create(
+            name='Legacy',
+            price=Decimal('10.00'),
+            attraction_uses=1,
+            food_balance=Decimal('5.00'),
+            is_active=False,
+        )
+
+        response = self.client.get('/api/compra_brazaletes/tipos/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([item['name'] for item in response.data], ['Premium'])
+
+    def test_admin_can_list_inactive_bracelet_types(self):
+        BraceletType.objects.create(
+            name='Legacy',
+            price=Decimal('10.00'),
+            attraction_uses=1,
+            food_balance=Decimal('5.00'),
+            is_active=False,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.get('/api/compra_brazaletes/tipos/?include_inactive=1')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            {item['name'] for item in response.data},
+            {'Premium', 'Legacy'},
+        )
+
+    def test_admin_can_deactivate_bracelet_type(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.patch(
+            f'/api/compra_brazaletes/tipos/{self.bracelet_type.id}/',
+            {'is_active': False},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.bracelet_type.refresh_from_db()
+        self.assertFalse(self.bracelet_type.is_active)
+
+    def test_admin_can_reactivate_inactive_bracelet_type(self):
+        self.bracelet_type.is_active = False
+        self.bracelet_type.save(update_fields=['is_active'])
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.patch(
+            f'/api/compra_brazaletes/tipos/{self.bracelet_type.id}/',
+            {'is_active': True},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.bracelet_type.refresh_from_db()
+        self.assertTrue(self.bracelet_type.is_active)
+
+    def test_admin_cannot_delete_bracelet_type_with_bracelets(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.delete(
+            f'/api/compra_brazaletes/tipos/{self.bracelet_type.id}/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(BraceletType.objects.filter(id=self.bracelet_type.id).exists())
+
     def test_bracelet_type_create_requires_authentication(self):
         response = self.client.post(
             '/api/compra_brazaletes/tipos/',
@@ -179,6 +249,19 @@ class BraceletPermissionsTests(APITestCase):
             self.client_user.account_balance,
             Decimal('70.01'),
         )
+
+    def test_internal_purchase_rejects_inactive_bracelet_type(self):
+        self.bracelet_type.is_active = False
+        self.bracelet_type.save(update_fields=['is_active'])
+        self.authenticate_client()
+
+        response = self.client.post(
+            '/api/compra_brazaletes/recibos/',
+            {'bracelet_type_id': self.bracelet_type.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch('compra_brazaletes.views.PayPalClient')
     @patch('compra_brazaletes.views.verify_order')

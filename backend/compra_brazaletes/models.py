@@ -16,6 +16,7 @@ class BraceletType(models.Model):
     food_balance = models.DecimalField(
         max_digits=8, decimal_places=2, default=0)
     description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     # If you want to store the route/URL of the image
     # image_url = models.URLField(blank=True, null=True)

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Carrusel } from '../components/Carrusel';
-import {} from '../api/api'; //Mover la construccion de URL\Apis al archivo y llamar las funciones cuando esten creadas
-import { getTiposBrazaletes } from '../api/api';
+import { buildMediaUrl, getTiposBrazaletes } from '../api/api';
 export function InicioPage() {
   const navigate = useNavigate();
   const [tipos, setTipos] = useState([]);
@@ -28,10 +27,7 @@ export function InicioPage() {
     if (!path) {
       return '/images/FotoBrazaletes.jpg';
     }
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    return `http://localhost:8000/media/${path}`;
+    return buildMediaUrl(path);
   }
 
   useEffect(() => {
@@ -85,7 +81,7 @@ export function InicioPage() {
                 className={`w-60 p-4 rounded-lg shadow-lg text-center ${bgClass}`}
               >
                 <img
-                  src={getImagenUrl(tipo.image)}
+                  src={getImagenUrl(tipo.image_url || tipo.image)}
                   alt={tipo.name}
                   className="mx-auto mb-4 h-32 object-cover"
                 />
