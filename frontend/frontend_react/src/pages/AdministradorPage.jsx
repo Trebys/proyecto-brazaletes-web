@@ -7,22 +7,25 @@ import {
   buildMediaUrl,
   createAdminAttraction,
   createAdminBracelet,
+  createAdminBraceletType,
   createAdminClient,
   createAdminFood,
   deleteAdminAttraction,
   deleteAdminBracelet,
+  deleteAdminBraceletType,
   deleteAdminClient,
   deleteAdminFood,
   deleteAdminReceipt,
   getAdminBracelets,
+  getAdminBraceletTypes,
   getAdminClients,
   getAdminReceipts,
   getAttractions,
   getFoods,
   getStoredUser,
-  getTiposBrazaletes,
   updateAdminAttraction,
   updateAdminBracelet,
+  updateAdminBraceletType,
   updateAdminClient,
   updateAdminFood,
   updateAdminReceipt,
@@ -52,6 +55,16 @@ const initialBraceletForm = {
   bracelet_type_id: '',
   current_balance: '0.00',
   attraction_uses_remaining: '0',
+};
+
+const initialBraceletTypeForm = {
+  name: '',
+  price: '0.00',
+  food_balance: '0.00',
+  attraction_uses: '0',
+  description: '',
+  image: null,
+  is_active: true,
 };
 
 const initialFoodForm = {
@@ -396,7 +409,7 @@ function DataTable({ columns, rows, emptyText, title }) {
 }
 
 function CatalogPreview({ item, kind }) {
-  const imageUrl = buildMediaUrl(item.photo_url || item.photo);
+  const imageUrl = buildMediaUrl(item.image_url || item.image || item.photo_url || item.photo);
 
   return (
     <div className="flex items-center gap-3">
@@ -427,6 +440,8 @@ export function AdministradorPage() {
   const [saving, setSaving] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [clientForm, setClientForm] = useState(initialClientForm);
+  const [selectedBraceletTypeId, setSelectedBraceletTypeId] = useState('');
+  const [braceletTypeForm, setBraceletTypeForm] = useState(initialBraceletTypeForm);
   const [selectedBraceletId, setSelectedBraceletId] = useState('');
   const [braceletForm, setBraceletForm] = useState(initialBraceletForm);
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
@@ -453,7 +468,7 @@ export function AdministradorPage() {
         getAdminClients(),
         getAdminBracelets(),
         getAdminReceipts(),
-        getTiposBrazaletes(),
+        getAdminBraceletTypes(),
         getFoods(),
         getAttractions(),
       ]);
@@ -581,6 +596,71 @@ export function AdministradorPage() {
       current_balance: bracelet.current_balance ?? '0.00',
       attraction_uses_remaining: bracelet.attraction_uses_remaining ?? '0',
     });
+  };
+
+  const handleBraceletTypeChange = (event) => {
+    const { name, type, checked, value, files } = event.target;
+    const nextValue = type === 'file' ? files[0] : type === 'checkbox' ? checked : value;
+
+    setBraceletTypeForm((current) => ({
+      ...current,
+      [name]: nextValue,
+    }));
+  };
+
+  const handleBraceletTypeSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+
+    try {
+      const payload = buildFormData(braceletTypeForm, 'image');
+
+      if (selectedBraceletTypeId) {
+        await updateAdminBraceletType(selectedBraceletTypeId, payload);
+        toast.success('Tipo de brazalete actualizado.');
+      } else {
+        await createAdminBraceletType(payload);
+        toast.success('Tipo de brazalete creado.');
+      }
+
+      setSelectedBraceletTypeId('');
+      setBraceletTypeForm(initialBraceletTypeForm);
+      await loadAdminData();
+    } catch (error) {
+      console.error('Error saving bracelet type:', error);
+      toast.error('No se pudo guardar el tipo de brazalete.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const editBraceletType = (braceletType) => {
+    setSelectedBraceletTypeId(String(braceletType.id));
+    setBraceletTypeForm({
+      name: braceletType.name || '',
+      price: braceletType.price ?? '0.00',
+      food_balance: braceletType.food_balance ?? '0.00',
+      attraction_uses: braceletType.attraction_uses ?? '0',
+      description: braceletType.description || '',
+      image: null,
+      is_active: Boolean(braceletType.is_active),
+    });
+  };
+
+  const toggleBraceletTypeActive = async (braceletType) => {
+    setSaving(true);
+    try {
+      await updateAdminBraceletType(braceletType.id, {
+        is_active: !braceletType.is_active,
+      });
+      await loadAdminData();
+      toast.success(braceletType.is_active ? 'Tipo desactivado.' : 'Tipo activado.');
+    } catch (error) {
+      console.error('Error updating bracelet type status:', error);
+      toast.error('No se pudo cambiar el estado del tipo.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReceiptSubmit = async (event) => {
@@ -780,6 +860,12 @@ export function AdministradorPage() {
                 <p className="mt-2 text-3xl font-extrabold">{totals.bracelets}</p>
               </div>
               <div className="rounded bg-teal-950/70 p-5">
+                <p className="text-sm text-white/70">Tipos activos</p>
+                <p className="mt-2 text-3xl font-extrabold">
+                  {braceletTypes.filter((type) => type.is_active).length}
+                </p>
+              </div>
+              <div className="rounded bg-teal-950/70 p-5">
                 <p className="text-sm text-white/70">Ventas</p>
                 <p className="mt-2 text-3xl font-extrabold">{totals.receipts}</p>
               </div>
@@ -790,7 +876,7 @@ export function AdministradorPage() {
             </section>
 
             {activeSection === 'resumen' ? (
-              <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+              <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => setActiveSection('clientes')}
@@ -808,7 +894,7 @@ export function AdministradorPage() {
                 >
                   <span className="text-2xl font-extrabold">Gestionar brazaletes</span>
                   <span className="mt-3 block text-sm text-white/70">
-                    Consulta, ajuste de saldo, usos y eliminacion operativa.
+                    Catalogo de tipos, brazaletes emitidos, saldos y usos.
                   </span>
                 </button>
                 <button
@@ -841,6 +927,110 @@ export function AdministradorPage() {
                     Alta, edicion, usos requeridos e imagenes del catalogo.
                   </span>
                 </button>
+              </section>
+            ) : null}
+
+            {activeSection === 'brazaletes' ? (
+              <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_380px]">
+                <DataTable
+                  title="Tipos de brazalete"
+                  emptyText="No hay tipos de brazalete registrados."
+                  rows={braceletTypes}
+                  columns={[
+                    {
+                      key: 'name',
+                      label: 'Tipo',
+                      render: (type) => <CatalogPreview item={type} kind="Tipo de brazalete" />,
+                    },
+                    {
+                      key: 'price',
+                      label: 'Precio',
+                      render: (type) => formatCurrency(type.price),
+                      sortValue: (type) => Number(type.price || 0),
+                    },
+                    {
+                      key: 'food_balance',
+                      label: 'Saldo comida',
+                      render: (type) => formatCurrency(type.food_balance),
+                      sortValue: (type) => Number(type.food_balance || 0),
+                    },
+                    {
+                      key: 'attraction_uses',
+                      label: 'Usos',
+                      sortValue: (type) => Number(type.attraction_uses || 0),
+                    },
+                    {
+                      key: 'is_active',
+                      label: 'Estado',
+                      render: (type) => (
+                        <Badge tone={type.is_active ? 'success' : 'neutral'}>
+                          {type.is_active ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      ),
+                      sortValue: (type) => (type.is_active ? 'Activo' : 'Inactivo'),
+                    },
+                    { key: 'description', label: 'Descripcion' },
+                    {
+                      key: 'actions',
+                      label: 'Acciones',
+                      sortable: false,
+                      render: (type) => (
+                        <div className="flex flex-wrap gap-2">
+                          <AdminButton onClick={() => editBraceletType(type)}>Editar</AdminButton>
+                          <AdminButton onClick={() => toggleBraceletTypeActive(type)} disabled={saving}>
+                            {type.is_active ? 'Desactivar' : 'Activar'}
+                          </AdminButton>
+                          <AdminButton
+                            variant="danger"
+                            onClick={() =>
+                              handleDelete('Eliminar este tipo de brazalete?', () =>
+                                deleteAdminBraceletType(type.id)
+                              )
+                            }
+                          >
+                            Eliminar
+                          </AdminButton>
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
+
+                <form onSubmit={handleBraceletTypeSubmit} className="rounded bg-teal-950/70 p-5">
+                  <h2 className="text-xl font-extrabold">
+                    {selectedBraceletTypeId ? 'Editar tipo' : 'Crear tipo'}
+                  </h2>
+                  <div className="mt-4 space-y-3">
+                    <TextField label="Nombre" name="name" value={braceletTypeForm.name} onChange={handleBraceletTypeChange} required />
+                    <TextField label="Precio" name="price" type="number" value={braceletTypeForm.price} onChange={handleBraceletTypeChange} required />
+                    <TextField label="Saldo comida" name="food_balance" type="number" value={braceletTypeForm.food_balance} onChange={handleBraceletTypeChange} required />
+                    <TextField label="Usos de atraccion" name="attraction_uses" type="number" value={braceletTypeForm.attraction_uses} onChange={handleBraceletTypeChange} required />
+                    <TextField label="Descripcion" name="description" value={braceletTypeForm.description} onChange={handleBraceletTypeChange} />
+                    <FileField label="Imagen" name="image" onChange={handleBraceletTypeChange} required={!selectedBraceletTypeId} />
+                    <label className="flex items-center gap-3 rounded border border-white/10 bg-fondoInput px-3 py-2 text-sm font-bold text-white">
+                      <input
+                        type="checkbox"
+                        name="is_active"
+                        checked={braceletTypeForm.is_active}
+                        onChange={handleBraceletTypeChange}
+                        className="h-4 w-4"
+                      />
+                      Disponible para compra
+                    </label>
+                  </div>
+                  <div className="mt-5 flex gap-2">
+                    <AdminButton type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</AdminButton>
+                    <AdminButton
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedBraceletTypeId('');
+                        setBraceletTypeForm(initialBraceletTypeForm);
+                      }}
+                    >
+                      Limpiar
+                    </AdminButton>
+                  </div>
+                </form>
               </section>
             ) : null}
 
@@ -928,7 +1118,7 @@ export function AdministradorPage() {
             ) : null}
 
             {activeSection === 'brazaletes' ? (
-              <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <DataTable
                   title="Brazaletes registrados"
                   emptyText="No hay brazaletes registrados."
@@ -995,7 +1185,7 @@ export function AdministradorPage() {
                         <option value="">Seleccionar tipo</option>
                         {braceletTypes.map((type) => (
                           <option key={type.id} value={type.id}>
-                            {type.name}
+                            {type.name}{type.is_active ? '' : ' (inactivo)'}
                           </option>
                         ))}
                       </select>

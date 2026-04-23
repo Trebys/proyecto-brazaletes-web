@@ -189,6 +189,28 @@ export const getTiposBrazaletes = async () => {
   }
 };
 
+export const getAdminBraceletTypes = async () => {
+  const response = await api.get('compra_brazaletes/tipos/?include_inactive=1');
+  return response.data;
+};
+
+export const createAdminBraceletType = async (braceletTypeData) => {
+  const response = await api.post('compra_brazaletes/tipos/', braceletTypeData);
+  return response.data;
+};
+
+export const updateAdminBraceletType = async (braceletTypeId, braceletTypeData) => {
+  const response = await api.patch(
+    `compra_brazaletes/tipos/${braceletTypeId}/`,
+    braceletTypeData
+  );
+  return response.data;
+};
+
+export const deleteAdminBraceletType = async (braceletTypeId) => {
+  await api.delete(`compra_brazaletes/tipos/${braceletTypeId}/`);
+};
+
 export const getAdminClients = async () => {
   const response = await api.get('Users/');
   return response.data;

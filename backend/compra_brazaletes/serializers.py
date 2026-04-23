@@ -14,9 +14,31 @@ class UserBasicSerializer(serializers.ModelSerializer):
 
 
 class BraceletTypeSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = BraceletType
-        fields = '__all__'
+        fields = [
+            'id',
+            'name',
+            'price',
+            'attraction_uses',
+            'food_balance',
+            'description',
+            'image',
+            'image_url',
+            'is_active',
+        ]
+
+    def get_image_url(self, obj):
+        if not obj.image:
+            return ''
+
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.image.url)
+
+        return obj.image.url
 
 
 class BraceletSerializer(serializers.ModelSerializer):

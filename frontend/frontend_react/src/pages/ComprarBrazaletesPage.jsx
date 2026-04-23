@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getTiposBrazaletes, createPurchaseReceipt } from '../api/api';
+import { buildMediaUrl, getTiposBrazaletes, createPurchaseReceipt } from '../api/api';
 import { PayPalButton } from '../components/PayPalButton';
 import ModalMessage from '../components/ModalMessage';
 
@@ -49,6 +49,10 @@ export function ComprarBrazaletesPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!selectedTipo) {
+      return;
+    }
+
     const token = localStorage.getItem('access_token');
     if (!token) {
       setShowLoginModal(true);
@@ -74,13 +78,6 @@ export function ComprarBrazaletesPage() {
   // ↙ Callback que PayPalButton llamará si detecta que no hay login
   const handleNotLoggedIn = () => {
     setShowLoginModal(true);
-  };
-
-  // Helper para la imagen
-  const getImagenUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    return `http://localhost:8000/media/${path}`;
   };
 
   return (
@@ -113,6 +110,9 @@ export function ComprarBrazaletesPage() {
               onChange={handleSelectChange}
               value={selectedTipo ? selectedTipo.id : ''}
             >
+              {tipos.length === 0 ? (
+                <option value="">No hay tipos disponibles</option>
+              ) : null}
               {tipos.map((tipo) => (
                 <option key={tipo.id} value={tipo.id}>
                   {tipo.name}
@@ -122,9 +122,9 @@ export function ComprarBrazaletesPage() {
           </div>
 
           <div className="p-2 rounded flex justify-center">
-            {selectedTipo && selectedTipo.image ? (
+            {selectedTipo && (selectedTipo.image_url || selectedTipo.image) ? (
               <img
-                src={getImagenUrl(selectedTipo.image)}
+                src={buildMediaUrl(selectedTipo.image_url || selectedTipo.image)}
                 alt={selectedTipo.name}
                 className="max-h-32 object-cover"
               />
@@ -160,6 +160,7 @@ export function ComprarBrazaletesPage() {
 
           <button
             type="submit"
+            disabled={!selectedTipo}
             className="w-full p-3 rounded bg-green-700 text-white font-bold hover:bg-green-600"
           >
             Comprar (saldo interno)

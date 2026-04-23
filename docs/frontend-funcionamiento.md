@@ -83,7 +83,7 @@ Responsabilidades:
 - expone helpers para limpiar sesion y detectar si el usuario actual es admin
 - expone funciones para login, registro, perfil, compra interna y compra por PayPal
 - expone tambien helpers para construir URLs de media y consumir atracciones/comidas
-- expone helpers administrativos para consultar y gestionar clientes, brazaletes, recibos, comidas y atracciones
+- expone helpers administrativos para consultar y gestionar clientes, tipos de brazalete, brazaletes, recibos, comidas y atracciones
 
 Funciones principales:
 
@@ -105,7 +105,7 @@ Funciones principales:
 - `purchaseFood(foodId, braceletId, paymentSource)`
 - `getBraceletTransactions()`
 - `buildMediaUrl(path)`
-- helpers administrativos: `getAdminClients`, `updateAdminClient`, `deleteAdminClient`, `getAdminBracelets`, `updateAdminBracelet`, `deleteAdminBracelet`, `getAdminReceipts`, `updateAdminReceipt`, `deleteAdminReceipt`, `createAdminFood`, `updateAdminFood`, `deleteAdminFood`, `createAdminAttraction`, `updateAdminAttraction`, `deleteAdminAttraction`
+- helpers administrativos: `getAdminClients`, `updateAdminClient`, `deleteAdminClient`, `getAdminBraceletTypes`, `createAdminBraceletType`, `updateAdminBraceletType`, `deleteAdminBraceletType`, `getAdminBracelets`, `updateAdminBracelet`, `deleteAdminBracelet`, `getAdminReceipts`, `updateAdminReceipt`, `deleteAdminReceipt`, `createAdminFood`, `updateAdminFood`, `deleteAdminFood`, `createAdminAttraction`, `updateAdminAttraction`, `deleteAdminAttraction`
 
 Decisiones actuales a tener presentes:
 
@@ -233,6 +233,8 @@ Responsabilidades:
 - permitir compra con PayPal;
 - bloquear compra si el usuario no ha iniciado sesion.
 
+Detalle practico: la pagina consume el catalogo publico de tipos activos. Si un administrador desactiva un tipo, deja de aparecer en inicio y compra, y el backend tambien rechaza intentos de compra con ese ID.
+
 Flujo con saldo interno:
 
 1. valida que exista token;
@@ -346,7 +348,8 @@ Responsabilidades:
 - mostrar un resumen operativo con totales de clientes, brazaletes, ventas e ingresos registrados;
 - ofrecer accesos directos a clientes, brazaletes, ventas, comidas y atracciones;
 - consultar clientes y gestionar alta, edicion de datos basicos, saldo y eliminacion de clientes no administradores;
-- consultar y gestionar brazaletes, incluyendo tipo, saldo y usos restantes;
+- consultar y gestionar tipos de brazalete dentro de la seccion Brazaletes, incluyendo precio, saldo de comida, usos de atraccion, descripcion, imagen, activacion/desactivacion y eliminacion cuando no tienen historial asociado;
+- consultar y gestionar brazaletes emitidos dentro de la misma seccion, incluyendo tipo, saldo y usos restantes;
 - consultar ventas/recibos y editar su estado operativo;
 - consultar y gestionar comidas y atracciones, incluyendo imagenes;
 - mantener botones de perfil y cierre de sesion consistentes con el layout principal;
@@ -357,10 +360,26 @@ Detalle practico:
 - la ruta `/administrador` esta protegida por `PrivateRoutes requireAdmin`;
 - la interfaz usa `is_admin` desde `user_data` y revalidacion con `user-profile` si hace falta;
 - el panel reutiliza los endpoints administrativos existentes del backend;
+- los tipos desactivados se mantienen visibles para el administrador, pero desaparecen del flujo publico de compra;
+- la seccion `Brazaletes` agrupa dos bloques separados: catalogo de tipos de brazalete y brazaletes emitidos;
 - la tabla administrativa incluye busqueda local, ordenamiento ascendente/descendente por columna con indicadores visuales, paginacion local y selector de filas por pagina;
 - las secciones con muchas columnas, como clientes y ventas, priorizan el ancho de la tabla y mueven el formulario debajo hasta pantallas mas amplias para mejorar lectura;
 - las acciones de eliminacion piden confirmacion antes de llamar al backend;
 - los roles administrativos no se editan desde este panel por seguridad; `is_staff` e `is_superuser` siguen siendo de solo lectura desde la API publica del backoffice.
+
+### Requerimiento completado: gestion administrativa de tipos de brazalete
+
+El requerimiento "Implementar gestion administrativa de tipos de brazalete" quedo cerrado desde frontend.
+
+Criterios resueltos:
+
+- el administrador gestiona tipos de brazalete desde la pagina `/administrador`;
+- la gestion vive dentro de la seccion `Brazaletes`, separada visualmente de los brazaletes emitidos;
+- el formulario permite crear y editar nombre, precio, saldo de comida, usos de atraccion, descripcion, imagen y disponibilidad para compra;
+- la tabla permite consultar tipos activos e inactivos, editarlos, activarlos/desactivarlos y solicitar eliminacion;
+- los tipos desactivados dejan de mostrarse en `InicioPage` y `ComprarBrazaletesPage`;
+- `ComprarBrazaletesPage` evita operar sin un tipo disponible y usa URLs de media construidas desde la configuracion de API;
+- el acceso sigue restringido por `PrivateRoutes requireAdmin`, por lo que clientes no pueden abrir el panel administrativo.
 
 ### Requerimiento completado: modulo de atracciones y comidas
 
@@ -425,7 +444,7 @@ Notas practicas:
 - visualizacion de recibo
 - visualizacion y edicion basica del perfil
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
-- panel operativo administrativo para clientes, brazaletes, ventas, comidas y atracciones
+- panel operativo administrativo para clientes, brazaletes, tipos de brazalete, ventas, comidas y atracciones
 - tablas administrativas con busqueda, ordenamiento visual, paginacion y mejor distribucion de espacio en secciones densas
 - listado de compras del usuario
 - catalogo funcional de atracciones y comidas
