@@ -249,6 +249,16 @@ class BraceletPermissionsTests(APITestCase):
             self.client_user.account_balance,
             Decimal('70.01'),
         )
+        self.assertEqual(receipt.purchase_code, f'ORDER-{receipt.id}')
+        self.assertEqual(receipt.bracelet.bracelet_code, f'BR-{receipt.bracelet.id}')
+        self.assertEqual(
+            receipt.bracelet.current_balance,
+            self.bracelet_type.food_balance,
+        )
+        self.assertEqual(
+            receipt.bracelet.attraction_uses_remaining,
+            self.bracelet_type.attraction_uses,
+        )
 
     def test_internal_purchase_rejects_inactive_bracelet_type(self):
         self.bracelet_type.is_active = False
@@ -262,6 +272,110 @@ class BraceletPermissionsTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_internal_purchase_rejects_when_balance_is_not_enough(self):
+        self.client_user.account_balance = Decimal('20.00')
+        self.client_user.save(update_fields=['account_balance'])
+        initial_receipt_count = PurchaseReceipt.objects.count()
+        initial_bracelet_count = Bracelet.objects.count()
+        self.authenticate_client()
+
+        response = self.client.post(
+            '/api/compra_brazaletes/recibos/',
+            {'bracelet_type_id': self.bracelet_type.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['detail'],
+            'Saldo insuficiente para comprar este brazalete.',
+        )
+        self.client_user.refresh_from_db()
+        self.assertEqual(self.client_user.account_balance, Decimal('20.00'))
+        self.assertEqual(PurchaseReceipt.objects.count(), initial_receipt_count)
+        self.assertEqual(Bracelet.objects.count(), initial_bracelet_count)
+
+    def test_receipt_list_is_scoped_to_authenticated_user(self):
+        other_user = User.objects.create_user(
+            username='receipts-otro',
+            email='receipts-otro@test.com',
+            password='secret123',
+        )
+        other_bracelet = Bracelet.objects.create(
+            bracelet_type=self.bracelet_type,
+            current_balance=Decimal('40.00'),
+            attraction_uses_remaining=4,
+        )
+        PurchaseReceipt.objects.create(
+            user=other_user,
+            bracelet=other_bracelet,
+            payment_method=PurchaseReceipt.PAYMENT_METHOD_INTERNAL,
+            amount_paid=Decimal('20.00'),
+            status=PurchaseReceipt.STATUS_CAPTURED,
+        )
+        self.authenticate_client()
+
+        response = self.client.get('/api/compra_brazaletes/recibos/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['user']['id'], self.client_user.id)
+
+    def test_paypal_capture_requires_bracelet_type_id(self):
+        self.authenticate_client()
+
+        response = self.client.post(
+            '/api/compra_brazaletes/paypal/capture-order/',
+            {'orderID': 'PAYPAL-ORDER-MISSING-TYPE'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['detail'],
+            'bracelet_type_id is required for the internal record.',
+        )
+
+    @patch('compra_brazaletes.views.verify_order')
+    def test_paypal_capture_rejects_unapproved_order(self, mock_verify_order):
+        self.authenticate_client()
+        mock_verify_order.return_value = SimpleNamespace(status='CREATED')
+
+        response = self.client.post(
+            '/api/compra_brazaletes/paypal/capture-order/',
+            {
+                'orderID': 'PAYPAL-ORDER-CREATED',
+                'bracelet_type_id': self.bracelet_type.id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['detail'],
+            'PayPal order is in status CREATED and cannot be captured.',
+        )
+
+    @patch('compra_brazaletes.views.verify_order')
+    def test_paypal_capture_returns_bad_gateway_when_verification_fails(self, mock_verify_order):
+        self.authenticate_client()
+        mock_verify_order.side_effect = Exception('paypal down')
+
+        response = self.client.post(
+            '/api/compra_brazaletes/paypal/capture-order/',
+            {
+                'orderID': 'PAYPAL-ORDER-VERIFY-ERR',
+                'bracelet_type_id': self.bracelet_type.id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+        self.assertEqual(
+            response.data['detail'],
+            'Unable to verify PayPal order before capture.',
+        )
 
     @patch('compra_brazaletes.views.PayPalClient')
     @patch('compra_brazaletes.views.verify_order')
@@ -304,6 +418,8 @@ class BraceletPermissionsTests(APITestCase):
         self.assertEqual(receipt.status, PurchaseReceipt.STATUS_CAPTURED)
         self.assertEqual(receipt.paypal_order_id, 'PAYPAL-ORDER-1')
         self.assertEqual(receipt.amount_paid, Decimal('49.99'))
+        self.assertEqual(receipt.purchase_code, f'ORDER-{receipt.id}')
+        self.assertEqual(receipt.bracelet.bracelet_code, f'BR-{receipt.bracelet.id}')
 
     @patch('compra_brazaletes.views.requests.post')
     @patch('compra_brazaletes.views.PayPalClient')
@@ -379,6 +495,131 @@ class BraceletPermissionsTests(APITestCase):
         receipt.refresh_from_db()
         self.assertEqual(receipt.status, PurchaseReceipt.STATUS_CAPTURED)
 
+    @patch('compra_brazaletes.views.requests.post')
+    @patch('compra_brazaletes.views.PayPalClient')
+    def test_paypal_webhook_marks_capture_completed_event_as_captured(
+        self,
+        mock_paypal_client,
+        mock_requests_post,
+    ):
+        receipt = PurchaseReceipt.objects.create(
+            user=self.client_user,
+            bracelet=self.bracelet,
+            payment_method=PurchaseReceipt.PAYMENT_METHOD_PAYPAL,
+            paypal_order_id='PAYPAL-ORDER-5',
+            amount_paid=Decimal('49.99'),
+            status=PurchaseReceipt.STATUS_PENDING,
+        )
+
+        mock_paypal_client.return_value.base_url = 'https://api-m.sandbox.paypal.com'
+        mock_paypal_client.return_value.get_access_token.return_value = 'fake-token'
+        mock_response = Mock()
+        mock_response.json.return_value = {'verification_status': 'SUCCESS'}
+        mock_response.raise_for_status.return_value = None
+        mock_requests_post.return_value = mock_response
+
+        response = self.client.post(
+            '/api/compra_brazaletes/paypal/webhook/',
+            {
+                'event_type': 'PAYMENT.CAPTURE.COMPLETED',
+                'resource': {
+                    'supplementary_data': {
+                        'related_ids': {'order_id': 'PAYPAL-ORDER-5'}
+                    }
+                },
+            },
+            format='json',
+            HTTP_PAYPAL_TRANSMISSION_ID='tx-3',
+            HTTP_PAYPAL_TRANSMISSION_SIG='sig',
+            HTTP_PAYPAL_TRANSMISSION_TIME='2026-04-08T12:00:00Z',
+            HTTP_PAYPAL_CERT_URL='https://api-m.paypal.com/certs/cert.pem',
+            HTTP_PAYPAL_AUTH_ALGO='SHA256withRSA',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        receipt.refresh_from_db()
+        self.assertEqual(receipt.status, PurchaseReceipt.STATUS_CAPTURED)
+
+    @patch('compra_brazaletes.views.requests.post')
+    @patch('compra_brazaletes.views.PayPalClient')
+    def test_paypal_webhook_rejects_invalid_signature(self, mock_paypal_client, mock_requests_post):
+        receipt = PurchaseReceipt.objects.create(
+            user=self.client_user,
+            bracelet=self.bracelet,
+            payment_method=PurchaseReceipt.PAYMENT_METHOD_PAYPAL,
+            paypal_order_id='PAYPAL-ORDER-6',
+            amount_paid=Decimal('49.99'),
+            status=PurchaseReceipt.STATUS_PENDING,
+        )
+
+        mock_paypal_client.return_value.base_url = 'https://api-m.sandbox.paypal.com'
+        mock_paypal_client.return_value.get_access_token.return_value = 'fake-token'
+        mock_response = Mock()
+        mock_response.json.return_value = {'verification_status': 'FAILURE'}
+        mock_response.raise_for_status.return_value = None
+        mock_requests_post.return_value = mock_response
+
+        response = self.client.post(
+            '/api/compra_brazaletes/paypal/webhook/',
+            {
+                'event_type': 'CHECKOUT.ORDER.APPROVED',
+                'resource': {'id': 'PAYPAL-ORDER-6'},
+            },
+            format='json',
+            HTTP_PAYPAL_TRANSMISSION_ID='tx-4',
+            HTTP_PAYPAL_TRANSMISSION_SIG='sig',
+            HTTP_PAYPAL_TRANSMISSION_TIME='2026-04-08T12:00:00Z',
+            HTTP_PAYPAL_CERT_URL='https://api-m.paypal.com/certs/cert.pem',
+            HTTP_PAYPAL_AUTH_ALGO='SHA256withRSA',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Invalid PayPal webhook signature.')
+        receipt.refresh_from_db()
+        self.assertEqual(receipt.status, PurchaseReceipt.STATUS_PENDING)
+
+    @patch('compra_brazaletes.views.requests.post')
+    @patch('compra_brazaletes.views.PayPalClient')
+    def test_paypal_webhook_returns_bad_gateway_when_signature_verification_fails(
+        self,
+        mock_paypal_client,
+        mock_requests_post,
+    ):
+        receipt = PurchaseReceipt.objects.create(
+            user=self.client_user,
+            bracelet=self.bracelet,
+            payment_method=PurchaseReceipt.PAYMENT_METHOD_PAYPAL,
+            paypal_order_id='PAYPAL-ORDER-7',
+            amount_paid=Decimal('49.99'),
+            status=PurchaseReceipt.STATUS_PENDING,
+        )
+
+        mock_paypal_client.return_value.base_url = 'https://api-m.sandbox.paypal.com'
+        mock_paypal_client.return_value.get_access_token.return_value = 'fake-token'
+        mock_requests_post.side_effect = Exception('timeout')
+
+        response = self.client.post(
+            '/api/compra_brazaletes/paypal/webhook/',
+            {
+                'event_type': 'CHECKOUT.ORDER.APPROVED',
+                'resource': {'id': 'PAYPAL-ORDER-7'},
+            },
+            format='json',
+            HTTP_PAYPAL_TRANSMISSION_ID='tx-5',
+            HTTP_PAYPAL_TRANSMISSION_SIG='sig',
+            HTTP_PAYPAL_TRANSMISSION_TIME='2026-04-08T12:00:00Z',
+            HTTP_PAYPAL_CERT_URL='https://api-m.paypal.com/certs/cert.pem',
+            HTTP_PAYPAL_AUTH_ALGO='SHA256withRSA',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+        self.assertEqual(
+            response.data['detail'],
+            'Unable to verify PayPal webhook signature.',
+        )
+        receipt.refresh_from_db()
+        self.assertEqual(receipt.status, PurchaseReceipt.STATUS_PENDING)
+
     def test_paypal_webhook_requires_paypal_headers(self):
         response = self.client.post(
             '/api/compra_brazaletes/paypal/webhook/',
@@ -388,3 +629,19 @@ class BraceletPermissionsTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'Missing required PayPal headers.')
+
+    def test_paypal_webhook_rejects_invalid_json_payload(self):
+        response = self.client.generic(
+            'POST',
+            '/api/compra_brazaletes/paypal/webhook/',
+            data='{"event_type": "CHECKOUT.ORDER.APPROVED",',
+            content_type='application/json',
+            HTTP_PAYPAL_TRANSMISSION_ID='tx-6',
+            HTTP_PAYPAL_TRANSMISSION_SIG='sig',
+            HTTP_PAYPAL_TRANSMISSION_TIME='2026-04-08T12:00:00Z',
+            HTTP_PAYPAL_CERT_URL='https://api-m.paypal.com/certs/cert.pem',
+            HTTP_PAYPAL_AUTH_ALGO='SHA256withRSA',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Invalid PayPal webhook payload.')

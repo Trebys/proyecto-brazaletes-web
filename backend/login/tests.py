@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
@@ -11,6 +13,7 @@ class UserPermissionsTests(APITestCase):
             username='cliente',
             email='cliente@test.com',
             password='secret123',
+            account_balance=Decimal('0.00'),
         )
         self.admin_user = User.objects.create_user(
             username='admin',
@@ -86,3 +89,98 @@ class UserPermissionsTests(APITestCase):
 
         created_user = User.objects.get(username=payload['username'])
         self.assertTrue(created_user.check_password(payload['password']))
+
+    def test_login_allows_authentication_with_username(self):
+        old_token_key = self.client_token.key
+
+        response = self.client.post(
+            '/api/login',
+            {
+                'identifier': self.client_user.username,
+                'password': 'secret123',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['User']['id'], self.client_user.id)
+        self.assertNotEqual(response.data['Token'], old_token_key)
+        self.assertFalse(Token.objects.filter(key=old_token_key).exists())
+        self.assertTrue(Token.objects.filter(key=response.data['Token']).exists())
+
+    def test_login_allows_authentication_with_email(self):
+        response = self.client.post(
+            '/api/login',
+            {
+                'identifier': self.client_user.email,
+                'password': 'secret123',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['User']['email'], self.client_user.email)
+
+    def test_login_rejects_wrong_password(self):
+        response = self.client.post(
+            '/api/login',
+            {
+                'identifier': self.client_user.username,
+                'password': 'incorrecta',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['message'], 'Wrong password.')
+
+    def test_login_requires_identifier_and_password(self):
+        response = self.client.post('/api/login', {'identifier': ''}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['message'],
+            'Username/Email and password are required.',
+        )
+
+    def test_client_cannot_update_own_account_balance_from_profile(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.client_token.key}')
+
+        response = self.client.patch(
+            '/api/edit-user',
+            {
+                'first_name': 'Cliente Actualizado',
+                'account_balance': '999.99',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.client_user.refresh_from_db()
+        self.assertEqual(self.client_user.first_name, 'Cliente Actualizado')
+        self.assertEqual(str(self.client_user.account_balance), '0.00')
+
+    def test_admin_can_update_own_account_balance_from_profile(self):
+        self.admin_user.account_balance = '10.00'
+        self.admin_user.save(update_fields=['account_balance'])
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.patch(
+            '/api/edit-user',
+            {
+                'account_balance': '250.50',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.admin_user.refresh_from_db()
+        self.assertEqual(str(self.admin_user.account_balance), '250.50')
+
+    def test_logout_deletes_current_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.client_token.key}')
+
+        response = self.client.post('/api/logout')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Token.objects.filter(key=self.client_token.key).exists())

@@ -149,6 +149,12 @@ Flujo:
 
 Observacion: el frontend no inicia sesion automaticamente despues del registro, aunque el backend si devuelve token.
 
+Estado vigente para este flujo:
+
+- el frontend sigue mostrando el flujo de login y registro como hasta ahora;
+- el backend ya tiene cobertura automatica sobre login, registro, permisos basicos y proteccion del saldo del perfil;
+- esto reduce el riesgo de regresiones invisibles en los flujos que alimentan las pantallas de acceso y perfil.
+
 ### Rutas privadas
 
 Archivo principal: `src/components/PrivateRoutes.jsx`
@@ -257,6 +263,12 @@ Nota de alcance vigente:
 - el frontend actual solo cubre la compra inicial del brazalete y la consulta del recibo;
 - la logica nueva del proyecto ya definio que los futuros consumos de comida y atracciones no se modelaran como nuevas ventas de brazalete;
 - cuando esa parte se implemente, la interfaz probablemente necesitara vistas de historial de movimientos o consumos del brazalete, ademas del recibo de compra.
+
+Estado vigente para este flujo:
+
+- el backend ya tiene cobertura automatica para compra interna con saldo, captura PayPal y contratos clave del webhook;
+- eso protege el flujo que consume `ComprarBrazaletesPage`, `PayPalButton` y `ReciboCompraPage`;
+- los escenarios de rechazo mas sensibles, como saldo insuficiente, firma invalida o errores de verificacion con PayPal, ya no dependen solo de prueba manual.
 
 ### `src/components/PayPalButton.jsx`
 
@@ -401,6 +413,17 @@ Comentario de continuidad:
 - esta version queda lista para pruebas funcionales del MVP;
 - mas adelante conviene agregar historial de consumos, una vista para movimientos del brazalete y mejoras de administracion visual del catalogo.
 
+### Requerimiento completado: pruebas backend para autenticacion, compra interna y pagos
+
+Aunque la implementacion de pruebas vive en backend, este requerimiento ya impacta directamente la estabilidad de los flujos principales consumidos por frontend.
+
+Criterios resueltos desde la perspectiva del frontend:
+
+- login, registro y permisos basicos ya cuentan con cobertura automatica en backend;
+- la compra con saldo interno ya tiene pruebas utiles sobre exito y rechazos de negocio;
+- la captura de PayPal y el webhook ya tienen pruebas sobre contratos clave y errores controlados;
+- los flujos visibles para el usuario en login, compra y recibo quedan mejor protegidos frente a regresiones.
+
 ## Componentes secundarios
 
 ### `src/components/Carrusel.jsx`
@@ -441,6 +464,7 @@ Notas practicas:
 - compra con saldo interno
 - compra con PayPal
 - visualizacion de estados consistentes de recibo para compras internas y PayPal
+- respaldo automatizado en backend para los flujos criticos de login, compra interna y pagos
 - visualizacion de recibo
 - visualizacion y edicion basica del perfil
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
