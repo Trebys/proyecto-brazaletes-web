@@ -204,6 +204,22 @@ No genera un token nuevo. Solo verifica si el token actual sigue dentro de la ve
 
 Elimina el token actual del usuario autenticado.
 
+### Cobertura automatica vigente en autenticacion
+
+El backend ya cuenta con pruebas automaticas utiles sobre los flujos criticos de autenticacion y permisos basicos.
+
+Cobertura actual:
+
+- login con `username`;
+- login con `email`;
+- rechazo de credenciales incompletas;
+- rechazo de password incorrecta;
+- invalidacion del token anterior al iniciar una nueva sesion;
+- cierre de sesion con eliminacion real del token;
+- acceso administrativo protegido en `UserViewSet`;
+- proteccion del saldo del usuario en `update_user_profile`, evitando que un cliente se altere su propio `account_balance`;
+- permiso valido para que un administrador actualice su saldo cuando corresponde.
+
 ### Rutas
 
 Archivo: `login/urls.py`
@@ -447,6 +463,16 @@ Observacion: la compra con saldo interno queda en `status = CAPTURED`, porque el
 
 Detalle practico: la compra solo acepta tipos de brazalete activos. Si un administrador desactiva un tipo, el catalogo publico deja de ofrecerlo y el backend tambien rechaza intentos de compra con ese `bracelet_type_id`.
 
+Cobertura automatica vigente para compra interna:
+
+- compra exitosa con saldo interno;
+- descuento correcto del saldo del usuario;
+- creacion consistente de `Bracelet` y `PurchaseReceipt`;
+- asignacion automatica de `bracelet_code` y `purchase_code`;
+- rechazo de compra si el tipo de brazalete esta inactivo;
+- rechazo sin efectos laterales cuando el saldo del usuario no alcanza;
+- aislamiento de recibos por usuario autenticado.
+
 Nota de alcance vigente:
 
 - hoy el backend implementa la venta inicial del brazalete y su recibo;
@@ -531,6 +557,32 @@ Observaciones importantes del estado actual:
 - solo persiste estados definidos por el modelo: `APPROVED` o `CAPTURED`, segun el evento;
 - evita degradar un recibo ya `CAPTURED` si llegan eventos fuera de orden;
 - usa logging en lugar de `print()` para los mensajes operativos.
+
+Cobertura automatica vigente para PayPal y webhook:
+
+- creacion de orden exige autenticacion;
+- captura PayPal exitosa crea recibo y brazalete consistentes;
+- la captura falla si falta `bracelet_type_id`;
+- la captura falla si la orden todavia no esta en un estado capturable;
+- la captura devuelve error controlado si falla la verificacion previa con PayPal;
+- el webhook procesa `CHECKOUT.ORDER.APPROVED`, `CHECKOUT.ORDER.COMPLETED` y `PAYMENT.CAPTURE.COMPLETED`;
+- el webhook no degrada un recibo ya `CAPTURED`;
+- el webhook rechaza headers faltantes;
+- el webhook rechaza payload JSON invalido;
+- el webhook rechaza firmas invalidas;
+- el webhook devuelve error controlado si no puede verificar la firma con PayPal.
+
+### Requerimiento completado: pruebas backend para autenticacion, compra interna y pagos
+
+El requerimiento "Agregar pruebas backend para autenticacion, compra interna y pagos" ya quedo cubierto desde backend.
+
+Criterios resueltos:
+
+- existen pruebas automaticas para login, registro y permisos basicos;
+- existen pruebas para compra con saldo interno, incluyendo escenarios exitosos y rechazos de negocio;
+- existen pruebas para contratos clave de PayPal y webhook en los puntos viables de aislamiento;
+- los bugs y regresiones importantes de autenticacion, saldo, captura PayPal y webhook quedaron protegidos por pruebas;
+- la cobertura agregada prioriza comportamiento critico y contratos de negocio, no cantidad artificial de casos.
 
 ## App `atracciones_comidas`
 
@@ -767,6 +819,7 @@ Notas practicas:
 - endpoints de PayPal alineados con autenticacion obligatoria;
 - flujo funcional de compra interna;
 - flujo funcional de compra por PayPal;
+- pruebas automaticas sobre autenticacion, compra interna y contratos defensivos de PayPal/webhook;
 - catalogo funcional de atracciones y comidas bajo rutas consistentes;
 - consumo minimo de atracciones y comidas conectado al estado real del brazalete;
 - consumos de atracciones y comidas auditados con `BraceletTransaction`;
