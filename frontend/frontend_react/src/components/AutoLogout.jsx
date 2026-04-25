@@ -1,72 +1,120 @@
 import { useEffect, useRef } from 'react';
-import api from '../api/api.js';
+import api, {
+  clearStoredAuth,
+  getSessionExpiredMessage,
+  getStoredSessionIdleTimeoutMs,
+  setSessionMessage,
+} from '../api/api.js';
+
+const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'click', 'scroll'];
+const SESSION_REFRESH_THROTTLE_MS = 60 * 1000;
+const INACTIVITY_MESSAGE =
+  'Tu sesion expiro por inactividad. Inicia sesion nuevamente.';
 
 export function AutoLogout({ children }) {
-  // Utilizamos useRef para mantener una referencia al temporizador
   const logoutTimerRef = useRef(null);
+  const lastRefreshRef = useRef(0);
 
-  // Función para cerrar la sesión
-  const handleLogout = async () => {
-    try {
-      await api.post('/logout/');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_data');
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Error al cerrar sesión automáticamente', error);
-    }
+  const hasSession = () => {
+    return Boolean(
+      localStorage.getItem('access_token') && localStorage.getItem('user_data')
+    );
   };
 
-  // Función para verificar si el token puede ser refrescado
-  const handleTokenRefresh = async () => {
-    try {
-      await api.post('/refresh-token/');
-      resetLogoutTimer();
-    } catch (error) {
-      console.error('Token expired or cannot be refreshed', error);
-      handleLogout();
-    }
-  };
-
-  // Función para reiniciar el temporizador
-  const resetLogoutTimer = () => {
+  const finishSession = (message) => {
     if (logoutTimerRef.current) {
       clearTimeout(logoutTimerRef.current);
     }
-    logoutTimerRef.current = setTimeout(
-      () => {
-        handleTokenRefresh();
-      },
-      5 * 60 * 1000
-    ); // 5 minuto para pruebas pero debo correguirlo para mostrar un mensaje de inactividad y demas procesos referentes a la inactividad
+
+    clearStoredAuth();
+    setSessionMessage(message);
+    window.location.href = '/login';
   };
 
-  // Efecto para registrar los eventos de usuario
-  useEffect(() => {
-    const accessToken = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user_data');
-
-    if (accessToken && userData) {
-      // Registrar eventos de usuario
-      const events = ['mousemove', 'keydown', 'click', 'scroll'];
-      events.forEach((event) =>
-        window.addEventListener(event, resetLogoutTimer)
-      );
-
-      // Iniciar el temporizador de inactividad
-      resetLogoutTimer();
-
-      // Limpiar eventos y temporizadores cuando se desmonte el componente
-      return () => {
-        if (logoutTimerRef.current) {
-          clearTimeout(logoutTimerRef.current);
-        }
-        events.forEach((event) =>
-          window.removeEventListener(event, resetLogoutTimer)
-        );
-      };
+  const expireSessionByInactivity = async () => {
+    if (!hasSession()) {
+      return;
     }
-  }, []); // Dejar el array de dependencias vacío para que solo se ejecute una vez al montar el componente
+
+    try {
+      await api.post('/logout/');
+    } catch (error) {
+      console.error('Error closing inactive session:', error);
+    } finally {
+      finishSession(INACTIVITY_MESSAGE);
+    }
+  };
+
+  const verifySession = async () => {
+    if (!hasSession()) {
+      return;
+    }
+
+    try {
+      await api.post('/refresh-token/');
+      lastRefreshRef.current = Date.now();
+      scheduleIdleCheck();
+    } catch (error) {
+      finishSession(getSessionExpiredMessage(error));
+    }
+  };
+
+  const scheduleIdleCheck = () => {
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+
+    if (!hasSession()) {
+      return;
+    }
+
+    logoutTimerRef.current = setTimeout(
+      expireSessionByInactivity,
+      getStoredSessionIdleTimeoutMs()
+    );
+  };
+
+  const handleActivity = () => {
+    if (!hasSession()) {
+      return;
+    }
+
+    scheduleIdleCheck();
+
+    if (Date.now() - lastRefreshRef.current >= SESSION_REFRESH_THROTTLE_MS) {
+      verifySession();
+    }
+  };
+
+  useEffect(() => {
+    ACTIVITY_EVENTS.forEach((event) => {
+      window.addEventListener(event, handleActivity);
+    });
+
+    const handleStorage = (event) => {
+      if (event.key === 'access_token' && !event.newValue) {
+        finishSession('Tu sesion fue cerrada en otra pestana.');
+      }
+
+      if (event.key === 'access_token' && event.newValue) {
+        scheduleIdleCheck();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    scheduleIdleCheck();
+
+    return () => {
+      if (logoutTimerRef.current) {
+        clearTimeout(logoutTimerRef.current);
+      }
+
+      ACTIVITY_EVENTS.forEach((event) => {
+        window.removeEventListener(event, handleActivity);
+      });
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   return <>{children}</>;
 }

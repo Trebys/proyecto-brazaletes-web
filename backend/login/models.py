@@ -1,12 +1,17 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
-from datetime import timedelta
+from django.db import models
 from rest_framework.authtoken.models import Token
+
+from .authentication import is_token_expired
 
 
 class User(AbstractUser):
-    account_balance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    account_balance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
 
     @property
     def is_admin_user(self):
@@ -19,20 +24,17 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
 
-
 class ExpiringToken(Token):
-    """ Extiende el modelo de token para añadir un tiempo de expiración """
+    """Proxy de Token con la politica de expiracion del proyecto."""
+
     class Meta:
         proxy = True
 
     @property
     def is_expired(self):
-        """ Verifica si el token ha expirado """
-        expiration_time = self.created + timedelta(minutes=1)  # 15 minutos de vida útil
-        return timezone.now() > expiration_time
+        return is_token_expired(self)
 
     def refresh_token(self):
-        """ Renueva el token al generar uno nuevo """
         self.delete()
         new_token = ExpiringToken.objects.create(user=self.user)
         return new_token

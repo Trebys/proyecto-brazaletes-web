@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { isAdminUser, loginUser, persistUserData } from '../api/api';
+import {
+  consumeSessionMessage,
+  isAdminUser,
+  loginUser,
+  persistUserData,
+} from '../api/api';
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => consumeSessionMessage() || '');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -25,7 +30,7 @@ export function LoginForm() {
         const { Token, User } = res.data;
         localStorage.setItem('access_token', Token);
         persistUserData(User);
-        alert(`Bienvenido, ${User.username}`);
+        alert(res.data.message || `Bienvenido, ${User.username}`);
         setError('');
 
         const targetPath = isAdminUser(User) && from === '/inicio'
