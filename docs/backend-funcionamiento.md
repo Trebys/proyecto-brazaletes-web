@@ -10,6 +10,8 @@ Este archivo resume como funciona el backend actual del proyecto a partir del co
 - los flujos de autenticacion y compra;
 - el estado actual del backend, incluyendo limites y riesgos visibles.
 
+Regla de mantenimiento: cuando un cambio modifique modelos, endpoints, permisos, configuracion, pagos, sesion o reglas de negocio del backend, este documento debe actualizarse en la misma rama. La guia completa esta en [docs/gestion-documentacion.md](gestion-documentacion.md).
+
 ## Stack actual
 
 - Django
@@ -876,6 +878,12 @@ Buenas practicas:
 - documenta los endpoints por flujo, no solo por lista;
 - anota riesgos reales detectados en el codigo;
 - evita describir como "terminado" algo que esta a medias.
+
+Apoyos para mantenerlo sincronizado:
+
+- criterios de aceptacion vigentes: [docs/backlog-criterios-aceptacion.md](backlog-criterios-aceptacion.md);
+- decisiones y limitaciones: [docs/registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md);
+- checklist de cierre documental: [docs/gestion-documentacion.md](gestion-documentacion.md).
 
 Plantilla mental util para documentar cada app:
 

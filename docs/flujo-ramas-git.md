@@ -131,6 +131,12 @@ Regla practica:
 - si un cambio corrige deuda tecnica o cierra un requerimiento documentado, el documento debe reflejar que ya quedo resuelto o describir el nuevo estado vigente;
 - si la tarea no afecta documentacion funcional ni operativa, no hace falta forzar cambios en `docs/`.
 
+Documentos de apoyo:
+
+- [gestion-documentacion.md](gestion-documentacion.md) define el checklist de cierre documental;
+- [backlog-criterios-aceptacion.md](backlog-criterios-aceptacion.md) mantiene historias clave y criterios de aceptacion;
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md) guarda decisiones y limitaciones relevantes.
+
 ## Flujo recomendado de trabajo
 
 ### Caso normal: trabajar una issue
@@ -139,10 +145,11 @@ Regla practica:
 2. crear rama nueva desde `main`;
 3. implementar el cambio;
 4. actualizar la documentacion relacionada si el cambio modifica comportamiento o configuracion documentada;
-5. probar;
-6. hacer uno o varios commits pequenos;
-7. subir la rama si el usuario lo pide o si hace falta respaldo remoto;
-8. integrar a `main` cuando el cambio este estable.
+5. actualizar criterios de aceptacion o decisiones si el cambio los afecta;
+6. probar;
+7. hacer uno o varios commits pequenos;
+8. subir la rama si el usuario lo pide o si hace falta respaldo remoto;
+9. integrar a `main` cuando el cambio este estable.
 
 Ejemplo:
 
@@ -253,9 +260,10 @@ El agente debe:
 1. crear o usar una rama de trabajo;
 2. implementar el cambio;
 3. actualizar documentacion si el cambio la afecta;
-4. hacer commit local si el usuario lo solicito o si la tarea incluye dejar historial listo;
-5. no hacer `push` automatico;
-6. resumir que rama uso y que commit dejo.
+4. actualizar criterios de aceptacion o decisiones si corresponde;
+5. hacer commit local si el usuario lo solicito o si la tarea incluye dejar historial listo;
+6. no hacer `push` automatico;
+7. resumir que rama uso y que commit dejo.
 
 ### Si el usuario pide implementar y dejar listo para subir
 
