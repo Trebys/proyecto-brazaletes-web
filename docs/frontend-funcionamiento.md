@@ -9,6 +9,8 @@ Este archivo explica como funciona el frontend actual del proyecto desde el codi
 - poder trabajar solo el frontend sin mezclar demasiado contexto del backend;
 - dejar claro el estado actual, incluyendo partes incompletas o con deuda tecnica.
 
+Regla de mantenimiento: cuando un cambio modifique rutas, pantallas, capa de API, sesion, permisos, variables de entorno o flujos principales del frontend, este documento debe actualizarse en la misma rama. La guia completa esta en [docs/gestion-documentacion.md](gestion-documentacion.md).
+
 ## Stack actual
 
 - React 18
@@ -537,6 +539,12 @@ Buenas practicas:
 - documenta flujos completos, no solo componentes aislados;
 - si una parte esta incompleta, dejalo escrito en vez de asumir que existe;
 - cuando cambie un endpoint o una ruta, actualiza este archivo en la misma tarea.
+
+Apoyos para mantenerlo sincronizado:
+
+- criterios de aceptacion vigentes: [docs/backlog-criterios-aceptacion.md](backlog-criterios-aceptacion.md);
+- decisiones y limitaciones: [docs/registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md);
+- checklist de cierre documental: [docs/gestion-documentacion.md](gestion-documentacion.md).
 
 Plantilla mental util para documentar cada modulo:
 
