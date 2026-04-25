@@ -111,6 +111,7 @@ Decisiones actuales a tener presentes:
 
 - el token se guarda en `localStorage` como `access_token`;
 - parte del estado del usuario tambien se guarda en `localStorage` como `user_data`;
+- la politica de sesion se guarda en `localStorage` como `session_policy`, tomando como fuente principal el valor que devuelve el backend;
 - `user_data` incluye informacion de privilegios como `is_admin`, `is_staff` e `is_superuser`;
 - para la UI, la bandera canonica es `is_admin`, que el backend deriva desde `is_staff`;
 - el `baseURL` ya no esta fijo en codigo; se toma de `VITE_API_BASE_URL`;
@@ -182,16 +183,33 @@ Funcionamiento actual:
 
 - escucha eventos de usuario: `mousemove`, `keydown`, `click`, `scroll`;
 - reinicia un temporizador cada vez que detecta actividad;
-- si expira el tiempo, llama al endpoint `refresh-token/`;
-- si ese endpoint falla, hace logout y limpia `localStorage`.
+- usa la misma ventana de sesion que devuelve el backend, con respaldo local `VITE_SESSION_IDLE_TIMEOUT_MINUTES`;
+- si hay actividad, llama de forma controlada a `refresh-token/` para mantener vigente la sesion;
+- si expira el tiempo por inactividad, cierra sesion, limpia `localStorage`, redirige a `/login` y muestra un mensaje coherente;
+- si el backend devuelve `401`, tambien limpia `localStorage`, redirige a `/login` y muestra el mensaje recibido o uno de sesion no activa;
+- escucha cambios de `localStorage` para reflejar cierres o inicios de sesion entre pestanas del mismo navegador.
 
-Observacion importante:
+Politica vigente:
 
-- el comentario dice que el tiempo es de prueba;
-- el temporizador del frontend esta en 5 minutos;
-- el backend valida expiracion con 1 minuto.
+- duracion por defecto: 15 minutos de inactividad;
+- fuente de verdad: backend, configurado con `SESSION_IDLE_TIMEOUT_MINUTES`;
+- regla de concurrencia: una sola sesion activa por usuario; el ultimo login invalida sesiones anteriores.
 
-Esa diferencia puede provocar comportamientos confusos durante pruebas.
+La decision completa esta documentada en [docs/politica-sesion.md](politica-sesion.md).
+
+### Requerimiento completado: alineacion de expiracion de sesion
+
+El requerimiento "Alinear expiracion de sesion entre frontend y backend" quedo resuelto desde frontend.
+
+Criterios resueltos:
+
+- el frontend usa la politica de sesion devuelta por el backend y mantiene `VITE_SESSION_IDLE_TIMEOUT_MINUTES` como respaldo local;
+- la ventana por defecto quedo alineada a 15 minutos de inactividad;
+- la actividad del usuario llama de forma controlada a `refresh-token/` para mantener la sesion vigente;
+- la inactividad real ya no refresca el token al vencer el temporizador, sino que cierra sesion y redirige a `/login`;
+- los errores `401` limpian la sesion local y muestran mensajes coherentes en la pantalla de login;
+- las pestanas del mismo navegador comparten la sesion mediante `localStorage` y reaccionan a cambios de autenticacion;
+- una segunda sesion en otro navegador o instancia invalida la sesion anterior, siguiendo la regla del backend.
 
 ## Layout general
 

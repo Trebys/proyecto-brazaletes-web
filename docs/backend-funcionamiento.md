@@ -63,8 +63,9 @@ Puntos importantes:
 - usa `login.User` como modelo de usuario personalizado;
 - activa `rest_framework` y `rest_framework.authtoken`;
 - carga desde variables de entorno la configuracion sensible y dependiente del entorno, incluyendo PayPal, `SECRET_KEY`, `DEBUG`, base de datos, `ALLOWED_HOSTS`, CORS y CSRF;
+- define la expiracion de sesion con `SESSION_IDLE_TIMEOUT_MINUTES`, alineada con [docs/politica-sesion.md](politica-sesion.md);
 - configura PostgreSQL como base de datos principal usando variables de entorno;
-- habilita `TokenAuthentication` y `SessionAuthentication`;
+- habilita `ExpiringTokenAuthentication` y `SessionAuthentication`;
 - permite CORS para los hosts configurados por entorno, manteniendo valores locales razonables para desarrollo.
 
 Observaciones del estado actual:
@@ -123,7 +124,7 @@ Es un proxy de `Token` con logica para:
 - revisar si el token expiro;
 - refrescarlo creando uno nuevo.
 
-Observacion importante: el tiempo real de expiracion implementado en el codigo es de 1 minuto, aunque el comentario menciona 15 minutos.
+La expiracion vigente ya no esta hardcodeada en el modelo. Usa la politica central documentada en [docs/politica-sesion.md](politica-sesion.md), con 15 minutos por defecto.
 
 ### Serializador
 
@@ -155,7 +156,9 @@ Flujo:
 2. valida password;
 3. elimina tokens anteriores del usuario;
 4. crea un token nuevo;
-5. devuelve token y datos del usuario.
+5. devuelve token, datos del usuario y la politica de sesion vigente.
+
+Decision vigente: solo existe una sesion activa por usuario. Si ya habia una sesion activa, el nuevo login invalida la anterior y responde con `replaced_existing_session = true`.
 
 #### `register_client`
 
@@ -198,7 +201,7 @@ Elimina al usuario autenticado.
 
 #### `refresh_token`
 
-No genera un token nuevo. Solo verifica si el token actual sigue dentro de la ventana de vigencia. Si ya expiro, elimina el token y devuelve error.
+No genera un token nuevo. Verifica si el token actual sigue dentro de la ventana de vigencia, renueva su marca de actividad mediante la autenticacion y devuelve la politica de sesion vigente. Si ya expiro, elimina el token y devuelve `401` con un mensaje de inactividad.
 
 #### `logout`
 
@@ -215,10 +218,27 @@ Cobertura actual:
 - rechazo de credenciales incompletas;
 - rechazo de password incorrecta;
 - invalidacion del token anterior al iniciar una nueva sesion;
+- expiracion por inactividad usando la politica central de 15 minutos;
+- validacion de sesion vigente mediante `/api/refresh-token/`;
 - cierre de sesion con eliminacion real del token;
 - acceso administrativo protegido en `UserViewSet`;
 - proteccion del saldo del usuario en `update_user_profile`, evitando que un cliente se altere su propio `account_balance`;
 - permiso valido para que un administrador actualice su saldo cuando corresponde.
+
+### Requerimiento completado: alineacion de expiracion de sesion
+
+El requerimiento "Alinear expiracion de sesion entre frontend y backend" quedo resuelto desde backend.
+
+Criterios resueltos:
+
+- existe una politica unica documentada en [docs/politica-sesion.md](politica-sesion.md);
+- el backend define la ventana de inactividad con `SESSION_IDLE_TIMEOUT_MINUTES`, con 15 minutos por defecto;
+- `ExpiringTokenAuthentication` valida la expiracion en todos los endpoints protegidos por autenticacion de token;
+- los tokens vigentes renuevan su marca de actividad cuando el usuario consume endpoints protegidos;
+- los tokens vencidos se eliminan y devuelven `401` con un mensaje coherente para el frontend;
+- el login mantiene la regla de una sola sesion activa por usuario, invalidando sesiones anteriores;
+- la respuesta de login informa si se cerro una sesion previa mediante `replaced_existing_session`;
+- existen pruebas para sesion vigente, expiracion por inactividad y token anterior invalidado por nuevo login.
 
 ### Rutas
 
@@ -832,7 +852,6 @@ Notas practicas:
 ### Riesgos y deuda tecnica visible
 
 - la seguridad final depende de que cada entorno productivo defina correctamente sus variables y no reutilice valores de desarrollo;
-- expiracion de token con comentarios y tiempos inconsistentes;
 - aun depende de la semantica de eventos que entregue PayPal;
 - el flujo de consumo actual ya persiste historial transaccional para atracciones y comidas;
 - el modelo transaccional completo aun tiene pendiente `Sale`, `SaleLine` y relacion directa `Bracelet -> User`.

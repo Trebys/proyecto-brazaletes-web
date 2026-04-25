@@ -1,9 +1,12 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../config/env';
+import { API_BASE_URL, SESSION_IDLE_TIMEOUT_SECONDS } from '../config/env';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
+
+const SESSION_POLICY_KEY = 'session_policy';
+const SESSION_MESSAGE_KEY = 'session_message';
 
 export const persistUserData = (user) => {
   localStorage.setItem('user_data', JSON.stringify(user));
@@ -12,6 +15,64 @@ export const persistUserData = (user) => {
 export const clearStoredAuth = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('user_data');
+  localStorage.removeItem(SESSION_POLICY_KEY);
+};
+
+export const persistSessionPolicy = (session) => {
+  if (!session?.idle_timeout_seconds) {
+    return;
+  }
+
+  localStorage.setItem(
+    SESSION_POLICY_KEY,
+    JSON.stringify({
+      idle_timeout_seconds: Number(session.idle_timeout_seconds),
+    })
+  );
+};
+
+export const getStoredSessionIdleTimeoutMs = () => {
+  const rawSessionPolicy = localStorage.getItem(SESSION_POLICY_KEY);
+
+  if (!rawSessionPolicy) {
+    return SESSION_IDLE_TIMEOUT_SECONDS * 1000;
+  }
+
+  try {
+    const sessionPolicy = JSON.parse(rawSessionPolicy);
+    const seconds = Number(sessionPolicy.idle_timeout_seconds);
+    return Number.isFinite(seconds) && seconds > 0
+      ? seconds * 1000
+      : SESSION_IDLE_TIMEOUT_SECONDS * 1000;
+  } catch (error) {
+    console.error('Error parsing stored session policy:', error);
+    localStorage.removeItem(SESSION_POLICY_KEY);
+    return SESSION_IDLE_TIMEOUT_SECONDS * 1000;
+  }
+};
+
+export const setSessionMessage = (message) => {
+  localStorage.setItem(SESSION_MESSAGE_KEY, message);
+};
+
+export const consumeSessionMessage = () => {
+  const message = localStorage.getItem(SESSION_MESSAGE_KEY);
+  localStorage.removeItem(SESSION_MESSAGE_KEY);
+  return message;
+};
+
+export const getSessionExpiredMessage = (error) => {
+  const detail = error?.response?.data?.detail;
+
+  if (
+    typeof detail === 'string' &&
+    detail.trim() &&
+    !detail.toLowerCase().includes('invalid token')
+  ) {
+    return detail;
+  }
+
+  return 'Tu sesion ya no esta activa. Inicia sesion nuevamente.';
 };
 
 export const buildMediaUrl = (path) => {
@@ -48,10 +109,13 @@ export const isAdminUser = (user) => {
 };
 
 export const loginUser = async (identifier, password) => {
-  return api.post('login/', {
+  const response = await api.post('login/', {
     identifier,
     password,
   });
+
+  persistSessionPolicy(response.data.session);
+  return response;
 };
 
 export const getClientData = async () => {
@@ -64,6 +128,7 @@ export const getClientData = async () => {
     });
 
     if (response.status === 200) {
+      persistSessionPolicy(response.data.session);
       persistUserData(response.data);
       return response.data;
     }
@@ -173,6 +238,7 @@ export const Logout = async () => {
 export const registerClient = async (clientData) => {
   try {
     const response = await api.post('register/', clientData);
+    persistSessionPolicy(response.data.session);
     return response;
   } catch (error) {
     throw error;
@@ -402,6 +468,21 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => {
+    persistSessionPolicy(response.data?.session);
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      clearStoredAuth();
+      setSessionMessage(getSessionExpiredMessage(error));
+    }
+
     return Promise.reject(error);
   }
 );

@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
@@ -90,6 +92,7 @@ class UserPermissionsTests(APITestCase):
         created_user = User.objects.get(username=payload['username'])
         self.assertTrue(created_user.check_password(payload['password']))
 
+    @override_settings(SESSION_IDLE_TIMEOUT_MINUTES=15)
     def test_login_allows_authentication_with_username(self):
         old_token_key = self.client_token.key
 
@@ -104,6 +107,8 @@ class UserPermissionsTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['User']['id'], self.client_user.id)
+        self.assertEqual(response.data['session']['idle_timeout_seconds'], 900)
+        self.assertTrue(response.data['session']['replaced_existing_session'])
         self.assertNotEqual(response.data['Token'], old_token_key)
         self.assertFalse(Token.objects.filter(key=old_token_key).exists())
         self.assertTrue(Token.objects.filter(key=response.data['Token']).exists())
@@ -184,3 +189,64 @@ class UserPermissionsTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Token.objects.filter(key=self.client_token.key).exists())
+
+    @override_settings(SESSION_IDLE_TIMEOUT_MINUTES=15)
+    def test_refresh_token_keeps_active_session_valid(self):
+        original_created = self.client_token.created
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.client_token.key}')
+
+        response = self.client.post('/api/refresh-token/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Sesion vigente.')
+        self.assertEqual(response.data['session']['idle_timeout_seconds'], 900)
+
+        self.client_token.refresh_from_db()
+        self.assertGreaterEqual(self.client_token.created, original_created)
+
+    @override_settings(SESSION_IDLE_TIMEOUT_MINUTES=15)
+    def test_expired_token_is_rejected_and_deleted(self):
+        self.client_token.created = timezone.now() - timezone.timedelta(minutes=16)
+        self.client_token.save(update_fields=['created'])
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.client_token.key}')
+
+        response = self.client.post('/api/user-profile')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('inactividad', str(response.data['detail']))
+        self.assertFalse(Token.objects.filter(key=self.client_token.key).exists())
+
+    def test_login_without_previous_session_reports_no_replacement(self):
+        Token.objects.filter(user=self.client_user).delete()
+
+        response = self.client.post(
+            '/api/login',
+            {
+                'identifier': self.client_user.username,
+                'password': 'secret123',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['session']['replaced_existing_session'])
+
+    def test_previous_session_token_is_rejected_after_new_login(self):
+        old_token_key = self.client_token.key
+        self.client.post(
+            '/api/login',
+            {
+                'identifier': self.client_user.username,
+                'password': 'secret123',
+            },
+            format='json',
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {old_token_key}')
+
+        response = self.client.post('/api/user-profile')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            str(response.data['detail']),
+            'Tu sesion ya no esta activa. Inicia sesion nuevamente.',
+        )
