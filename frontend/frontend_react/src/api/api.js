@@ -5,17 +5,52 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+const TOKEN_KEY = 'access_token';
+const USER_DATA_KEY = 'user_data';
 const SESSION_POLICY_KEY = 'session_policy';
 const SESSION_MESSAGE_KEY = 'session_message';
+const PURCHASE_STORAGE_KEYS = [
+  'receiptId',
+  'paypal_order_id',
+  'paypalOrderId',
+  '__paypal_storage__',
+];
+
+export const getStoredToken = () => localStorage.getItem(TOKEN_KEY);
 
 export const persistUserData = (user) => {
-  localStorage.setItem('user_data', JSON.stringify(user));
+  localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
+};
+
+export const persistAuthSession = ({ token, user, session }) => {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+
+  if (user) {
+    persistUserData(user);
+  }
+
+  persistSessionPolicy(session);
+};
+
+export const persistPurchaseReceiptId = (receiptId) => {
+  localStorage.setItem('receiptId', receiptId);
+};
+
+export const getStoredPurchaseReceiptId = () => {
+  return localStorage.getItem('receiptId');
+};
+
+export const clearPurchaseStorage = () => {
+  PURCHASE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 };
 
 export const clearStoredAuth = () => {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('user_data');
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_DATA_KEY);
   localStorage.removeItem(SESSION_POLICY_KEY);
+  clearPurchaseStorage();
 };
 
 export const persistSessionPolicy = (session) => {
@@ -89,7 +124,7 @@ export const buildMediaUrl = (path) => {
 };
 
 export const getStoredUser = () => {
-  const rawUser = localStorage.getItem('user_data');
+  const rawUser = localStorage.getItem(USER_DATA_KEY);
 
   if (!rawUser) {
     return null;
@@ -123,7 +158,7 @@ export const getClientData = async () => {
     const response = await api.post('user-profile/', null, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Token ${localStorage.getItem('access_token')}`,
+        Authorization: `Token ${getStoredToken()}`,
       },
     });
 
@@ -142,7 +177,7 @@ export const getClientData = async () => {
 };
 
 export const submitClientData = async (userData) => {
-  const token = localStorage.getItem('access_token');
+  const token = getStoredToken();
   if (!token) {
     console.error('No token found');
     return;
@@ -171,7 +206,7 @@ export const submitClientData = async (userData) => {
 };
 
 export const deleteClientAccount = async () => {
-  const token = localStorage.getItem('access_token');
+  const token = getStoredToken();
   if (!token) {
     console.error('No token found');
     return;
@@ -200,9 +235,9 @@ export const deleteClientAccount = async () => {
 };
 
 export const Logout = async () => {
-  const token = localStorage.getItem('access_token');
+  const token = getStoredToken();
   if (!token) {
-    console.error('No token found');
+    clearStoredAuth();
     return;
   }
 
@@ -232,6 +267,8 @@ export const Logout = async () => {
     } else {
       alert('Error al cerrar sesion: ' + error.message);
     }
+  } finally {
+    clearStoredAuth();
   }
 };
 
@@ -461,7 +498,7 @@ export const getUserPurchaseReceipts = async () => {
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = getStoredToken();
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }

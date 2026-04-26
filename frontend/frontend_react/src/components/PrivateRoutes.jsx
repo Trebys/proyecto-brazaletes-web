@@ -1,78 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import {
-  clearStoredAuth,
-  getClientData,
-  getStoredUser,
-  isAdminUser,
-  persistUserData,
-} from '../api/api';
+import { useAuth } from '../auth/AuthContext';
 
 const PrivateRoutes = ({ requireAdmin = false }) => {
   const location = useLocation();
-  const [authState, setAuthState] = useState(() => {
-    const token = localStorage.getItem('access_token');
-    const storedUser = getStoredUser();
-
-    return {
-      checking: Boolean(token && (!storedUser || requireAdmin)),
-      isAuthenticated: Boolean(token),
-      isAuthorized: requireAdmin ? isAdminUser(storedUser) : Boolean(token),
-    };
-  });
+  const { isAuthenticated, isAdmin, refreshUser, clearAuth } = useAuth();
+  const [checking, setChecking] = useState(
+    Boolean(isAuthenticated && requireAdmin && !isAdmin)
+  );
+  const [isAuthorized, setIsAuthorized] = useState(
+    requireAdmin ? isAdmin : isAuthenticated
+  );
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-
-    if (!token) {
-      setAuthState({
-        checking: false,
-        isAuthenticated: false,
-        isAuthorized: false,
-      });
+    if (!isAuthenticated) {
+      setChecking(false);
+      setIsAuthorized(false);
       return;
     }
 
-    const storedUser = getStoredUser();
-    if (storedUser && (!requireAdmin || isAdminUser(storedUser))) {
-      setAuthState({
-        checking: false,
-        isAuthenticated: true,
-        isAuthorized: true,
-      });
+    if (!requireAdmin || isAdmin) {
+      setChecking(false);
+      setIsAuthorized(true);
       return;
     }
 
     let isMounted = true;
 
     const syncUser = async () => {
+      setChecking(true);
+
       try {
-        const currentUser = await getClientData();
+        const currentUser = await refreshUser();
 
         if (!isMounted) {
           return;
         }
 
-        persistUserData(currentUser);
-        setAuthState({
-          checking: false,
-          isAuthenticated: true,
-          isAuthorized: requireAdmin ? isAdminUser(currentUser) : true,
-        });
+        setChecking(false);
+        setIsAuthorized(
+          Boolean(
+            currentUser?.is_admin ||
+              currentUser?.is_staff ||
+              currentUser?.is_superuser
+          )
+        );
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
         if (error.response?.status === 401) {
-          clearStoredAuth();
+          clearAuth();
         }
 
-        setAuthState({
-          checking: false,
-          isAuthenticated: false,
-          isAuthorized: false,
-        });
+        setChecking(false);
+        setIsAuthorized(false);
       }
     };
 
@@ -81,17 +64,17 @@ const PrivateRoutes = ({ requireAdmin = false }) => {
     return () => {
       isMounted = false;
     };
-  }, [requireAdmin]);
+  }, [clearAuth, isAdmin, isAuthenticated, refreshUser, requireAdmin]);
 
-  if (authState.checking) {
+  if (checking) {
     return <div className="p-6 text-center">Validando acceso...</div>;
   }
 
-  if (!authState.isAuthenticated) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  if (!authState.isAuthorized) {
+  if (!isAuthorized) {
     return <Navigate to="/inicio" replace />;
   }
 

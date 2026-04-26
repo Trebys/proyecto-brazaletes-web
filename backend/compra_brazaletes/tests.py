@@ -2,6 +2,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from paypalhttp.http_error import HttpError
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
@@ -184,6 +185,37 @@ class BraceletPermissionsTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch('compra_brazaletes.views.PayPalClient')
+    def test_paypal_order_creation_returns_bad_gateway_when_credentials_are_rejected(
+        self,
+        mock_paypal_client,
+    ):
+        self.authenticate_client()
+        mock_paypal_client.return_value.client.execute.side_effect = HttpError(
+            '{"error":"invalid_client","error_description":"Client Authentication failed"}',
+            401,
+            {},
+        )
+
+        response = self.client.post(
+            '/api/compra_brazaletes/paypal/create-order/',
+            {
+                'amount': '49.99',
+                'currency': 'USD',
+                'description': 'Compra de brazalete',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+        self.assertEqual(
+            response.data['detail'],
+            (
+                'PayPal rejected the configured credentials. '
+                'Check PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET and PAYPAL_ENV.'
+            ),
+        )
 
     def test_client_can_only_list_own_bracelet_transactions(self):
         other_user = User.objects.create_user(

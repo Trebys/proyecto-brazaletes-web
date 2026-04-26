@@ -113,6 +113,25 @@ Criterios de aceptacion:
 - El flujo de ramas recuerda validar documentacion antes de cerrar una tarea.
 - El README enlaza los documentos principales para facilitar su uso cotidiano.
 
+### Refactorizar frontend de autenticacion y rutas para mejorar mantenibilidad
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [politica-sesion.md](politica-sesion.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
+
+Criterios de aceptacion:
+
+- La estructura de rutas principales queda declarada en `App.jsx` con rutas anidadas y `Outlet`.
+- La autenticacion tiene una fuente de estado controlada mediante `AuthContext`.
+- `localStorage` queda como persistencia, no como fuente principal de verdad para la UI.
+- La navegacion interna usa `Link` o `navigate` para evitar recargas completas.
+- El cierre de sesion limpia token, usuario, politica de sesion y datos temporales de compra/PayPal.
+- El comportamiento de login, rutas protegidas, compra y consulta de recibo se mantiene.
+
 ## Pendientes relevantes
 
 ### Exponer historial transaccional completo del brazalete en frontend

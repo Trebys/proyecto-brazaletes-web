@@ -1,8 +1,13 @@
 import React from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { createPayPalOrder, capturePayPalOrder } from '../api/api';
+import {
+  createPayPalOrder,
+  capturePayPalOrder,
+  persistPurchaseReceiptId,
+} from '../api/api';
 import { useNavigate } from 'react-router-dom';
 import { PAYPAL_CLIENT_ID } from '../config/env';
+import { useAuth } from '../auth/AuthContext';
 
 /**
  * @param {string} braceletTypeId - El ID del brazalete
@@ -11,11 +16,11 @@ import { PAYPAL_CLIENT_ID } from '../config/env';
  */
 export function PayPalButton({ braceletTypeId, price, onNotLoggedIn }) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // Función para crear la orden en PayPal
   const handleCreateOrder = async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
+    if (!isAuthenticated) {
       if (onNotLoggedIn) {
         onNotLoggedIn();
       }
@@ -36,7 +41,7 @@ export function PayPalButton({ braceletTypeId, price, onNotLoggedIn }) {
       // PayPalButton.jsx, en handleApprove:
       const result = await capturePayPalOrder(data.orderID, braceletTypeId);
       // "result.receipt_id" es tu ID de PurchaseReceipt
-      localStorage.setItem('receiptId', result.receipt_id);
+      persistPurchaseReceiptId(result.receipt_id);
       console.log('Captura final:', result);
       alert(`Pago completado! Recibo: ${result.receipt_id}`);
       navigate('/recibo-compra');

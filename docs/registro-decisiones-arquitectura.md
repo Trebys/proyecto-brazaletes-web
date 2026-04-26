@@ -92,6 +92,33 @@ Seguimiento:
 
 - Si aparecen roles finos, deben vivir sobre `is_staff` mediante grupos o permisos adicionales.
 
+### 2026-04-25 - `AuthContext` como fuente de estado de sesion en frontend
+
+Estado: vigente
+
+Contexto:
+
+- El frontend usaba `localStorage` como fuente principal de verdad para token, usuario y privilegios.
+- Las rutas protegidas, el layout y varios flujos consultaban almacenamiento persistente directamente.
+- El crecimiento del backoffice exige que sesion, roles y rutas protegidas sean mas faciles de extender.
+
+Decision:
+
+- Mantener `localStorage` solo como persistencia entre recargas y sincronizacion entre pestanas.
+- Usar `AuthContext` como fuente de estado para la UI de autenticacion.
+- Declarar las rutas principales con `Outlet` y rutas anidadas de React Router.
+- Limpiar datos temporales de compra y PayPal al cerrar sesion.
+
+Impacto:
+
+- Los componentes deben preferir `useAuth` antes que leer `user_data` o token directamente.
+- Las futuras rutas protegidas pueden reutilizar `PrivateRoutes` y el estado del contexto.
+- El flujo de logout reduce exposicion de datos temporales de compras previas en navegadores compartidos.
+
+Seguimiento:
+
+- Si se agregan nuevos datos temporales ligados a compra o checkout, deben registrarse en la limpieza centralizada de sesion.
+
 ### 2026-04-25 - `PurchaseReceipt` no debe cargar todo el dominio de ventas y consumos
 
 Estado: propuesta
@@ -145,10 +172,12 @@ Estado: vigente
 Limitacion:
 
 - La seguridad final depende de variables de entorno correctas para secretos, base de datos, hosts, CORS, CSRF y PayPal.
+- Las credenciales PayPal deben pertenecer al mismo entorno configurado en `PAYPAL_ENV`; credenciales live con `sandbox`, o sandbox con `live`, provocan rechazo `invalid_client` por parte de PayPal.
 
 Impacto:
 
 - Un despliegue con valores de desarrollo o variables incompletas puede fallar o quedar inseguro.
+- En desarrollo, una configuracion PayPal invalida impide crear ordenes, pero el backend debe responder con error controlado y sin filtrar secretos.
 
 Seguimiento:
 
