@@ -1,8 +1,6 @@
-# paypal_client.py
-
-import os
-from paypalcheckoutsdk.core import PayPalHttpClient, SandboxEnvironment, LiveEnvironment
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from paypalcheckoutsdk.core import LiveEnvironment, PayPalHttpClient, SandboxEnvironment
 import requests
 
 
@@ -12,18 +10,25 @@ class PayPalClient:
         client_secret = settings.PAYPAL_CLIENT_SECRET
         env_type = settings.PAYPAL_ENV  # "sandbox" or "live"
 
+        if not client_id or not client_secret:
+            raise ImproperlyConfigured(
+                "PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be configured."
+            )
+
         if env_type == "sandbox":
             self.environment = SandboxEnvironment(
                 client_id=client_id,
                 client_secret=client_secret
             )
             self.base_url = "https://api-m.sandbox.paypal.com"
-        else:
+        elif env_type == "live":
             self.environment = LiveEnvironment(
                 client_id=client_id,
                 client_secret=client_secret
             )
             self.base_url = "https://api-m.paypal.com"
+        else:
+            raise ImproperlyConfigured("PAYPAL_ENV must be 'sandbox' or 'live'.")
 
         self.client_id = client_id
         self.client_secret = client_secret
@@ -40,5 +45,6 @@ class PayPalClient:
             auth=(self.client_id, self.client_secret),
             data={"grant_type": "client_credentials"},
         )
+        resp.raise_for_status()
         data = resp.json()
         return data["access_token"]

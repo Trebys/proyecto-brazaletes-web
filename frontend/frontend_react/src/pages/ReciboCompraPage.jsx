@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { buildMediaUrl, getPurchaseReceiptById } from '../api/api';
+import {
+  buildMediaUrl,
+  getPurchaseReceiptById,
+  getStoredPurchaseReceiptId,
+} from '../api/api';
 
 const getMethodLabel = (method) => {
   switch (method) {
@@ -20,9 +24,9 @@ export function ReciboCompraPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedReceiptId = localStorage.getItem('receiptId');
+    const storedReceiptId = getStoredPurchaseReceiptId();
     if (!storedReceiptId) {
-      console.warn('No se encontro "receiptId" en localStorage.');
+      console.warn('No se encontro un recibo de compra pendiente.');
       setLoading(false);
       return;
     }

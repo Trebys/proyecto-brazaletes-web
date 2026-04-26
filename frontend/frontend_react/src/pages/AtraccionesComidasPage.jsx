@@ -8,11 +8,10 @@ import {
   getAttractions,
   getClientData,
   getFoods,
-  getStoredUser,
   getUserPurchaseReceipts,
-  persistUserData,
   purchaseFood,
 } from '../api/api';
+import { useAuth } from '../auth/AuthContext';
 
 const PAYMENT_SOURCE_BRACELET = 'BRACELET_BALANCE';
 
@@ -51,6 +50,7 @@ const buildBraceletLabel = (bracelet) => {
 
 export function AtraccionesComidasPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, updateUser } = useAuth();
   const [attractions, setAttractions] = useState([]);
   const [foods, setFoods] = useState([]);
   const [bracelets, setBracelets] = useState([]);
@@ -60,7 +60,6 @@ export function AtraccionesComidasPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [activeAction, setActiveAction] = useState('');
 
-  const hasSession = Boolean(localStorage.getItem('access_token'));
   const selectedBracelet = bracelets.find(
     (bracelet) => String(bracelet.id) === String(selectedBraceletId)
   );
@@ -85,7 +84,7 @@ export function AtraccionesComidasPage() {
         setAttractions(attractionsData);
         setFoods(foodsData);
 
-        if (!hasSession) {
+        if (!isAuthenticated) {
           return;
         }
 
@@ -123,7 +122,7 @@ export function AtraccionesComidasPage() {
     return () => {
       ignore = true;
     };
-  }, [hasSession]);
+  }, [isAuthenticated]);
 
   const syncBraceletState = (updatedBracelet) => {
     setBracelets((currentBracelets) =>
@@ -140,10 +139,9 @@ export function AtraccionesComidasPage() {
 
     setAccountBalance(nextBalance);
 
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      persistUserData({
-        ...storedUser,
+    if (user) {
+      updateUser({
+        ...user,
         account_balance: nextBalance,
       });
     }
@@ -155,7 +153,7 @@ export function AtraccionesComidasPage() {
   };
 
   const handleConsumeAttraction = async (attraction) => {
-    if (!hasSession) {
+    if (!isAuthenticated) {
       handleRequireSession();
       return;
     }
@@ -182,7 +180,7 @@ export function AtraccionesComidasPage() {
   };
 
   const handlePurchaseFood = async (food, paymentSource) => {
-    if (!hasSession) {
+    if (!isAuthenticated) {
       handleRequireSession();
       return;
     }
@@ -219,7 +217,7 @@ export function AtraccionesComidasPage() {
   return (
     <div className="min-h-screen bg-fondoPrincipal px-4 py-10 text-white">
       <div className="mx-auto max-w-6xl">
-        {hasSession ? (
+        {isAuthenticated ? (
           <section className="mx-auto mb-10 max-w-4xl rounded-lg bg-teal-800/50 px-5 py-4 shadow-lg">
             <div className="grid gap-4 text-sm md:grid-cols-[1.3fr_1fr_1fr_1fr] md:items-center">
               <label className="block">
@@ -282,7 +280,7 @@ export function AtraccionesComidasPage() {
                   selectedBracelet?.attraction_uses_remaining ?? 0
                 );
                 const canConsume =
-                  !hasSession ||
+                  !isAuthenticated ||
                   (selectedBracelet &&
                     remainingUses >= requiredUses &&
                     requiredUses > 0);
@@ -316,7 +314,7 @@ export function AtraccionesComidasPage() {
                     <p className="mt-4 text-sm font-extrabold">
                       Gasta {formatUsesLabel(requiredUses)}
                     </p>
-                    {hasSession && selectedBracelet ? (
+                    {isAuthenticated && selectedBracelet ? (
                       <p className="mt-1 text-xs text-white/80">
                         Te quedan {remainingUses} usos
                       </p>
@@ -358,9 +356,9 @@ export function AtraccionesComidasPage() {
                 );
                 const foodPrice = Number(food.price ?? 0);
                 const canPayWithBracelet =
-                  hasSession && selectedBracelet && braceletBalance >= foodPrice;
+                  isAuthenticated && selectedBracelet && braceletBalance >= foodPrice;
                 const paymentSource = PAYMENT_SOURCE_BRACELET;
-                const canBuy = !hasSession || canPayWithBracelet;
+                const canBuy = !isAuthenticated || canPayWithBracelet;
                 const isProcessing =
                   activeAction === `food-${food.id}-${paymentSource}`;
 
@@ -389,7 +387,7 @@ export function AtraccionesComidasPage() {
                     <p className="mt-4 text-sm font-extrabold">
                       {formatCurrency(food.price)}
                     </p>
-                    {hasSession && selectedBracelet ? (
+                    {isAuthenticated && selectedBracelet ? (
                       <p className="mt-1 min-h-[32px] text-xs text-white/80">
                         Saldo disponible {formatCurrency(braceletBalance)}
                       </p>

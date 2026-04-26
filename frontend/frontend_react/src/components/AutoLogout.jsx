@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api, {
-  clearStoredAuth,
   getSessionExpiredMessage,
   getStoredSessionIdleTimeoutMs,
   setSessionMessage,
 } from '../api/api.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'click', 'scroll'];
 const SESSION_REFRESH_THROTTLE_MS = 60 * 1000;
@@ -12,27 +13,23 @@ const INACTIVITY_MESSAGE =
   'Tu sesion expiro por inactividad. Inicia sesion nuevamente.';
 
 export function AutoLogout({ children }) {
+  const navigate = useNavigate();
+  const { isAuthenticated, clearAuth } = useAuth();
   const logoutTimerRef = useRef(null);
   const lastRefreshRef = useRef(0);
 
-  const hasSession = () => {
-    return Boolean(
-      localStorage.getItem('access_token') && localStorage.getItem('user_data')
-    );
-  };
-
-  const finishSession = (message) => {
+  const finishSession = useCallback((message) => {
     if (logoutTimerRef.current) {
       clearTimeout(logoutTimerRef.current);
     }
 
-    clearStoredAuth();
+    clearAuth();
     setSessionMessage(message);
-    window.location.href = '/login';
-  };
+    navigate('/login', { replace: true });
+  }, [clearAuth, navigate]);
 
-  const expireSessionByInactivity = async () => {
-    if (!hasSession()) {
+  const expireSessionByInactivity = useCallback(async () => {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -43,10 +40,25 @@ export function AutoLogout({ children }) {
     } finally {
       finishSession(INACTIVITY_MESSAGE);
     }
-  };
+  }, [finishSession, isAuthenticated]);
 
-  const verifySession = async () => {
-    if (!hasSession()) {
+  const scheduleIdleCheck = useCallback(() => {
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+
+    if (!isAuthenticated) {
+      return;
+    }
+
+    logoutTimerRef.current = setTimeout(
+      expireSessionByInactivity,
+      getStoredSessionIdleTimeoutMs()
+    );
+  }, [expireSessionByInactivity, isAuthenticated]);
+
+  const verifySession = useCallback(async () => {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -57,25 +69,10 @@ export function AutoLogout({ children }) {
     } catch (error) {
       finishSession(getSessionExpiredMessage(error));
     }
-  };
+  }, [finishSession, isAuthenticated, scheduleIdleCheck]);
 
-  const scheduleIdleCheck = () => {
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current);
-    }
-
-    if (!hasSession()) {
-      return;
-    }
-
-    logoutTimerRef.current = setTimeout(
-      expireSessionByInactivity,
-      getStoredSessionIdleTimeoutMs()
-    );
-  };
-
-  const handleActivity = () => {
-    if (!hasSession()) {
+  const handleActivity = useCallback(() => {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -84,7 +81,7 @@ export function AutoLogout({ children }) {
     if (Date.now() - lastRefreshRef.current >= SESSION_REFRESH_THROTTLE_MS) {
       verifySession();
     }
-  };
+  }, [isAuthenticated, scheduleIdleCheck, verifySession]);
 
   useEffect(() => {
     ACTIVITY_EVENTS.forEach((event) => {
@@ -114,7 +111,7 @@ export function AutoLogout({ children }) {
       });
       window.removeEventListener('storage', handleStorage);
     };
-  }, []);
+  }, [finishSession, handleActivity, scheduleIdleCheck]);
 
   return <>{children}</>;
 }

@@ -4,7 +4,9 @@ from decimal import Decimal
 
 import requests
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
+from paypalhttp.http_error import HttpError
 from paypalcheckoutsdk.orders import (
     OrdersCaptureRequest,
     OrdersCreateRequest,
@@ -40,6 +42,12 @@ PAYPAL_STATUS_ORDER = {
     PurchaseReceipt.STATUS_APPROVED: 1,
     PurchaseReceipt.STATUS_CAPTURED: 2,
 }
+
+PAYPAL_CONFIGURATION_ERROR_DETAIL = (
+    "PayPal rejected the configured credentials. "
+    "Check PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET and PAYPAL_ENV."
+)
+PAYPAL_PROVIDER_ERROR_DETAIL = "PayPal is not available right now."
 
 
 def create_bracelet_for_type(bracelet_type):
@@ -110,6 +118,35 @@ def extract_paypal_order_id(event_type, resource):
         )
 
     return resource.get('id')
+
+
+def build_paypal_error_response(error, context_message):
+    if isinstance(error, ImproperlyConfigured):
+        logger.error("%s PayPal configuration is incomplete: %s", context_message, error)
+        return Response(
+            {"detail": PAYPAL_CONFIGURATION_ERROR_DETAIL},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    if isinstance(error, HttpError):
+        logger.warning(
+            "%s PayPal responded with HTTP %s: %s",
+            context_message,
+            error.status_code,
+            error.message,
+        )
+        detail = (
+            PAYPAL_CONFIGURATION_ERROR_DETAIL
+            if error.status_code == 401
+            else PAYPAL_PROVIDER_ERROR_DETAIL
+        )
+        return Response({"detail": detail}, status=status.HTTP_502_BAD_GATEWAY)
+
+    logger.exception("%s Unexpected PayPal error.", context_message)
+    return Response(
+        {"detail": PAYPAL_PROVIDER_ERROR_DETAIL},
+        status=status.HTTP_502_BAD_GATEWAY,
+    )
 
 
 class BraceletTypeViewSet(viewsets.ModelViewSet):
@@ -263,8 +300,8 @@ class PayPalCreateOrderView(APIView):
             ],
         })
 
-        paypal_client = PayPalClient().client
         try:
+            paypal_client = PayPalClient().client
             response = paypal_client.execute(create_request)
             order = response.result
             return Response({
@@ -272,12 +309,8 @@ class PayPalCreateOrderView(APIView):
                 "status": order.status,
                 "links": [link.href for link in order.links],
             }, status=status.HTTP_201_CREATED)
-        except Exception:
-            logger.exception("Error creating PayPal order.")
-            return Response(
-                {"detail": "Error creating PayPal order."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        except Exception as error:
+            return build_paypal_error_response(error, "Error creating PayPal order.")
 
 
 class PayPalCaptureOrderView(APIView):
@@ -335,15 +368,13 @@ class PayPalCaptureOrderView(APIView):
 
         capture_request = OrdersCaptureRequest(order_id)
         capture_request.request_body({})
-        paypal_client = PayPalClient().client
-
         try:
+            paypal_client = PayPalClient().client
             response = paypal_client.execute(capture_request)
-        except Exception:
-            logger.exception("Error capturing PayPal order %s.", order_id)
-            return Response(
-                {"detail": "Error capturing PayPal order."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        except Exception as error:
+            return build_paypal_error_response(
+                error,
+                f"Error capturing PayPal order {order_id}.",
             )
 
         order = response.result

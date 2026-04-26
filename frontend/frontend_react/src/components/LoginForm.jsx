@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
+  clearStoredAuth,
   consumeSessionMessage,
   isAdminUser,
   loginUser,
-  persistUserData,
 } from '../api/api';
+import { useAuth } from '../auth/AuthContext';
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(() => consumeSessionMessage() || '');
   const [loading, setLoading] = useState(false);
+  const { storeAuthSession } = useAuth();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,9 +29,8 @@ export function LoginForm() {
       const res = await loginUser(identifier, password);
 
       if (res.status === 200) {
-        const { Token, User } = res.data;
-        localStorage.setItem('access_token', Token);
-        persistUserData(User);
+        const { Token, User, session } = res.data;
+        storeAuthSession({ token: Token, user: User, session });
         alert(res.data.message || `Bienvenido, ${User.username}`);
         setError('');
 
@@ -45,7 +46,7 @@ export function LoginForm() {
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        localStorage.removeItem('access_token');
+        clearStoredAuth();
         setError('Tu sesion ha expirado. Por favor, inicia sesion de nuevo.');
         navigate('/login');
       } else {
@@ -62,12 +63,12 @@ export function LoginForm() {
         className="w-full max-w-sm bg-fondoLogin p-8 rounded-lg shadow-md"
         onSubmit={handleLogin}
       >
-        <a
-          onClick={() => navigate('/inicio')}
+        <Link
+          to="/inicio"
           className="text-white text-sm mb-4 inline-block cursor-pointer"
         >
           Regresar
-        </a>
+        </Link>
         <h1 className="text-center text-white text-2xl mb-6 font-bold">
           Iniciar sesion
         </h1>
@@ -88,12 +89,12 @@ export function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full p-2 text-teal-900 rounded bg-teal-700 placeholder-teal-200 focus:outline-none"
           />
-          <a
-            href="#"
+          <button
+            type="button"
             className="text-white inline-block mt-2 hover:underline font-bold text-lg"
           >
             Olvidaste la contrasena?
-          </a>
+          </button>
         </div>
         <button
           type="submit"
@@ -108,12 +109,12 @@ export function LoginForm() {
 
         <div className="flex justify-between items-center mt-6">
           <span className="text-white font-bold text-lg">No tienes cuenta?</span>
-          <a
-            onClick={() => navigate('/registro')}
+          <Link
+            to="/registro"
             className="text-green-400 hover:underline font-bold text-lg cursor-pointer"
           >
             Registrate
-          </a>
+          </Link>
         </div>
       </form>
     </div>

@@ -29,6 +29,8 @@ frontend/frontend_react/
   src/
     api/
       api.js
+    auth/
+      AuthContext.jsx
     components/
       AutoLogout.jsx
       LoginForm.jsx
@@ -55,9 +57,9 @@ frontend/frontend_react/
 
 ### `src/main.jsx`
 
-Es el arranque de la aplicacion. Renderiza `App` dentro de `React.StrictMode` y envuelve toda la app con `AutoLogout`.
+Es el arranque de la aplicacion. Renderiza `App` dentro de `React.StrictMode`.
 
-Eso significa que la logica de expiracion por inactividad queda activa para toda la aplicacion desde el inicio.
+La logica global de autenticacion y expiracion se monta dentro de `App`, ya bajo el contexto de React Router, para poder navegar sin recargas completas.
 
 ### `src/App.jsx`
 
@@ -66,10 +68,30 @@ Define el enrutamiento principal.
 - `/login` muestra `LoginPage`
 - `/registro` muestra `RegistroForm`
 - `/administrador` se renderiza fuera del layout del cliente y queda protegido con `PrivateRoutes requireAdmin`
-- el resto de rutas se renderiza dentro de `MasterPageCliente`
-- `PrivateRoutes` protege `/mi-perfil/*`
+- `MasterPageCliente` funciona como layout con `Outlet` para las rutas publicas del cliente
+- `PrivateRoutes` protege `/mi-perfil`
+- las rutas internas de perfil (`info` y `mis-brazaletes`) se declaran en la misma jerarquia de rutas de `App`
 
-Observacion importante: dentro de la ruta principal se anidan otros `Routes` directamente dentro del `element`. Funciona, pero no es la forma mas limpia ni la mas escalable en React Router v6. A futuro conviene migrarlo a rutas anidadas declarativas con `Outlet`.
+Estado vigente: el enrutamiento principal usa rutas anidadas declarativas de React Router v6 con `Outlet`. Esto evita tener `Routes` embebidos dentro de `element` y deja una estructura mas clara para extender paneles, roles y secciones protegidas.
+
+### `src/auth/AuthContext.jsx`
+
+Centraliza el estado de autenticacion en memoria React.
+
+Responsabilidades:
+
+- inicializar token y usuario desde almacenamiento persistente;
+- exponer `isAuthenticated`, `isAdmin`, `user` y acciones de sesion;
+- guardar una sesion autenticada luego del login;
+- actualizar datos de usuario despues de consultar o editar perfil;
+- limpiar sesion y datos temporales de compra al cerrar sesion;
+- escuchar cambios de almacenamiento entre pestanas para sincronizar estado.
+
+Decision vigente:
+
+- `localStorage` sigue existiendo como persistencia entre recargas;
+- el estado que consume la UI vive en `AuthContext`;
+- los componentes no deben leer `user_data` directamente desde `localStorage` cuando puedan usar `useAuth`.
 
 ## Capa de API
 
@@ -80,9 +102,10 @@ Este archivo concentra casi toda la comunicacion con el backend.
 Responsabilidades:
 
 - crea una instancia de Axios cuya `baseURL` sale de `VITE_API_BASE_URL`
-- adjunta automaticamente el token desde `localStorage`
-- sincroniza `user_data` en `localStorage` cuando el perfil cambia o se consulta de nuevo
-- expone helpers para limpiar sesion y detectar si el usuario actual es admin
+- adjunta automaticamente el token desde helpers centralizados de sesion
+- sincroniza datos persistentes del usuario cuando el perfil cambia o se consulta de nuevo
+- expone helpers para guardar/limpiar sesion y detectar si el usuario actual es admin
+- expone helpers para guardar o limpiar el recibo temporal de compra
 - expone funciones para login, registro, perfil, compra interna y compra por PayPal
 - expone tambien helpers para construir URLs de media y consumir atracciones/comidas
 - expone helpers administrativos para consultar y gestionar clientes, tipos de brazalete, brazaletes, recibos, comidas y atracciones
@@ -113,7 +136,10 @@ Decisiones actuales a tener presentes:
 
 - el token se guarda en `localStorage` como `access_token`;
 - parte del estado del usuario tambien se guarda en `localStorage` como `user_data`;
+- la UI ya no toma `localStorage` como fuente principal de verdad: consume `AuthContext`;
 - la politica de sesion se guarda en `localStorage` como `session_policy`, tomando como fuente principal el valor que devuelve el backend;
+- el ultimo recibo usado por el flujo de compra se guarda temporalmente como `receiptId`;
+- al cerrar sesion se eliminan token, usuario, politica de sesion y datos temporales de compra para no dejar referencias de PayPal o recibos de una sesion anterior, incluyendo la clave `__paypal_storage__` creada por el SDK de PayPal;
 - `user_data` incluye informacion de privilegios como `is_admin`, `is_staff` e `is_superuser`;
 - para la UI, la bandera canonica es `is_admin`, que el backend deriva desde `is_staff`;
 - el `baseURL` ya no esta fijo en codigo; se toma de `VITE_API_BASE_URL`;
@@ -136,7 +162,7 @@ Flujo:
 
 1. el usuario escribe `identifier` y `password`;
 2. `handleLogin` llama `loginUser`;
-3. si el backend responde bien, se guardan `Token` y `User` en `localStorage`;
+3. si el backend responde bien, `AuthContext` guarda token, usuario y politica de sesion;
 4. se redirige al usuario a la ruta previa;
 5. si el usuario es administrador e inicio sesion sin una ruta previa especifica, se redirige a `/administrador`.
 
@@ -166,8 +192,8 @@ La proteccion ya no depende solo de que exista `access_token` en `localStorage`.
 
 Funcionamiento actual:
 
-- si no hay token, redirige a `/login`;
-- si la ruta requiere admin, revisa `user_data` y su bandera `is_admin`;
+- si no hay sesion en `AuthContext`, redirige a `/login`;
+- si la ruta requiere admin, revisa la bandera `isAdmin` del contexto;
 - si falta informacion local o puede estar desactualizada, consulta `user-profile` al backend para revalidar;
 - si el usuario no tiene privilegios, bloquea `/administrador` y lo redirige a `/inicio`.
 
@@ -190,6 +216,7 @@ Funcionamiento actual:
 - si expira el tiempo por inactividad, cierra sesion, limpia `localStorage`, redirige a `/login` y muestra un mensaje coherente;
 - si el backend devuelve `401`, tambien limpia `localStorage`, redirige a `/login` y muestra el mensaje recibido o uno de sesion no activa;
 - escucha cambios de `localStorage` para reflejar cierres o inicios de sesion entre pestanas del mismo navegador.
+- al estar dentro de `BrowserRouter`, redirige con `navigate` en vez de `window.location.href`, evitando recargas completas.
 
 Politica vigente:
 
@@ -230,8 +257,8 @@ Incluye:
 
 Detalles practicos:
 
-- usa `navigate`, pero tambien renderiza enlaces con `href`; eso puede producir recargas completas si el navegador prioriza el comportamiento nativo del enlace;
-- el estado del usuario se lee una sola vez desde `localStorage`, asi que no existe un contexto global de autenticacion.
+- usa `Link`, `Outlet` y `navigate` de React Router para mantener navegacion SPA;
+- toma el usuario desde `AuthContext`, por lo que responde a login, logout y cambios entre pestanas sin depender de una lectura inicial de `localStorage`.
 
 ## Paginas y flujos principales
 
@@ -266,7 +293,7 @@ Flujo con saldo interno:
 1. valida que exista token;
 2. llama `createPurchaseReceipt(selectedTipo.id)`;
 3. el backend devuelve un recibo ya pagado con `status = CAPTURED`;
-4. guarda `receiptId` en `localStorage`;
+4. guarda el `receiptId` mediante el helper temporal de compra;
 5. navega a `/recibo-compra`.
 
 Flujo con PayPal:
@@ -275,8 +302,10 @@ Flujo con PayPal:
 2. `PayPalButton` crea la orden en backend;
 3. al aprobar el pago, captura la orden;
 4. el backend devuelve un recibo con estado consistente con el pago, normalmente `CAPTURED`;
-5. guarda `receiptId` en `localStorage`;
+5. guarda el `receiptId` mediante el helper temporal de compra;
 6. navega a `/recibo-compra`.
+
+Detalle de seguridad: el `receiptId` temporal se borra al cerrar sesion junto con claves temporales conocidas del flujo PayPal, incluyendo `__paypal_storage__`, para evitar que una sesion posterior vea referencias o metadatos de una compra anterior.
 
 Nota de alcance vigente:
 
@@ -309,7 +338,7 @@ Muestra el detalle de la ultima compra.
 
 Flujo:
 
-1. lee `receiptId` desde `localStorage`;
+1. lee el recibo temporal con el helper de compra;
 2. consulta el endpoint del recibo;
 3. renderiza datos del usuario, brazalete, monto, metodo de pago y estado de la compra.
 
@@ -341,7 +370,7 @@ Responsabilidades:
 
 - listar recibos del usuario actual;
 - mostrar datos resumidos del brazalete comprado;
-- guardar `receiptId` en `localStorage` cuando el usuario pulsa "Ver Recibo";
+- guardar `receiptId` mediante el helper temporal de compra cuando el usuario pulsa "Ver Recibo";
 - redirigir a `ReciboCompraPage`.
 
 Detalle practico del estado actual:
@@ -513,12 +542,23 @@ La interfaz ya consume el estado actual del brazalete para atracciones y comidas
 
 ### Deuda tecnica visible
 
-- uso intensivo de `localStorage` como fuente de verdad;
-- ausencia de contexto global para autenticacion;
-- parte del estado del usuario sigue viviendo duplicado entre backend, memoria y `localStorage`;
-- mezcla de `href` y `navigate`;
+- `localStorage` sigue existiendo como persistencia, pero ya no es la fuente principal de verdad para la UI de autenticacion;
+- parte del estado del usuario sigue viviendo duplicado entre backend, memoria y almacenamiento persistente, aunque ahora hay una frontera mas clara mediante `AuthContext`;
 - varios textos del codigo muestran problemas de codificacion de caracteres;
 - el modulo de atracciones y comidas esta completo como MVP, pero aun no expone una vista dedicada de historial transaccional del brazalete.
+
+### Requerimiento completado: refactor frontend de autenticacion y rutas
+
+El requerimiento "Refactorizar frontend de autenticacion y rutas para mejorar mantenibilidad" quedo resuelto desde frontend.
+
+Criterios resueltos:
+
+- las rutas principales usan una estructura declarativa con `Outlet`;
+- `AuthContext` centraliza estado de sesion, usuario, permisos y acciones de login/logout;
+- los componentes principales dejaron de leer `user_data` directamente desde `localStorage`;
+- la navegacion interna usa `Link` o `navigate`, reduciendo recargas completas;
+- el logout limpia datos de autenticacion, politica de sesion y datos temporales de compra/PayPal;
+- el comportamiento visible de login, rutas protegidas, compra y recibo se mantiene.
 
 ## Como seguir documentando bien este frontend
 

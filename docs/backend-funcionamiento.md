@@ -545,6 +545,12 @@ Devuelve el `id` de la orden y su estado.
 
 Permiso actual: requiere autenticacion. Ya no acepta llamadas anonimas.
 
+Comportamiento ante errores:
+
+- si PayPal rechaza las credenciales configuradas, el backend devuelve `502` con un mensaje controlado para revisar `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` y `PAYPAL_ENV`;
+- si falta configuracion de PayPal, tambien devuelve `502` sin exponer secretos;
+- ya no se deja subir este fallo esperado como `500` generico.
+
 ### `PayPalCaptureOrderView`
 
 Flujo:
@@ -576,13 +582,21 @@ Eventos tratados:
 Observaciones importantes del estado actual:
 
 - el webhook verifica firma antes de tocar recibos;
+- `PAYPAL_WEBHOOK_ID` corresponde al identificador del webhook creado en el panel de PayPal Developer; sin este valor no se pueden verificar eventos reales del webhook;
 - solo persiste estados definidos por el modelo: `APPROVED` o `CAPTURED`, segun el evento;
 - evita degradar un recibo ya `CAPTURED` si llegan eventos fuera de orden;
 - usa logging en lugar de `print()` para los mensajes operativos.
 
+Impacto practico de no configurar `PAYPAL_WEBHOOK_ID`:
+
+- el flujo normal de compra puede seguir funcionando si el frontend aprueba el pago y llama a `capture-order`;
+- los eventos asincronos enviados directamente por PayPal no podran verificarse correctamente;
+- el backend no podra usar el webhook como respaldo confiable para cambios de estado que ocurran fuera del flujo directo del navegador.
+
 Cobertura automatica vigente para PayPal y webhook:
 
 - creacion de orden exige autenticacion;
+- creacion de orden devuelve error controlado si PayPal rechaza las credenciales configuradas;
 - captura PayPal exitosa crea recibo y brazalete consistentes;
 - la captura falla si falta `bracelet_type_id`;
 - la captura falla si la orden todavia no esta en un estado capturable;

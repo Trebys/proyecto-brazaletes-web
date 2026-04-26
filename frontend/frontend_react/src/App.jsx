@@ -12,50 +12,52 @@ import { PerfilClientePage } from './pages/PerfilClientePage';
 import { AtraccionesComidasPage } from './pages/AtraccionesComidasPage';
 import { ContactoPage } from './pages/ContactoPage';
 import { ReciboCompraPage } from './pages/ReciboCompraPage';
+import { AuthProvider } from './auth/AuthContext';
+import { AutoLogout } from './components/AutoLogout';
+import { ProfileDataForm } from './components/ProfileDataForm';
+import { MyBracelets } from './components/MyBracelets';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Rutas sin navbar y footer */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/registro" element={<RegistroForm />} />
-        <Route element={<PrivateRoutes requireAdmin />}>
-          <Route path="/administrador" element={<AdministradorPage />} />
-        </Route>
+      <AuthProvider>
+        <AutoLogout>
+          <Routes>
+            <Route path="/" element={<Navigate to="/inicio" replace />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/registro" element={<RegistroForm />} />
 
-        {/* Rutas con navbar y footer */}
-        <Route
-          path="/*"
-          element={
-            <MasterPageCliente>
-              <Routes>
-                <Route path="/" element={<Navigate to="/inicio" />} />
-                <Route path="/inicio" element={<InicioPage />} />
-                <Route
-                  path="/comprar-brazaletes"
-                  element={<ComprarBrazaletesPage />}
-                />
+            <Route element={<PrivateRoutes requireAdmin />}>
+              <Route path="/administrador" element={<AdministradorPage />} />
+            </Route>
 
-                <Route path="/recibo-compra" element={<ReciboCompraPage />} />
+            <Route element={<MasterPageCliente />}>
+              <Route path="/inicio" element={<InicioPage />} />
+              <Route
+                path="/comprar-brazaletes"
+                element={<ComprarBrazaletesPage />}
+              />
+              <Route path="/recibo-compra" element={<ReciboCompraPage />} />
+              <Route
+                path="/atracciones-comidas"
+                element={<AtraccionesComidasPage />}
+              />
+              <Route path="/contacto" element={<ContactoPage />} />
 
-                <Route
-                  path="/atracciones-comidas"
-                  element={<AtraccionesComidasPage />}
-                />
-
-                <Route path="/contacto" element={<ContactoPage />} />
-
-                {/* Rutas protegidas */}
-                <Route element={<PrivateRoutes />}>
-                  <Route path="/mi-perfil/*" element={<PerfilClientePage />} />
+              <Route element={<PrivateRoutes />}>
+                <Route path="/mi-perfil" element={<PerfilClientePage />}>
+                  <Route index element={<Navigate to="info" replace />} />
+                  <Route path="info" element={<ProfileDataForm />} />
+                  <Route path="mis-brazaletes" element={<MyBracelets />} />
                 </Route>
-              </Routes>
-            </MasterPageCliente>
-          }
-        />
-      </Routes>
-      <Toaster />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/inicio" replace />} />
+            </Route>
+          </Routes>
+          <Toaster />
+        </AutoLogout>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

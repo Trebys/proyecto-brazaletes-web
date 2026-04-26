@@ -2,13 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { buildMediaUrl, getTiposBrazaletes, createPurchaseReceipt } from '../api/api';
+import {
+  buildMediaUrl,
+  createPurchaseReceipt,
+  getTiposBrazaletes,
+  persistPurchaseReceiptId,
+} from '../api/api';
 import { PayPalButton } from '../components/PayPalButton';
 import ModalMessage from '../components/ModalMessage';
+import { useAuth } from '../auth/AuthContext';
 
 export function ComprarBrazaletesPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const { state } = location || {};
   const defaultTipoId = state?.tipoId || null;
 
@@ -53,8 +60,7 @@ export function ComprarBrazaletesPage() {
       return;
     }
 
-    const token = localStorage.getItem('access_token');
-    if (!token) {
+    if (!isAuthenticated) {
       setShowLoginModal(true);
       return;
     }
@@ -64,7 +70,7 @@ export function ComprarBrazaletesPage() {
       // Ejemplo al comprar con saldo interno:
       const result = await createPurchaseReceipt(selectedTipo.id);
       // Supongamos que "result.id" es el ID del PurchaseReceipt
-      localStorage.setItem('receiptId', result.id);
+      persistPurchaseReceiptId(result.id);
       alert(
         `Compra exitosa con saldo interno. Recibo: ${result.purchase_code}`
       );

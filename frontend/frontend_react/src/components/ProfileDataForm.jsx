@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   getClientData,
   submitClientData,
   deleteClientAccount,
-  persistUserData,
 } from '../api/api';
+import { useAuth } from '../auth/AuthContext';
 
 export function ProfileDataForm() {
+  const navigate = useNavigate();
+  const { updateUser, clearAuth } = useAuth();
   const [userData, setUserData] = useState({
     username: '',
     first_name: '',
@@ -28,13 +31,13 @@ export function ProfileDataForm() {
           password: '******',
           account_balance: data.account_balance,
         });
-        persistUserData(data);
+        updateUser(data);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       }
     };
     loadUserData();
-  }, []);
+  }, [updateUser]);
 
   const fields = [
     { name: 'username', label: 'Usuario', type: 'text' },
@@ -52,7 +55,10 @@ export function ProfileDataForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await submitClientData(userData);
+      const updatedUser = await submitClientData(userData);
+      if (updatedUser) {
+        updateUser(updatedUser);
+      }
       alert('User data updated successfully');
     } catch (error) {
       console.error('Error updating user data:', error);
@@ -64,8 +70,9 @@ export function ProfileDataForm() {
     try {
       if (window.confirm('Estas seguro de eliminar tu cuenta?')) {
         await deleteClientAccount();
+        clearAuth();
         alert('Cuenta eliminada con exito.');
-        window.location.href = '/inicio';
+        navigate('/inicio', { replace: true });
       }
     } catch (error) {
       console.error('Error deleting account:', error);

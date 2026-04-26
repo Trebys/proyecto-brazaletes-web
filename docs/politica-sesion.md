@@ -22,6 +22,8 @@ Los endpoints protegidos tambien validan la expiracion del token. Si el token si
 
 Si el usuario supera la ventana de inactividad, el frontend cierra la sesion y muestra el mensaje correspondiente. Si el siguiente request llega primero al backend con un token vencido, el backend elimina el token y responde `401` con el mismo criterio de expiracion.
 
+Al cerrar sesion, el frontend limpia tambien datos temporales de compra asociados a la sesion, como el ultimo `receiptId` usado para mostrar recibos y claves temporales conocidas del flujo PayPal, incluyendo `__paypal_storage__`. Esto evita que una sesion posterior herede referencias o metadatos de compras de un usuario anterior en el mismo navegador.
+
 ### Segunda sesion
 
 El sistema aplica la regla "ultimo inicio de sesion gana".

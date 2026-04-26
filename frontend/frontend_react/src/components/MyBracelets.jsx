@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserPurchaseReceipts } from '../api/api';
+import { getUserPurchaseReceipts, persistPurchaseReceiptId } from '../api/api';
 
 function getBraceletBgColor(typeName) {
   if (!typeName) return 'bg-gray-100';
@@ -28,11 +28,8 @@ export function MyBracelets() {
     })();
   }, []);
 
-  // Manejar el click del botón "Ver Recibo"
   const handleViewReceipt = (receiptId) => {
-    // Guardamos el ID en localStorage (o en el state)
-    localStorage.setItem('receiptId', receiptId);
-    // Redirigimos a /recibo-compra
+    persistPurchaseReceiptId(receiptId);
     navigate('/recibo-compra');
   };
 
