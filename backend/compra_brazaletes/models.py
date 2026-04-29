@@ -34,6 +34,13 @@ class BraceletType(models.Model):
 
 class Bracelet(models.Model):
     id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bracelets'
+    )
     bracelet_type = models.ForeignKey(
         BraceletType,
         on_delete=models.CASCADE,
@@ -116,10 +123,94 @@ class PurchaseReceipt(models.Model):
         )
 
 
+class Sale(models.Model):
+    STATUS_PENDING = 'PENDING'
+    STATUS_CONFIRMED = 'CONFIRMED'
+    STATUS_CANCELLED = 'CANCELLED'
+    STATUS_REFUNDED = 'REFUNDED'
+    STATUS_CHOICES = (
+        (STATUS_PENDING, 'Pendiente'),
+        (STATUS_CONFIRMED, 'Confirmada'),
+        (STATUS_CANCELLED, 'Cancelada'),
+        (STATUS_REFUNDED, 'Reembolsada'),
+    )
+
+    CHANNEL_INTERNAL_BALANCE = 'INTERNAL_BALANCE'
+    CHANNEL_PAYPAL = 'PAYPAL'
+    CHANNEL_CHOICES = (
+        (CHANNEL_INTERNAL_BALANCE, 'Saldo interno'),
+        (CHANNEL_PAYPAL, 'PayPal'),
+    )
+
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='sales'
+    )
+    receipt = models.OneToOneField(
+        PurchaseReceipt,
+        on_delete=models.PROTECT,
+        related_name='sale'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING
+    )
+    channel = models.CharField(max_length=30, choices=CHANNEL_CHOICES)
+    total_amount = models.DecimalField(max_digits=9, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(blank=True, null=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='created_sales'
+    )
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+    def __str__(self):
+        return f"Sale #{self.id} - {self.customer} - {self.status}"
+
+
+class SaleLine(models.Model):
+    sale = models.ForeignKey(
+        Sale,
+        on_delete=models.CASCADE,
+        related_name='lines'
+    )
+    bracelet_type = models.ForeignKey(
+        BraceletType,
+        on_delete=models.PROTECT,
+        related_name='sale_lines'
+    )
+    bracelet = models.OneToOneField(
+        Bracelet,
+        on_delete=models.PROTECT,
+        related_name='sale_line'
+    )
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=9, decimal_places=2)
+    line_total = models.DecimalField(max_digits=9, decimal_places=2)
+    initial_food_balance = models.DecimalField(max_digits=9, decimal_places=2)
+    initial_attraction_uses = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.quantity} x {self.bracelet_type} - Sale #{self.sale_id}"
+
+
 class BraceletTransaction(models.Model):
+    TYPE_ACTIVATION = 'ACTIVATION'
     TYPE_ATTRACTION_CONSUMPTION = 'ATTRACTION_CONSUMPTION'
     TYPE_FOOD_CONSUMPTION = 'FOOD_CONSUMPTION'
     TRANSACTION_TYPES = (
+        (TYPE_ACTIVATION, 'Activacion de brazalete'),
         (TYPE_ATTRACTION_CONSUMPTION, 'Consumo de atraccion'),
         (TYPE_FOOD_CONSUMPTION, 'Consumo de comida'),
     )
@@ -152,6 +243,27 @@ class BraceletTransaction(models.Model):
     )
     food = models.ForeignKey(
         'atracciones_comidas.Food',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bracelet_transactions'
+    )
+    sale = models.ForeignKey(
+        Sale,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bracelet_transactions'
+    )
+    sale_line = models.ForeignKey(
+        SaleLine,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bracelet_transactions'
+    )
+    receipt = models.ForeignKey(
+        PurchaseReceipt,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,

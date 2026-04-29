@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db import transaction
+from django.db import models, transaction
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -23,10 +23,12 @@ def get_owned_bracelet(user, bracelet_id, for_update=False):
         raise ValidationError({'bracelet_id': 'bracelet_id is required.'})
 
     if for_update:
-        owns_bracelet = PurchaseReceipt.objects.filter(
-            user=user,
-            bracelet_id=bracelet_id,
-        ).exists()
+        owns_bracelet = Bracelet.objects.filter(id=bracelet_id, owner=user).exists()
+        if not owns_bracelet:
+            owns_bracelet = PurchaseReceipt.objects.filter(
+                user=user,
+                bracelet_id=bracelet_id,
+            ).exists()
 
         if not owns_bracelet:
             raise NotFound('Bracelet not found for the current user.')
@@ -41,7 +43,9 @@ def get_owned_bracelet(user, bracelet_id, for_update=False):
     bracelet = (
         queryset.filter(
             id=bracelet_id,
-            purchase_receipts__user=user,
+        )
+        .filter(
+            models.Q(owner=user) | models.Q(purchase_receipts__user=user)
         )
         .distinct()
         .first()

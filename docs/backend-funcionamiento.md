@@ -325,10 +325,13 @@ Representa una unidad concreta comprada.
 
 Campos importantes:
 
+- `owner`
 - `bracelet_type`
 - `bracelet_code`
 - `current_balance`
 - `attraction_uses_remaining`
+
+Detalle practico: `owner` guarda la relacion directa con el usuario propietario del brazalete. Esto evita depender solo del recibo para saber a quien pertenece una unidad emitida.
 
 #### `PurchaseReceipt`
 
@@ -357,6 +360,54 @@ Y estos estados:
 - `CAPTURED`
 - `REFUNDED`
 
+Detalle de dominio: `PurchaseReceipt` no representa por si solo la venta comercial. Su responsabilidad principal es conservar la evidencia del pago: metodo, referencia externa, monto pagado y estado financiero.
+
+#### `Sale`
+
+Representa la cabecera comercial de la venta.
+
+Campos importantes:
+
+- `customer`
+- `receipt`
+- `status`
+- `channel`
+- `total_amount`
+- `created_at`
+- `confirmed_at`
+- `created_by`
+
+Estados vigentes:
+
+- `PENDING`
+- `CONFIRMED`
+- `CANCELLED`
+- `REFUNDED`
+
+Canales vigentes:
+
+- `INTERNAL_BALANCE`
+- `PAYPAL`
+
+Detalle practico: en el flujo actual cada compra exitosa de brazalete crea una `Sale` confirmada y enlazada uno a uno con su `PurchaseReceipt`.
+
+#### `SaleLine`
+
+Representa el detalle comercial del brazalete vendido.
+
+Campos importantes:
+
+- `sale`
+- `bracelet_type`
+- `bracelet`
+- `quantity`
+- `unit_price`
+- `line_total`
+- `initial_food_balance`
+- `initial_attraction_uses`
+
+Regla vigente: el MVP vende un brazalete por operacion, por lo que cada venta crea una linea con `quantity = 1`. La linea congela precio, saldo inicial de comida y usos iniciales de atraccion del tipo vendido.
+
 #### `BraceletTransaction`
 
 Representa el historial operativo auditable del brazalete para consumos posteriores a la venta.
@@ -380,21 +431,22 @@ Campos importantes:
 
 Tipos vigentes:
 
+- `ACTIVATION`
 - `ATTRACTION_CONSUMPTION`
 - `FOOD_CONSUMPTION`
 
-Detalle practico: los consumos de atracciones y comidas crean esta transaccion en la misma operacion atomica que actualiza el estado del brazalete.
+Detalle practico: la compra inicial crea una transaccion `ACTIVATION` enlazada a `Sale`, `SaleLine` y `PurchaseReceipt`. Los consumos de atracciones y comidas crean su propia transaccion en la misma operacion atomica que actualiza el estado del brazalete.
 
-### Decision de modelo transaccional ya definida
+### Modelo transaccional vigente
 
-Ademas del estado actual del codigo, el proyecto ya dejo resuelta la logica de dominio para la siguiente etapa de consumo y auditoria.
+El proyecto ya separa las responsabilidades principales de venta, pago y movimiento operativo del brazalete.
 
 Decision vigente:
 
 - `PurchaseReceipt` se mantiene como comprobante de pago;
-- la venta de brazaletes debe modelarse aparte como `Sale` y `SaleLine`;
-- el historial operativo del brazalete debe vivir en una entidad tipo `BraceletTransaction`;
-- el brazalete debe quedar relacionado de forma directa con el usuario, en lugar de depender solo del recibo para inferir propiedad.
+- la venta de brazaletes se modela con `Sale` y `SaleLine`;
+- el historial operativo del brazalete vive en `BraceletTransaction`;
+- el brazalete queda relacionado de forma directa con el usuario mediante `Bracelet.owner`.
 
 Separacion de responsabilidades acordada:
 
@@ -402,7 +454,7 @@ Separacion de responsabilidades acordada:
 - `Sale` y `SaleLine` responden que se vendio;
 - `BraceletTransaction` responde que movimientos afectaron al brazalete.
 
-Importante: la primera pieza real de esta logica ya quedo implementada mediante `BraceletTransaction` para consumos. `Sale`, `SaleLine` y la relacion directa `Bracelet -> User` siguen como evolucion futura documentada en [docs/modelo-transaccional-brazaletes.md](/C:/Users/3st3b/Dev/brazaletes_web_agentes_IA/proyecto-brazaletes-web/docs/modelo-transaccional-brazaletes.md).
+Importante: la primera activacion del brazalete tambien queda auditada como `BraceletTransaction`. Los consumos posteriores usan el mismo ledger operativo, pero con tipos de transaccion distintos.
 
 ### Signals
 
@@ -457,6 +509,8 @@ Permisos actuales:
 - acceso restringido a administradores;
 - ya no esta expuesto con `AllowAny`.
 
+Regla de integridad: si el brazalete ya tiene una `SaleLine` asociada, la eliminacion fisica se bloquea para conservar trazabilidad comercial.
+
 #### `PurchaseReceiptViewSet`
 
 Gestiona recibos de compra y requiere autenticacion.
@@ -466,6 +520,8 @@ Comportamiento especial:
 - si el usuario tiene privilegios administrativos, puede ver todos los recibos;
 - si no, solo ve los suyos;
 - `create()` fue sobreescrito para ejecutar la compra con saldo interno.
+
+Regla de integridad: si el recibo ya tiene una `Sale` asociada, la eliminacion fisica se bloquea para conservar trazabilidad comercial y financiera.
 
 ### Flujo de compra con saldo interno
 
@@ -477,19 +533,24 @@ Flujo:
 2. busca el `BraceletType` activo;
 3. valida el saldo del usuario;
 4. descuenta el precio de `account_balance`;
-5. crea un `Bracelet` con saldo de comida y usos iniciales;
+5. crea un `Bracelet` con propietario, saldo de comida y usos iniciales;
 6. crea un `PurchaseReceipt` con `status = CAPTURED`;
-7. devuelve el recibo serializado.
+7. crea una `Sale` confirmada;
+8. crea una `SaleLine` para el brazalete vendido;
+9. crea una `BraceletTransaction` de tipo `ACTIVATION`;
+10. devuelve el recibo serializado.
 
 Observacion: la compra con saldo interno queda en `status = CAPTURED`, porque el cobro se ejecuta en el mismo flujo.
 
 Detalle practico: la compra solo acepta tipos de brazalete activos. Si un administrador desactiva un tipo, el catalogo publico deja de ofrecerlo y el backend tambien rechaza intentos de compra con ese `bracelet_type_id`.
 
+Detalle de consistencia: recibo, venta, linea, brazalete y transaccion de activacion se crean dentro de la misma transaccion de base de datos. Si falla una parte del registro interno, no queda una venta incompleta.
+
 Cobertura automatica vigente para compra interna:
 
 - compra exitosa con saldo interno;
 - descuento correcto del saldo del usuario;
-- creacion consistente de `Bracelet` y `PurchaseReceipt`;
+- creacion consistente de `PurchaseReceipt`, `Sale`, `SaleLine`, `Bracelet` y `BraceletTransaction`;
 - asignacion automatica de `bracelet_code` y `purchase_code`;
 - rechazo de compra si el tipo de brazalete esta inactivo;
 - rechazo sin efectos laterales cuando el saldo del usuario no alcanza;
@@ -498,8 +559,7 @@ Cobertura automatica vigente para compra interna:
 Nota de alcance vigente:
 
 - hoy el backend implementa la venta inicial del brazalete y su recibo;
-- el consumo posterior todavia no tiene modelo transaccional persistente en codigo;
-- la logica aprobada es que la comida y las atracciones no generen una nueva venta del brazalete, sino movimientos operativos del brazalete.
+- la comida y las atracciones no generan una nueva venta del brazalete, sino movimientos operativos del brazalete.
 
 ### Requerimiento completado: gestion administrativa de tipos de brazalete
 
@@ -560,7 +620,8 @@ Flujo:
 3. intenta capturar la orden;
 4. si el pago termina en `COMPLETED`, crea el brazalete;
 5. crea el recibo con `payment_method = PAYPAL` y `status = CAPTURED`;
-6. devuelve `receipt_id` para que el frontend consulte el recibo.
+6. crea la `Sale`, la `SaleLine` y la `BraceletTransaction` de activacion;
+7. devuelve `receipt_id` para que el frontend consulte el recibo.
 
 Permiso actual: requiere autenticacion. Esto evita capturas ligadas a usuarios anonimos.
 
@@ -773,14 +834,14 @@ Comentario de continuidad:
 5. backend crea brazalete y recibo con `status = CAPTURED`
 6. si PayPal envia eventos intermedios o finales, el webhook solo actualiza el recibo con estados validos y sin degradar estados ya consolidados
 
-### Modelo logico acordado para la siguiente etapa
+### Modelo logico vigente de venta y activacion
 
-Aunque el codigo actual todavia no lo materializa, el proyecto ya definio esta evolucion del flujo:
+El flujo de compra inicial ya materializa el modelo comercial separado:
 
 1. una compra de brazalete seguira produciendo recibo y brazalete;
-2. esa compra deberia quedar representada comercialmente por una `Sale` y su `SaleLine`;
-3. la activacion inicial del saldo y de los usos del brazalete deberia registrarse como una transaccion operativa;
-4. los consumos de comida y atracciones deberian registrarse como movimientos del brazalete, no como nuevas ventas de brazalete;
+2. esa compra queda representada comercialmente por una `Sale` y su `SaleLine`;
+3. la activacion inicial del saldo y de los usos del brazalete se registra como una transaccion operativa;
+4. los consumos de comida y atracciones se registran como movimientos del brazalete, no como nuevas ventas de brazalete;
 5. el saldo actual del brazalete seguira sirviendo como estado rapido, mientras que el historial detallado quedara en el ledger transaccional.
 
 ## Matriz de permisos
@@ -859,18 +920,21 @@ Notas practicas:
 - catalogo funcional de atracciones y comidas bajo rutas consistentes;
 - consumo minimo de atracciones y comidas conectado al estado real del brazalete;
 - consumos de atracciones y comidas auditados con `BraceletTransaction`;
+- venta comercial separada mediante `Sale` y `SaleLine`;
+- relacion directa `Bracelet.owner` para consultar propiedad del brazalete sin depender solo del recibo;
+- activacion inicial del brazalete auditada con `BraceletTransaction`;
 - estados de `PurchaseReceipt` alineados con el flujo real de compra y captura;
 - webhook de PayPal alineado con estados persistibles del modelo;
 - serializacion anidada util para el frontend;
 - uso de signals para codigos automaticos;
-- logica objetivo del modelo transaccional ya definida y documentada para la siguiente etapa.
+- modelo transaccional de venta inicial ya implementado y documentado.
 
 ### Riesgos y deuda tecnica visible
 
 - la seguridad final depende de que cada entorno productivo defina correctamente sus variables y no reutilice valores de desarrollo;
 - aun depende de la semantica de eventos que entregue PayPal;
 - el flujo de consumo actual ya persiste historial transaccional para atracciones y comidas;
-- el modelo transaccional completo aun tiene pendiente `Sale`, `SaleLine` y relacion directa `Bracelet -> User`.
+- el frontend todavia no expone una vista completa de historial transaccional para usuarios o administradores.
 
 ## Como seguir documentando bien este backend
 

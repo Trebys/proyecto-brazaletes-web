@@ -6,6 +6,7 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
+from django.utils import timezone
 from paypalhttp.http_error import HttpError
 from paypalcheckoutsdk.orders import (
     OrdersCaptureRequest,
@@ -19,7 +20,7 @@ from rest_framework.views import APIView
 
 from login.permissions import IsAdminUserReal, ReadOnlyOrAdminUser, has_backoffice_access
 
-from .models import Bracelet, BraceletTransaction, BraceletType, PurchaseReceipt
+from .models import Bracelet, BraceletTransaction, BraceletType, PurchaseReceipt, Sale, SaleLine
 from .paypal_client import PayPalClient
 from .serializers import (
     BraceletSerializer,
@@ -50,12 +51,75 @@ PAYPAL_CONFIGURATION_ERROR_DETAIL = (
 PAYPAL_PROVIDER_ERROR_DETAIL = "PayPal is not available right now."
 
 
-def create_bracelet_for_type(bracelet_type):
+def create_bracelet_for_type(bracelet_type, owner=None):
     return Bracelet.objects.create(
+        owner=owner,
         bracelet_type=bracelet_type,
         current_balance=bracelet_type.food_balance,
         attraction_uses_remaining=bracelet_type.attraction_uses,
     )
+
+
+def create_sale_for_bracelet_purchase(
+    *,
+    user,
+    bracelet_type,
+    payment_method,
+    amount_paid,
+    status,
+    paypal_order_id=None,
+    created_by=None,
+):
+    new_bracelet = create_bracelet_for_type(bracelet_type, owner=user)
+    new_receipt = PurchaseReceipt.objects.create(
+        user=user,
+        bracelet=new_bracelet,
+        payment_method=payment_method,
+        paypal_order_id=paypal_order_id,
+        amount_paid=amount_paid,
+        status=status,
+    )
+    channel = (
+        Sale.CHANNEL_PAYPAL
+        if payment_method == PurchaseReceipt.PAYMENT_METHOD_PAYPAL
+        else Sale.CHANNEL_INTERNAL_BALANCE
+    )
+    sale = Sale.objects.create(
+        customer=user,
+        receipt=new_receipt,
+        status=Sale.STATUS_CONFIRMED,
+        channel=channel,
+        total_amount=amount_paid,
+        confirmed_at=timezone.now(),
+        created_by=created_by or user,
+    )
+    sale_line = SaleLine.objects.create(
+        sale=sale,
+        bracelet_type=bracelet_type,
+        bracelet=new_bracelet,
+        quantity=1,
+        unit_price=bracelet_type.price,
+        line_total=bracelet_type.price,
+        initial_food_balance=bracelet_type.food_balance,
+        initial_attraction_uses=bracelet_type.attraction_uses,
+    )
+    BraceletTransaction.objects.create(
+        bracelet=new_bracelet,
+        owner=user,
+        performed_by=created_by or user,
+        sale=sale,
+        sale_line=sale_line,
+        receipt=new_receipt,
+        transaction_type=BraceletTransaction.TYPE_ACTIVATION,
+        concept=f'Activacion de brazalete: {bracelet_type.name}',
+        balance_delta=bracelet_type.food_balance,
+        uses_delta=bracelet_type.attraction_uses,
+        balance_before=Decimal('0.00'),
+        balance_after=new_bracelet.current_balance,
+        uses_before=0,
+        uses_after=new_bracelet.attraction_uses_remaining,
+    )
+    return new_receipt
 
 
 def verify_order(order_id):
@@ -188,6 +252,22 @@ class BraceletViewSet(viewsets.ModelViewSet):
     serializer_class = BraceletSerializer
     permission_classes = [IsAdminUserReal]
 
+    def destroy(self, request, *args, **kwargs):
+        bracelet = self.get_object()
+
+        if hasattr(bracelet, 'sale_line'):
+            return Response(
+                {
+                    "detail": (
+                        "Este brazalete ya tiene una venta asociada. "
+                        "No puede eliminarse sin perder trazabilidad comercial."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().destroy(request, *args, **kwargs)
+
 
 class BraceletTransactionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = BraceletTransactionSerializer
@@ -218,6 +298,22 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet):
         if has_backoffice_access(self.request.user):
             return PurchaseReceipt.objects.all()
         return PurchaseReceipt.objects.filter(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        receipt = self.get_object()
+
+        if hasattr(receipt, 'sale'):
+            return Response(
+                {
+                    "detail": (
+                        "Este recibo ya tiene una venta asociada. "
+                        "No puede eliminarse sin perder trazabilidad comercial."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().destroy(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         """
@@ -251,13 +347,23 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet):
             )
 
         with transaction.atomic():
-            user.account_balance -= price
-            user.save(update_fields=['account_balance'])
+            locked_user = type(user).objects.select_for_update().get(pk=user.pk)
 
-            new_bracelet = create_bracelet_for_type(bracelet_type)
-            new_receipt = PurchaseReceipt.objects.create(
-                user=user,
-                bracelet=new_bracelet,
+            if locked_user.account_balance is None:
+                locked_user.account_balance = Decimal('0.00')
+
+            if locked_user.account_balance < price:
+                return Response(
+                    {"detail": "Saldo insuficiente para comprar este brazalete."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            locked_user.account_balance -= price
+            locked_user.save(update_fields=['account_balance'])
+
+            new_receipt = create_sale_for_bracelet_purchase(
+                user=locked_user,
+                bracelet_type=bracelet_type,
                 payment_method=PurchaseReceipt.PAYMENT_METHOD_INTERNAL,
                 amount_paid=price,
                 status=PurchaseReceipt.STATUS_CAPTURED,
@@ -388,10 +494,9 @@ class PayPalCaptureOrderView(APIView):
         captured_value = Decimal(captured_value_str)
 
         with transaction.atomic():
-            new_bracelet = create_bracelet_for_type(bracelet_type)
-            new_receipt = PurchaseReceipt.objects.create(
+            new_receipt = create_sale_for_bracelet_purchase(
                 user=request.user,
-                bracelet=new_bracelet,
+                bracelet_type=bracelet_type,
                 payment_method=PurchaseReceipt.PAYMENT_METHOD_PAYPAL,
                 paypal_order_id=order.id,
                 amount_paid=captured_value,

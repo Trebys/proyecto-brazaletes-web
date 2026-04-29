@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Definir un modelo de datos minimo y coherente para soportar:
+Documentar el modelo de datos vigente para soportar:
 
 - venta de brazaletes;
 - detalle de lo vendido;
@@ -17,8 +17,11 @@ Este documento parte del estado real del proyecto y evita duplicar responsabilid
 Hoy el backend ya tiene estas piezas:
 
 - `BraceletType`: catalogo comercial del brazalete;
-- `Bracelet`: instancia creada al comprar, con saldo actual y usos restantes;
+- `Bracelet`: instancia creada al comprar, con propietario, saldo actual y usos restantes;
 - `PurchaseReceipt`: comprobante de compra y pago;
+- `Sale`: cabecera comercial de la venta;
+- `SaleLine`: detalle del brazalete vendido;
+- `BraceletTransaction`: ledger operativo del brazalete;
 - `Food` y `Attractions`: catalogos operativos de servicios consumibles.
 
 Referencias actuales:
@@ -27,26 +30,27 @@ Referencias actuales:
 - [backend/atracciones_comidas/models.py](/C:/Users/3st3b/Dev/brazaletes_web_agentes_IA/proyecto-brazaletes-web/backend/atracciones_comidas/models.py)
 - [docs/backend-funcionamiento.md](/C:/Users/3st3b/Dev/brazaletes_web_agentes_IA/proyecto-brazaletes-web/docs/backend-funcionamiento.md)
 
-### Problema actual
+### Problema resuelto
 
-El estado del brazalete se actualiza de forma directa en `Bracelet.current_balance` y `Bracelet.attraction_uses_remaining`, pero no existe una entidad canonica que registre:
+Antes, `PurchaseReceipt` cargaba demasiada responsabilidad porque el sistema inferia desde el comprobante que se habia vendido y a quien pertenecia el brazalete.
 
-- por que cambio ese estado;
-- quien ejecuto la operacion;
-- a que venta o consumo pertenece;
-- como reconstruir el historial operativo.
+El modelo vigente separa:
 
-Ademas, la relacion entre usuario y brazalete hoy queda inferida principalmente por `PurchaseReceipt`, lo que dificulta consultas operativas y deja el dominio poco expresivo.
+- comprobante de pago;
+- hecho comercial de venta;
+- detalle vendido;
+- unidad de brazalete emitida;
+- movimiento operativo del brazalete.
 
-## Decision de diseno
+## Decision de diseno vigente
 
-Se propone conservar `PurchaseReceipt` como comprobante de pago y agregar solo tres piezas nuevas:
+Se conserva `PurchaseReceipt` como comprobante de pago y se agregan tres piezas de dominio:
 
 1. `Sale`: cabecera comercial de la venta.
 2. `SaleLine`: detalle de la venta.
 3. `BraceletTransaction`: ledger operativo e inmutable de cada movimiento del brazalete.
 
-Tambien se recomienda hacer explicita la relacion entre brazalete y usuario agregando un propietario o usuario asignado al `Bracelet`.
+Tambien se hizo explicita la relacion entre brazalete y usuario agregando `Bracelet.owner`.
 
 ## Principio rector
 
@@ -97,13 +101,13 @@ Conservar el modelo actual y restringir su responsabilidad a comprobante de pago
 
 Nueva entidad para representar la operacion comercial.
 
-### Campos minimos sugeridos
+### Campos vigentes
 
 - `id`
 - `customer` -> `ForeignKey(User)`
-- `receipt` -> `OneToOneField(PurchaseReceipt, null=True, blank=True)`
+- `receipt` -> `OneToOneField(PurchaseReceipt)`
 - `status` -> `PENDING`, `CONFIRMED`, `CANCELLED`, `REFUNDED`
-- `channel` -> `INTERNAL_BALANCE`, `PAYPAL`, `BOX_OFFICE`, etc.
+- `channel` -> `INTERNAL_BALANCE`, `PAYPAL`
 - `total_amount`
 - `created_at`
 - `confirmed_at`
@@ -123,12 +127,12 @@ Aunque hoy el flujo actual vende un solo brazalete por operacion, mantener `Sale
 
 Nueva entidad para representar el detalle de lo vendido.
 
-### Campos minimos sugeridos
+### Campos vigentes
 
 - `id`
 - `sale` -> `ForeignKey(Sale, related_name="lines")`
 - `bracelet_type` -> `ForeignKey(BraceletType)`
-- `bracelet` -> `OneToOneField(Bracelet, null=True, blank=True)`
+- `bracelet` -> `OneToOneField(Bracelet)`
 - `quantity`
 - `unit_price`
 - `line_total`
@@ -141,9 +145,9 @@ Nueva entidad para representar el detalle de lo vendido.
 - congelar la configuracion relevante al momento de la venta;
 - vincular la linea con el brazalete efectivamente emitido.
 
-### Regla practica para este proyecto
+### Regla practica vigente
 
-En la primera implementacion puede restringirse a:
+La primera implementacion esta restringida a:
 
 - `quantity = 1`;
 - una linea por brazalete emitido.
@@ -156,7 +160,7 @@ Nueva entidad canonica para historial operativo del brazalete.
 
 Este modelo sustituye la idea ambigua de una tabla generica llamada solo `Transacciones` y la aterriza como ledger del brazalete.
 
-### Campos minimos sugeridos
+### Campos vigentes relevantes
 
 - `id`
 - `bracelet` -> `ForeignKey(Bracelet, related_name="transactions")`
@@ -207,7 +211,7 @@ Los cambios del brazalete se hacen siempre en una transaccion atomica de base de
 
 Si falla cualquiera de esos pasos, no se debe persistir nada.
 
-## Relaciones propuestas
+## Relaciones vigentes
 
 ```mermaid
 erDiagram
@@ -303,39 +307,35 @@ La activacion inicial del brazalete nace por una venta, pero sigue siendo un mov
 - si la transaccion es de atraccion, `attraction` debe venir informada;
 - el brazalete debe quedar vinculado directamente al usuario para evitar depender de joins indirectos via recibos.
 
-## Propuesta de implementacion por fases
+## Estado de implementacion
 
-### Fase 1
+### Implementado
 
 - agregar `owner` a `Bracelet`;
 - crear `Sale`;
 - crear `SaleLine`;
 - enlazar `PurchaseReceipt` con `Sale`.
-
-### Fase 2
-
-- crear `BraceletTransaction`;
 - registrar `ACTIVATION` al comprar el brazalete;
 - registrar consumo de comida y atracciones usando transacciones atomicas.
 
-### Fase 3
+### Pendiente futuro
 
 - agregar ajustes manuales, reversos y reportes operativos;
 - incorporar restricciones y validaciones mas finas.
 
-## Decision final recomendada
+## Decision final vigente
 
-La propuesta minima recomendada para este proyecto es:
+El modelo minimo vigente para este proyecto es:
 
 - mantener `PurchaseReceipt`;
-- agregar `Sale`;
-- agregar `SaleLine`;
-- agregar `BraceletTransaction`;
-- agregar relacion directa `Bracelet -> User`.
+- usar `Sale`;
+- usar `SaleLine`;
+- usar `BraceletTransaction`;
+- usar relacion directa `Bracelet -> User`.
 
 Con esto se cumplen los criterios del requerimiento porque:
 
-- existe una propuesta coherente entre compra, consumo y auditoria;
+- existe una implementacion coherente entre compra, consumo y auditoria;
 - las relaciones entre usuario, brazalete, venta y transaccion quedan explicitas;
 - `PurchaseReceipt` conserva un rol claro y no se sobrecarga;
 - el modelo soporta consultas operativas e historial sin perder simplicidad.
