@@ -149,6 +149,35 @@ Seguimiento:
 
 - Exponer reportes o vistas de ventas si el panel administrativo necesita consultar `Sale` y `SaleLine` directamente.
 
+### 2026-04-29 - Ajustes y reversos como movimientos append-only del brazalete
+
+Estado: vigente
+
+Contexto:
+
+- El ledger del brazalete ya registra activacion inicial y consumos.
+- El proyecto necesita representar correcciones administrativas y reversos sin convertir `PurchaseReceipt` en historial operativo.
+- Editar o borrar movimientos antiguos debilitaria la trazabilidad del saldo y los usos.
+
+Decision:
+
+- Los ajustes administrativos se registran como `BraceletTransaction` de tipo `ADMIN_ADJUSTMENT`.
+- La edicion administrativa de saldo o usos desde `BraceletViewSet` crea automaticamente ese movimiento de ajuste.
+- Los reversos se registran como `BraceletTransaction` de tipo `REVERSAL`.
+- Un reverso puede apuntar a la transaccion corregida mediante `reverted_transaction`.
+- El contexto operativo variable se guarda en `metadata`, manteniendo el esquema principal estable.
+
+Impacto:
+
+- `PurchaseReceipt` sigue limitado a comprobante de pago.
+- El historial operativo del brazalete conserva una semantica append-only.
+- Las consultas pueden auditar quien hizo el ajuste, que cambio produjo y que movimiento se corrigio.
+- El formulario administrativo existente de brazaletes ya no cambia saldo o usos sin dejar auditoria.
+
+Seguimiento:
+
+- Si se crean endpoints administrativos para ejecutar ajustes o reversos, deben actualizar el estado materializado de `Bracelet` y crear la transaccion en una misma operacion atomica.
+
 ## Limitaciones vigentes
 
 ### Historial de movimientos visible para usuarios

@@ -419,6 +419,10 @@ Campos importantes:
 - `performed_by`
 - `attraction`
 - `food`
+- `sale`
+- `sale_line`
+- `receipt`
+- `reverted_transaction`
 - `transaction_type`
 - `concept`
 - `balance_delta`
@@ -427,6 +431,7 @@ Campos importantes:
 - `balance_after`
 - `uses_before`
 - `uses_after`
+- `metadata`
 - `occurred_at`
 
 Tipos vigentes:
@@ -434,8 +439,16 @@ Tipos vigentes:
 - `ACTIVATION`
 - `ATTRACTION_CONSUMPTION`
 - `FOOD_CONSUMPTION`
+- `ADMIN_ADJUSTMENT`
+- `REVERSAL`
 
 Detalle practico: la compra inicial crea una transaccion `ACTIVATION` enlazada a `Sale`, `SaleLine` y `PurchaseReceipt`. Los consumos de atracciones y comidas crean su propia transaccion en la misma operacion atomica que actualiza el estado del brazalete.
+
+Los movimientos administrativos tambien viven en este ledger:
+
+- `ADMIN_ADJUSTMENT` representa correcciones operativas de saldo o usos;
+- `REVERSAL` representa un reverso y puede apuntar a la transaccion corregida mediante `reverted_transaction`;
+- `metadata` permite guardar contexto operativo acotado, como motivo, ticket interno o referencia de caja.
 
 ### Modelo transaccional vigente
 
@@ -454,7 +467,7 @@ Separacion de responsabilidades acordada:
 - `Sale` y `SaleLine` responden que se vendio;
 - `BraceletTransaction` responde que movimientos afectaron al brazalete.
 
-Importante: la primera activacion del brazalete tambien queda auditada como `BraceletTransaction`. Los consumos posteriores usan el mismo ledger operativo, pero con tipos de transaccion distintos.
+Importante: la primera activacion del brazalete tambien queda auditada como `BraceletTransaction`. Los consumos posteriores, ajustes y reversos usan el mismo ledger operativo, pero con tipos de transaccion distintos.
 
 ### Signals
 
@@ -508,6 +521,8 @@ Permisos actuales:
 
 - acceso restringido a administradores;
 - ya no esta expuesto con `AllowAny`.
+
+Regla de auditoria: cuando un administrador edita `current_balance` o `attraction_uses_remaining`, el backend registra automaticamente una `BraceletTransaction` de tipo `ADMIN_ADJUSTMENT` con el estado anterior, el estado posterior, el delta y metadata de origen. La actualizacion del brazalete y la transaccion de auditoria ocurren dentro de la misma transaccion de base de datos.
 
 Regla de integridad: si el brazalete ya tiene una `SaleLine` asociada, la eliminacion fisica se bloquea para conservar trazabilidad comercial.
 
@@ -923,6 +938,7 @@ Notas practicas:
 - venta comercial separada mediante `Sale` y `SaleLine`;
 - relacion directa `Bracelet.owner` para consultar propiedad del brazalete sin depender solo del recibo;
 - activacion inicial del brazalete auditada con `BraceletTransaction`;
+- ajustes administrativos y reversos representables en `BraceletTransaction` sin sobrecargar `PurchaseReceipt`;
 - estados de `PurchaseReceipt` alineados con el flujo real de compra y captura;
 - webhook de PayPal alineado con estados persistibles del modelo;
 - serializacion anidada util para el frontend;

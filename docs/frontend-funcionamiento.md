@@ -312,8 +312,9 @@ Detalle de seguridad: el `receiptId` temporal se borra al cerrar sesion junto co
 Nota de alcance vigente:
 
 - el frontend actual solo cubre la compra inicial del brazalete y la consulta del recibo;
-- la logica nueva del proyecto ya definio que los futuros consumos de comida y atracciones no se modelaran como nuevas ventas de brazalete;
-- cuando esa parte se implemente, la interfaz probablemente necesitara vistas de historial de movimientos o consumos del brazalete, ademas del recibo de compra.
+- los consumos de comida y atracciones no se modelan como nuevas ventas de brazalete;
+- el panel administrativo ya expone una vista de movimientos para consultar activaciones, consumos, ajustes y reversos;
+- queda pendiente una vista equivalente para clientes si se quiere mostrar ese historial dentro de `mi-perfil`.
 
 Estado vigente para este flujo:
 
@@ -408,12 +409,14 @@ Es el panel operativo del sistema para administradores. Ya no es un placeholder 
 Responsabilidades:
 
 - cargar en paralelo clientes, brazaletes, recibos, tipos de brazalete, comidas y atracciones;
-- mostrar un resumen operativo con totales de clientes, brazaletes, ventas e ingresos registrados;
-- ofrecer accesos directos a clientes, brazaletes, ventas, comidas y atracciones;
+- cargar tambien movimientos auditados de brazaletes;
+- mostrar un resumen operativo con totales de clientes, brazaletes, ventas, movimientos e ingresos registrados;
+- ofrecer accesos directos a clientes, brazaletes, ventas, movimientos, comidas y atracciones;
 - consultar clientes y gestionar alta, edicion de datos basicos, saldo y eliminacion de clientes no administradores;
 - consultar y gestionar tipos de brazalete dentro de la seccion Brazaletes, incluyendo precio, saldo de comida, usos de atraccion, descripcion, imagen, activacion/desactivacion y eliminacion cuando no tienen historial asociado;
 - consultar y gestionar brazaletes emitidos dentro de la misma seccion, incluyendo tipo, saldo y usos restantes;
 - consultar ventas/recibos y editar su estado operativo;
+- consultar el historial de movimientos del brazalete, incluyendo activaciones, consumos, ajustes administrativos y reversos;
 - consultar y gestionar comidas y atracciones, incluyendo imagenes;
 - mantener botones de perfil y cierre de sesion consistentes con el layout principal;
 - mostrar footer con anio actual calculado automaticamente.
@@ -425,6 +428,7 @@ Detalle practico:
 - el panel reutiliza los endpoints administrativos existentes del backend;
 - los tipos desactivados se mantienen visibles para el administrador, pero desaparecen del flujo publico de compra;
 - la seccion `Brazaletes` agrupa dos bloques separados: catalogo de tipos de brazalete y brazaletes emitidos;
+- la seccion `Movimientos` muestra el ledger operativo de `BraceletTransaction` con fecha, brazalete, cliente, tipo, concepto, saldo/usos antes y despues, y usuario que ejecuto el movimiento;
 - la tabla administrativa incluye busqueda local, ordenamiento ascendente/descendente por columna con indicadores visuales, paginacion local y selector de filas por pagina;
 - las secciones con muchas columnas, como clientes y ventas, priorizan el ancho de la tabla y mueven el formulario debajo hasta pantallas mas amplias para mejorar lectura;
 - las acciones de eliminacion piden confirmacion antes de llamar al backend;
@@ -520,6 +524,7 @@ Notas practicas:
 - visualizacion y edicion basica del perfil
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
 - panel operativo administrativo para clientes, brazaletes, tipos de brazalete, ventas, comidas y atracciones
+- vista administrativa de historial de movimientos de brazaletes
 - tablas administrativas con busqueda, ordenamiento visual, paginacion y mejor distribucion de espacio en secciones densas
 - listado de compras del usuario
 - catalogo funcional de atracciones y comidas
@@ -547,7 +552,7 @@ La interfaz ya consume el estado actual del brazalete para atracciones y comidas
 - `localStorage` sigue existiendo como persistencia, pero ya no es la fuente principal de verdad para la UI de autenticacion;
 - parte del estado del usuario sigue viviendo duplicado entre backend, memoria y almacenamiento persistente, aunque ahora hay una frontera mas clara mediante `AuthContext`;
 - varios textos del codigo muestran problemas de codificacion de caracteres;
-- el modulo de atracciones y comidas esta completo como MVP, pero aun no expone una vista dedicada de historial transaccional del brazalete.
+- el modulo de atracciones y comidas esta completo como MVP y el panel administrativo ya expone una vista de historial transaccional del brazalete.
 
 ### Requerimiento completado: refactor frontend de autenticacion y rutas
 

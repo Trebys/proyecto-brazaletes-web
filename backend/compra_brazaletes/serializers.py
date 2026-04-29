@@ -104,6 +104,11 @@ class BraceletTransactionSerializer(serializers.ModelSerializer):
     sale_id = serializers.IntegerField(source='sale.id', read_only=True)
     sale_line_id = serializers.IntegerField(source='sale_line.id', read_only=True)
     receipt_id = serializers.IntegerField(source='receipt.id', read_only=True)
+    reverted_transaction_id = serializers.IntegerField(
+        source='reverted_transaction.id',
+        read_only=True,
+        allow_null=True,
+    )
 
     class Meta:
         model = BraceletTransaction
@@ -127,6 +132,8 @@ class BraceletTransactionSerializer(serializers.ModelSerializer):
             'sale_id',
             'sale_line_id',
             'receipt_id',
+            'reverted_transaction_id',
+            'metadata',
             'occurred_at',
         ]
         read_only_fields = fields

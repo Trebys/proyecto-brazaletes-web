@@ -62,7 +62,7 @@ La regla clave es esta:
 
 Con esa separacion se evita que un mismo modelo cargue responsabilidades de pago, inventario logico, consumo y auditoria al mismo tiempo.
 
-## Modelo propuesto
+## Modelo vigente
 
 ### 1. `Bracelet`
 
@@ -181,16 +181,14 @@ Este modelo sustituye la idea ambigua de una tabla generica llamada solo `Transa
 - `performed_by` -> usuario operador o sistema
 - `occurred_at`
 - `reverted_transaction` -> para reversos o correcciones
-- `metadata` -> `JSONField` opcional para referencia externa, caja, terminal, IP, observaciones
+- `metadata` -> `JSONField` para referencia externa, caja, terminal, ticket interno u observaciones
 
-### Tipos de transaccion sugeridos
+### Tipos de transaccion vigentes
 
 - `ACTIVATION`
 - `FOOD_CONSUMPTION`
 - `ATTRACTION_CONSUMPTION`
-- `MANUAL_ADJUSTMENT`
-- `RECHARGE`
-- `REFUND`
+- `ADMIN_ADJUSTMENT`
 - `REVERSAL`
 
 ### Responsabilidad
@@ -264,7 +262,10 @@ erDiagram
 
 1. un operador autorizado genera el ajuste;
 2. se crea una nueva `BraceletTransaction`, nunca se edita el historial anterior;
-3. si corrige otra transaccion, se referencia en `reverted_transaction`.
+3. si corrige otra transaccion, se referencia en `reverted_transaction`;
+4. si hace falta conservar contexto operativo, se guarda en `metadata`.
+
+En el flujo administrativo vigente, editar el saldo o los usos restantes desde el endpoint de brazaletes crea automaticamente un `ADMIN_ADJUSTMENT`. La actualizacion del estado materializado del `Bracelet` y la escritura del movimiento ocurren en una misma transaccion atomica.
 
 ## Consultas operativas que ya quedarian soportadas
 
@@ -317,11 +318,16 @@ La activacion inicial del brazalete nace por una venta, pero sigue siendo un mov
 - enlazar `PurchaseReceipt` con `Sale`.
 - registrar `ACTIVATION` al comprar el brazalete;
 - registrar consumo de comida y atracciones usando transacciones atomicas.
+- permitir ajustes administrativos con `ADMIN_ADJUSTMENT`;
+- auditar automaticamente ediciones administrativas de saldo y usos desde `BraceletViewSet`;
+- permitir reversos con `REVERSAL` y `reverted_transaction`;
+- conservar contexto operativo flexible mediante `metadata`.
 
 ### Pendiente futuro
 
-- agregar ajustes manuales, reversos y reportes operativos;
-- incorporar restricciones y validaciones mas finas.
+- agregar endpoints administrativos dedicados para ejecutar ajustes/reversos y modificar el estado materializado del brazalete de forma atomica;
+- incorporar restricciones y validaciones mas finas por tipo de transaccion;
+- agregar reportes operativos.
 
 ## Decision final vigente
 

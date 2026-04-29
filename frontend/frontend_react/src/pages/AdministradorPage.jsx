@@ -20,6 +20,7 @@ import {
   getAdminBraceletTypes,
   getAdminClients,
   getAdminReceipts,
+  getBraceletTransactions,
   getAttractions,
   getFoods,
   getStoredUser,
@@ -36,6 +37,7 @@ const ADMIN_SECTIONS = [
   { id: 'clientes', label: 'Clientes' },
   { id: 'brazaletes', label: 'Brazaletes' },
   { id: 'ventas', label: 'Ventas' },
+  { id: 'movimientos', label: 'Movimientos' },
   { id: 'comidas', label: 'Comidas' },
   { id: 'atracciones', label: 'Atracciones' },
 ];
@@ -103,6 +105,28 @@ const formatDate = (value) => {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+};
+
+const formatDelta = (value, kind = 'money') => {
+  const numericValue = Number(value ?? 0);
+
+  if (kind === 'money') {
+    return `${numericValue > 0 ? '+' : ''}${formatCurrency(numericValue)}`;
+  }
+
+  return `${numericValue > 0 ? '+' : ''}${numericValue}`;
+};
+
+const getTransactionTone = (type) => {
+  const tones = {
+    ACTIVATION: 'success',
+    FOOD_CONSUMPTION: 'warning',
+    ATTRACTION_CONSUMPTION: 'warning',
+    ADMIN_ADJUSTMENT: 'info',
+    REVERSAL: 'danger',
+  };
+
+  return tones[type] || 'neutral';
 };
 
 const buildFormData = (values, fileField = 'photo') => {
@@ -434,6 +458,7 @@ export function AdministradorPage() {
   const [bracelets, setBracelets] = useState([]);
   const [receipts, setReceipts] = useState([]);
   const [braceletTypes, setBraceletTypes] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [foods, setFoods] = useState([]);
   const [attractions, setAttractions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -462,6 +487,7 @@ export function AdministradorPage() {
         braceletsData,
         receiptsData,
         braceletTypesData,
+        transactionsData,
         foodsData,
         attractionsData,
       ] = await Promise.all([
@@ -469,6 +495,7 @@ export function AdministradorPage() {
         getAdminBracelets(),
         getAdminReceipts(),
         getAdminBraceletTypes(),
+        getBraceletTransactions(),
         getFoods(),
         getAttractions(),
       ]);
@@ -477,6 +504,7 @@ export function AdministradorPage() {
       setBracelets(normalizeList(braceletsData));
       setReceipts(normalizeList(receiptsData));
       setBraceletTypes(normalizeList(braceletTypesData));
+      setTransactions(normalizeList(transactionsData));
       setFoods(normalizeList(foodsData));
       setAttractions(normalizeList(attractionsData));
     } catch (error) {
@@ -781,6 +809,7 @@ export function AdministradorPage() {
     clients: clients.filter((client) => !client.is_staff).length,
     bracelets: bracelets.length,
     receipts: receipts.length,
+    transactions: transactions.length,
     income: receipts.reduce((sum, receipt) => sum + Number(receipt.amount_paid || 0), 0),
   };
 
@@ -870,6 +899,10 @@ export function AdministradorPage() {
                 <p className="mt-2 text-3xl font-extrabold">{totals.receipts}</p>
               </div>
               <div className="rounded bg-teal-950/70 p-5">
+                <p className="text-sm text-white/70">Movimientos</p>
+                <p className="mt-2 text-3xl font-extrabold">{totals.transactions}</p>
+              </div>
+              <div className="rounded bg-teal-950/70 p-5">
                 <p className="text-sm text-white/70">Ingresos registrados</p>
                 <p className="mt-2 text-3xl font-extrabold">{formatCurrency(totals.income)}</p>
               </div>
@@ -905,6 +938,16 @@ export function AdministradorPage() {
                   <span className="text-2xl font-extrabold">Gestionar ventas</span>
                   <span className="mt-3 block text-sm text-white/70">
                     Revision de recibos, metodos de pago, estado y montos.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('movimientos')}
+                  className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
+                >
+                  <span className="text-2xl font-extrabold">Ver movimientos</span>
+                  <span className="mt-3 block text-sm text-white/70">
+                    Historial de activaciones, consumos, ajustes y reversos.
                   </span>
                 </button>
                 <button
@@ -1317,6 +1360,100 @@ export function AdministradorPage() {
                     </AdminButton>
                   </div>
                 </form>
+              </section>
+            ) : null}
+
+            {activeSection === 'movimientos' ? (
+              <section className="grid gap-6">
+                <DataTable
+                  title="Historial de movimientos"
+                  emptyText="No hay movimientos registrados."
+                  rows={transactions}
+                  columns={[
+                    {
+                      key: 'occurred_at',
+                      label: 'Fecha',
+                      render: (movement) => formatDate(movement.occurred_at),
+                      sortValue: (movement) => new Date(movement.occurred_at || 0).getTime(),
+                    },
+                    {
+                      key: 'bracelet',
+                      label: 'Brazalete',
+                      render: (movement) => (
+                        <div>
+                          <p className="font-bold">
+                            {movement.bracelet?.bracelet_code || `#${movement.bracelet?.id || movement.id}`}
+                          </p>
+                          <p className="text-xs text-neutral-500">
+                            {movement.bracelet?.bracelet_type?.name || 'Sin tipo'}
+                          </p>
+                        </div>
+                      ),
+                      sortValue: (movement) => movement.bracelet?.bracelet_code || '',
+                    },
+                    {
+                      key: 'owner',
+                      label: 'Cliente',
+                      render: (movement) => movement.owner?.username || 'Sin cliente',
+                      sortValue: (movement) => movement.owner?.username || '',
+                    },
+                    {
+                      key: 'transaction_type',
+                      label: 'Tipo',
+                      render: (movement) => (
+                        <Badge tone={getTransactionTone(movement.transaction_type)}>
+                          {movement.transaction_type}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: 'concept',
+                      label: 'Concepto',
+                      render: (movement) => (
+                        <div className="min-w-56">
+                          <p className="font-bold">{movement.concept}</p>
+                          {movement.reverted_transaction_id ? (
+                            <p className="text-xs text-neutral-500">
+                              Revierte movimiento #{movement.reverted_transaction_id}
+                            </p>
+                          ) : null}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'balance_delta',
+                      label: 'Saldo',
+                      render: (movement) => (
+                        <div>
+                          <p className="font-bold">{formatDelta(movement.balance_delta)}</p>
+                          <p className="text-xs text-neutral-500">
+                            {formatCurrency(movement.balance_before)} a {formatCurrency(movement.balance_after)}
+                          </p>
+                        </div>
+                      ),
+                      sortValue: (movement) => Number(movement.balance_delta || 0),
+                    },
+                    {
+                      key: 'uses_delta',
+                      label: 'Usos',
+                      render: (movement) => (
+                        <div>
+                          <p className="font-bold">{formatDelta(movement.uses_delta, 'uses')}</p>
+                          <p className="text-xs text-neutral-500">
+                            {movement.uses_before} a {movement.uses_after}
+                          </p>
+                        </div>
+                      ),
+                      sortValue: (movement) => Number(movement.uses_delta || 0),
+                    },
+                    {
+                      key: 'performed_by',
+                      label: 'Hecho por',
+                      render: (movement) => movement.performed_by?.username || 'Sistema',
+                      sortValue: (movement) => movement.performed_by?.username || '',
+                    },
+                  ]}
+                />
               </section>
             ) : null}
 

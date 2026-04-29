@@ -94,6 +94,27 @@ Criterios de aceptacion:
 - Existen pruebas para captura PayPal exitosa y errores controlados.
 - Existen pruebas para webhook con firma valida, firma invalida y payload invalido.
 
+### Ampliar BraceletTransaction para activacion inicial, ajustes y reversos
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [backend-funcionamiento.md](backend-funcionamiento.md)
+- [modelo-transaccional-brazaletes.md](modelo-transaccional-brazaletes.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
+
+Criterios de aceptacion:
+
+- `BraceletTransaction` incorpora tipos de movimiento para activacion inicial, consumos, ajustes administrativos y reversos.
+- Cada compra exitosa registra un movimiento inicial `ACTIVATION` del brazalete.
+- La edicion administrativa de saldo o usos de un brazalete registra un movimiento `ADMIN_ADJUSTMENT`.
+- El modelo permite representar ajustes y reversos sin sobrecargar `PurchaseReceipt`.
+- Los reversos pueden referenciar la transaccion corregida mediante `reverted_transaction`.
+- Los movimientos pueden conservar contexto operativo acotado mediante `metadata`.
+- Las pruebas cubren creacion y consulta de movimientos de activacion, ajuste administrativo y reverso.
+- La documentacion backend y del modelo transaccional queda actualizada.
+
 ### Mantener documentacion tecnica y criterios de aceptacion sincronizados
 
 Estado: Completada
@@ -136,7 +157,7 @@ Criterios de aceptacion:
 
 ### Exponer historial transaccional completo del brazalete en frontend
 
-Estado: Pendiente
+Estado: Completada para administradores
 
 Documentos relacionados:
 
@@ -144,13 +165,17 @@ Documentos relacionados:
 - [backend-funcionamiento.md](backend-funcionamiento.md)
 - [modelo-transaccional-brazaletes.md](modelo-transaccional-brazaletes.md)
 
-Criterios de aceptacion propuestos:
+Criterios de aceptacion:
 
-- El usuario puede consultar movimientos de sus brazaletes.
 - El administrador puede consultar movimientos de cualquier brazalete.
 - Cada movimiento muestra fecha, tipo, concepto, saldo/usos antes y despues.
-- La vista consume `BraceletTransaction` desde la API existente o una evolucion documentada.
+- La vista muestra el brazalete, cliente y usuario que ejecuto el movimiento cuando existen.
+- La vista consume `BraceletTransaction` desde la API existente.
 - La documentacion frontend y backend se actualiza con el flujo final.
+
+Alcance pendiente fuera de esta historia:
+
+- Exponer un historial equivalente para clientes dentro de `mi-perfil` o una pantalla dedicada a sus brazaletes.
 
 ### Completar modelo comercial `Sale` y `SaleLine`
 

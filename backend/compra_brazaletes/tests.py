@@ -175,6 +175,43 @@ class BraceletPermissionsTests(APITestCase):
         response = self.client.get('/api/compra_brazaletes/brazaletes/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_admin_bracelet_balance_or_uses_update_creates_adjustment_transaction(self):
+        self.bracelet.owner = self.client_user
+        self.bracelet.save(update_fields=['owner'])
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.patch(
+            f'/api/compra_brazaletes/brazaletes/{self.bracelet.id}/',
+            {
+                'current_balance': '85.00',
+                'attraction_uses_remaining': 7,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.bracelet.refresh_from_db()
+        self.assertEqual(self.bracelet.current_balance, Decimal('85.00'))
+        self.assertEqual(self.bracelet.attraction_uses_remaining, 7)
+
+        adjustment = BraceletTransaction.objects.get(
+            bracelet=self.bracelet,
+            transaction_type=BraceletTransaction.TYPE_ADMIN_ADJUSTMENT,
+        )
+        self.assertEqual(adjustment.owner, self.client_user)
+        self.assertEqual(adjustment.performed_by, self.admin_user)
+        self.assertEqual(adjustment.balance_delta, Decimal('-15.00'))
+        self.assertEqual(adjustment.uses_delta, -3)
+        self.assertEqual(adjustment.balance_before, Decimal('100.00'))
+        self.assertEqual(adjustment.balance_after, Decimal('85.00'))
+        self.assertEqual(adjustment.uses_before, 10)
+        self.assertEqual(adjustment.uses_after, 7)
+        self.assertEqual(adjustment.metadata['source'], 'admin_bracelet_update')
+        self.assertEqual(
+            adjustment.metadata['changed_fields']['attraction_uses_remaining'],
+            {'before': 10, 'after': 7},
+        )
+
     def test_paypal_order_creation_requires_authentication(self):
         response = self.client.post(
             '/api/compra_brazaletes/paypal/create-order/',
@@ -261,6 +298,57 @@ class BraceletPermissionsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['owner']['id'], self.client_user.id)
+
+    def test_admin_can_query_adjustment_and_reversal_transactions(self):
+        adjustment = BraceletTransaction.objects.create(
+            bracelet=self.bracelet,
+            owner=self.client_user,
+            performed_by=self.admin_user,
+            transaction_type=BraceletTransaction.TYPE_ADMIN_ADJUSTMENT,
+            concept='Ajuste administrativo de saldo por cortesia',
+            balance_delta=Decimal('15.00'),
+            balance_before=Decimal('100.00'),
+            balance_after=Decimal('115.00'),
+            uses_before=10,
+            uses_after=10,
+            metadata={'reason': 'courtesy', 'ticket': 'OPS-15'},
+        )
+        reversal = BraceletTransaction.objects.create(
+            bracelet=self.bracelet,
+            owner=self.client_user,
+            performed_by=self.admin_user,
+            reverted_transaction=adjustment,
+            transaction_type=BraceletTransaction.TYPE_REVERSAL,
+            concept='Reverso de ajuste administrativo OPS-15',
+            balance_delta=Decimal('-15.00'),
+            balance_before=Decimal('115.00'),
+            balance_after=Decimal('100.00'),
+            uses_before=10,
+            uses_after=10,
+            metadata={'reason': 'operator_error'},
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.get('/api/compra_brazaletes/transacciones/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        movement_by_id = {movement['id']: movement for movement in response.data}
+        self.assertEqual(
+            movement_by_id[adjustment.id]['transaction_type'],
+            BraceletTransaction.TYPE_ADMIN_ADJUSTMENT,
+        )
+        self.assertEqual(
+            movement_by_id[adjustment.id]['metadata'],
+            {'reason': 'courtesy', 'ticket': 'OPS-15'},
+        )
+        self.assertEqual(
+            movement_by_id[reversal.id]['transaction_type'],
+            BraceletTransaction.TYPE_REVERSAL,
+        )
+        self.assertEqual(
+            movement_by_id[reversal.id]['reverted_transaction_id'],
+            adjustment.id,
+        )
 
     def test_internal_purchase_creates_captured_receipt_and_debits_balance(self):
         self.authenticate_client()
