@@ -16,6 +16,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { AutoLogout } from './components/AutoLogout';
 import { ProfileDataForm } from './components/ProfileDataForm';
 import { MyBracelets } from './components/MyBracelets';
+import { BraceletMovementHistory } from './components/BraceletMovementHistory';
 
 function App() {
   return (
@@ -49,6 +50,10 @@ function App() {
                   <Route index element={<Navigate to="info" replace />} />
                   <Route path="info" element={<ProfileDataForm />} />
                   <Route path="mis-brazaletes" element={<MyBracelets />} />
+                  <Route
+                    path="historial-movimientos"
+                    element={<BraceletMovementHistory />}
+                  />
                 </Route>
               </Route>
 

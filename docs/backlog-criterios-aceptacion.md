@@ -153,11 +153,11 @@ Criterios de aceptacion:
 - El cierre de sesion limpia token, usuario, politica de sesion y datos temporales de compra/PayPal.
 - El comportamiento de login, rutas protegidas, compra y consulta de recibo se mantiene.
 
-## Pendientes relevantes
+## Historias recientes y pendientes
 
 ### Exponer historial transaccional completo del brazalete en frontend
 
-Estado: Completada para administradores
+Estado: Completada
 
 Documentos relacionados:
 
@@ -167,15 +167,13 @@ Documentos relacionados:
 
 Criterios de aceptacion:
 
+- El cliente puede consultar movimientos de sus propios brazaletes.
 - El administrador puede consultar movimientos de cualquier brazalete.
-- Cada movimiento muestra fecha, tipo, concepto, saldo/usos antes y despues.
+- Cada movimiento muestra fecha, tipo, concepto, saldo/usos antes y despues y variacion aplicada.
 - La vista muestra el brazalete, cliente y usuario que ejecuto el movimiento cuando existen.
 - La vista consume `BraceletTransaction` desde la API existente.
+- La navegacion permite llegar a esta vista desde perfil de cliente y desde el backoffice.
 - La documentacion frontend y backend se actualiza con el flujo final.
-
-Alcance pendiente fuera de esta historia:
-
-- Exponer un historial equivalente para clientes dentro de `mi-perfil` o una pantalla dedicada a sus brazaletes.
 
 ### Completar modelo comercial `Sale` y `SaleLine`
 

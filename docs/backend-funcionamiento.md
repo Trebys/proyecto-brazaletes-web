@@ -450,6 +450,17 @@ Los movimientos administrativos tambien viven en este ledger:
 - `REVERSAL` representa un reverso y puede apuntar a la transaccion corregida mediante `reverted_transaction`;
 - `metadata` permite guardar contexto operativo acotado, como motivo, ticket interno o referencia de caja.
 
+#### `BraceletTransactionViewSet`
+
+Expone el ledger operativo desde `/api/compra_brazaletes/transacciones/`.
+
+Permisos actuales:
+
+- requiere autenticacion;
+- un cliente solo consulta movimientos donde aparece como propietario;
+- un administrador consulta movimientos de cualquier brazalete;
+- el parametro opcional `bracelet_id` permite filtrar el historial de un brazalete concreto sin cambiar el endpoint.
+
 ### Modelo transaccional vigente
 
 El proyecto ya separa las responsabilidades principales de venta, pago y movimiento operativo del brazalete.
@@ -766,6 +777,7 @@ Endpoints y acciones actuales:
 - consumir una atraccion descontando usos del brazalete;
 - comprar una comida usando saldo del brazalete;
 - consultar transacciones auditadas del brazalete desde `/api/compra_brazaletes/transacciones/`.
+- filtrar transacciones por brazalete con `/api/compra_brazaletes/transacciones/?bracelet_id={id}`.
 
 Permisos actuales:
 
@@ -894,6 +906,7 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | `GET /api/compra_brazaletes/recibos/{id}/` | `401` | permitido si el recibo es suyo | permitido |
 | `POST /api/compra_brazaletes/recibos/` | `401` | permitido | permitido |
 | `GET /api/compra_brazaletes/transacciones/` | `401` | permitido, solo ve las suyas | permitido, ve todas |
+| `GET /api/compra_brazaletes/transacciones/?bracelet_id={id}` | `401` | permitido, solo devuelve movimientos propios de ese brazalete | permitido para cualquier brazalete |
 | `POST /api/compra_brazaletes/paypal/create-order/` | `401` | permitido | permitido |
 | `POST /api/compra_brazaletes/paypal/capture-order/` | `401` | permitido | permitido |
 
@@ -939,6 +952,7 @@ Notas practicas:
 - relacion directa `Bracelet.owner` para consultar propiedad del brazalete sin depender solo del recibo;
 - activacion inicial del brazalete auditada con `BraceletTransaction`;
 - ajustes administrativos y reversos representables en `BraceletTransaction` sin sobrecargar `PurchaseReceipt`;
+- consulta autenticada del historial completo de movimientos, con aislamiento por cliente y acceso total para administradores;
 - estados de `PurchaseReceipt` alineados con el flujo real de compra y captura;
 - webhook de PayPal alineado con estados persistibles del modelo;
 - serializacion anidada util para el frontend;
@@ -949,8 +963,7 @@ Notas practicas:
 
 - la seguridad final depende de que cada entorno productivo defina correctamente sus variables y no reutilice valores de desarrollo;
 - aun depende de la semantica de eventos que entregue PayPal;
-- el flujo de consumo actual ya persiste historial transaccional para atracciones y comidas;
-- el frontend todavia no expone una vista completa de historial transaccional para usuarios o administradores.
+- el flujo de consumo actual ya persiste historial transaccional para atracciones y comidas.
 
 ## Como seguir documentando bien este backend
 

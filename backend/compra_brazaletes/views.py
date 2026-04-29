@@ -342,9 +342,18 @@ class BraceletTransactionViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
         if has_backoffice_access(self.request.user):
-            return queryset
+            filtered_queryset = queryset
+        else:
+            filtered_queryset = queryset.filter(owner=self.request.user)
 
-        return queryset.filter(owner=self.request.user)
+        bracelet_id = self.request.query_params.get('bracelet_id')
+        if bracelet_id:
+            if not bracelet_id.isdecimal():
+                return filtered_queryset.none()
+
+            filtered_queryset = filtered_queryset.filter(bracelet_id=bracelet_id)
+
+        return filtered_queryset
 
 
 class PurchaseReceiptViewSet(viewsets.ModelViewSet):

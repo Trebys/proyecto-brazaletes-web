@@ -33,6 +33,15 @@ export function MyBracelets() {
     navigate('/recibo-compra');
   };
 
+  const handleViewMovements = (braceletId) => {
+    if (!braceletId) {
+      navigate('/mi-perfil/historial-movimientos');
+      return;
+    }
+
+    navigate(`/mi-perfil/historial-movimientos?bracelet=${braceletId}`);
+  };
+
   return (
     <div className="py-8">
       <h2 className="text-2xl font-bold text-center mb-6">Mis Brazaletes</h2>
@@ -98,12 +107,20 @@ export function MyBracelets() {
                 </tbody>
               </table>
               {/* Botón "Ver Recibo" */}
-              <button
-                onClick={() => handleViewReceipt(id)}
-                className="bg-black px-3 py-2 rounded text-white hover:bg-gray-800"
-              >
-                Ver Recibo
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleViewReceipt(id)}
+                  className="rounded bg-black px-3 py-2 text-white hover:bg-gray-800"
+                >
+                  Ver Recibo
+                </button>
+                <button
+                  onClick={() => handleViewMovements(bracelet?.id)}
+                  className="rounded bg-teal-700 px-3 py-2 text-white hover:bg-teal-600"
+                >
+                  Ver movimientos
+                </button>
+              </div>
             </div>
           );
         })}
