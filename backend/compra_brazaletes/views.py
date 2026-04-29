@@ -252,6 +252,60 @@ class BraceletViewSet(viewsets.ModelViewSet):
     serializer_class = BraceletSerializer
     permission_classes = [IsAdminUserReal]
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        with transaction.atomic():
+            locked_bracelet = Bracelet.objects.select_for_update().get(pk=instance.pk)
+            balance_before = locked_bracelet.current_balance
+            uses_before = locked_bracelet.attraction_uses_remaining
+
+            serializer = self.get_serializer(
+                locked_bracelet,
+                data=request.data,
+                partial=partial,
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            updated_bracelet = serializer.instance
+            balance_after = updated_bracelet.current_balance
+            uses_after = updated_bracelet.attraction_uses_remaining
+
+            if balance_before != balance_after or uses_before != uses_after:
+                changed_fields = {}
+                if balance_before != balance_after:
+                    changed_fields['current_balance'] = {
+                        'before': str(balance_before),
+                        'after': str(balance_after),
+                    }
+                if uses_before != uses_after:
+                    changed_fields['attraction_uses_remaining'] = {
+                        'before': uses_before,
+                        'after': uses_after,
+                    }
+
+                BraceletTransaction.objects.create(
+                    bracelet=updated_bracelet,
+                    owner=updated_bracelet.owner,
+                    performed_by=request.user,
+                    transaction_type=BraceletTransaction.TYPE_ADMIN_ADJUSTMENT,
+                    concept='Ajuste administrativo de brazalete',
+                    balance_delta=balance_after - balance_before,
+                    uses_delta=uses_after - uses_before,
+                    balance_before=balance_before,
+                    balance_after=balance_after,
+                    uses_before=uses_before,
+                    uses_after=uses_after,
+                    metadata={
+                        'source': 'admin_bracelet_update',
+                        'changed_fields': changed_fields,
+                    },
+                )
+
+        return Response(serializer.data)
+
     def destroy(self, request, *args, **kwargs):
         bracelet = self.get_object()
 
@@ -281,6 +335,10 @@ class BraceletTransactionViewSet(viewsets.ReadOnlyModelViewSet):
             'performed_by',
             'attraction',
             'food',
+            'sale',
+            'sale_line',
+            'receipt',
+            'reverted_transaction',
         )
 
         if has_backoffice_access(self.request.user):

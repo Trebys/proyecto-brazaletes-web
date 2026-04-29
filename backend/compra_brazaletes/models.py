@@ -209,10 +209,14 @@ class BraceletTransaction(models.Model):
     TYPE_ACTIVATION = 'ACTIVATION'
     TYPE_ATTRACTION_CONSUMPTION = 'ATTRACTION_CONSUMPTION'
     TYPE_FOOD_CONSUMPTION = 'FOOD_CONSUMPTION'
+    TYPE_ADMIN_ADJUSTMENT = 'ADMIN_ADJUSTMENT'
+    TYPE_REVERSAL = 'REVERSAL'
     TRANSACTION_TYPES = (
         (TYPE_ACTIVATION, 'Activacion de brazalete'),
         (TYPE_ATTRACTION_CONSUMPTION, 'Consumo de atraccion'),
         (TYPE_FOOD_CONSUMPTION, 'Consumo de comida'),
+        (TYPE_ADMIN_ADJUSTMENT, 'Ajuste administrativo'),
+        (TYPE_REVERSAL, 'Reverso de movimiento'),
     )
 
     bracelet = models.ForeignKey(
@@ -269,6 +273,13 @@ class BraceletTransaction(models.Model):
         null=True,
         related_name='bracelet_transactions'
     )
+    reverted_transaction = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='reversal_transactions'
+    )
     transaction_type = models.CharField(
         max_length=40,
         choices=TRANSACTION_TYPES
@@ -292,6 +303,7 @@ class BraceletTransaction(models.Model):
     )
     uses_before = models.PositiveIntegerField(default=0)
     uses_after = models.PositiveIntegerField(default=0)
+    metadata = models.JSONField(blank=True, default=dict)
     occurred_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
