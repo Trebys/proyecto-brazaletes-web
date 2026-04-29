@@ -121,12 +121,13 @@ Seguimiento:
 
 ### 2026-04-25 - `PurchaseReceipt` no debe cargar todo el dominio de ventas y consumos
 
-Estado: propuesta
+Estado: vigente
 
 Contexto:
 
 - `PurchaseReceipt` ya representa el comprobante de pago.
 - El proyecto necesita distinguir venta, detalle vendido y movimientos posteriores del brazalete.
+- La compra inicial ya crea brazalete, recibo, venta comercial, detalle y transaccion de activacion.
 
 Decision:
 
@@ -134,17 +135,19 @@ Decision:
 - Modelar la venta con `Sale`.
 - Modelar el detalle con `SaleLine`.
 - Modelar movimientos del brazalete con `BraceletTransaction`.
-- Hacer explicita la relacion directa `Bracelet -> User` en una etapa futura.
+- Hacer explicita la relacion directa `Bracelet -> User` mediante `Bracelet.owner`.
+- Crear recibo, venta, linea, brazalete y transaccion de activacion dentro de una transaccion atomica en los flujos internos del backend.
 
 Impacto:
 
-- El flujo actual puede seguir funcionando mientras se implementa por fases.
 - Las futuras consultas comerciales y operativas tendran fronteras mas claras.
+- El recibo sigue siendo la fuente del pago, pero la venta ya no desaparece dentro del recibo.
+- Los consumos posteriores siguen modelados como movimientos operativos, no como nuevas ventas del brazalete.
 - La documentacion de referencia es [modelo-transaccional-brazaletes.md](modelo-transaccional-brazaletes.md).
 
 Seguimiento:
 
-- Implementar `Sale`, `SaleLine`, relacion directa de propietario y transaccion inicial de activacion.
+- Exponer reportes o vistas de ventas si el panel administrativo necesita consultar `Sale` y `SaleLine` directamente.
 
 ## Limitaciones vigentes
 

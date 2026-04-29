@@ -21,6 +21,8 @@ export function ComprarBrazaletesPage() {
 
   const [tipos, setTipos] = useState([]);
   const [selectedTipo, setSelectedTipo] = useState(null);
+  const [purchaseError, setPurchaseError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modal "Debes iniciar sesión"
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -52,10 +54,13 @@ export function ComprarBrazaletesPage() {
     const tipoId = parseInt(e.target.value, 10);
     const found = tipos.find((t) => t.id === tipoId);
     setSelectedTipo(found || null);
+    setPurchaseError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setPurchaseError('');
+
     if (!selectedTipo) {
       return;
     }
@@ -65,6 +70,7 @@ export function ComprarBrazaletesPage() {
       return;
     }
     // ... lógicas si sí está logueado
+    setIsSubmitting(true);
     try {
       console.log('Compra con saldo interno:', selectedTipo);
       // Ejemplo al comprar con saldo interno:
@@ -78,6 +84,12 @@ export function ComprarBrazaletesPage() {
       navigate('/recibo-compra');
     } catch (err) {
       console.error('Error en compra interna:', err);
+      const detail =
+        err.response?.data?.detail ||
+        'No fue posible completar la compra. Revisa tu saldo e intenta de nuevo.';
+      setPurchaseError(detail);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -166,11 +178,20 @@ export function ComprarBrazaletesPage() {
 
           <button
             type="submit"
-            disabled={!selectedTipo}
-            className="w-full p-3 rounded bg-green-700 text-white font-bold hover:bg-green-600"
+            disabled={!selectedTipo || isSubmitting}
+            className="w-full p-3 rounded bg-green-700 text-white font-bold hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Comprar (saldo interno)
+            {isSubmitting ? 'Procesando compra...' : 'Comprar (saldo interno)'}
           </button>
+
+          {purchaseError ? (
+            <div
+              className="mt-4 rounded border border-red-300 bg-red-950/40 px-3 py-2 text-sm text-red-100"
+              role="alert"
+            >
+              {purchaseError}
+            </div>
+          ) : null}
         </form>
 
         {/* COMPRAR CON PAYPAL */}

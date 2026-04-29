@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import BraceletType, Bracelet, BraceletTransaction, PurchaseReceipt
+from .models import BraceletType, Bracelet, BraceletTransaction, PurchaseReceipt, Sale, SaleLine
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -43,6 +43,7 @@ class BraceletTypeSerializer(serializers.ModelSerializer):
 
 class BraceletSerializer(serializers.ModelSerializer):
     bracelet_type = BraceletTypeSerializer(read_only=True)
+    owner = UserBasicSerializer(read_only=True)
     bracelet_type_id = serializers.PrimaryKeyRelatedField(
         queryset=BraceletType.objects.all(),
         source='bracelet_type',
@@ -53,6 +54,7 @@ class BraceletSerializer(serializers.ModelSerializer):
         model = Bracelet
         fields = [
             'id',
+            'owner',
             'bracelet_type',
             'bracelet_type_id',
             'bracelet_code',
@@ -64,6 +66,7 @@ class BraceletSerializer(serializers.ModelSerializer):
 class PurchaseReceiptSerializer(serializers.ModelSerializer):
     bracelet = BraceletSerializer(read_only=True)
     user = UserBasicSerializer(read_only=True)
+    sale_id = serializers.IntegerField(source='sale.id', read_only=True)
 
     class Meta:
         model = PurchaseReceipt
@@ -78,6 +81,7 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
             'paypal_order_id',
             'amount_paid',
             'status',
+            'sale_id',
         ]
         # Marcar como solo lectura si deseas que no se seteen vía PUT/POST
         read_only_fields = [
@@ -97,6 +101,9 @@ class BraceletTransactionSerializer(serializers.ModelSerializer):
     performed_by = UserBasicSerializer(read_only=True)
     attraction_name = serializers.CharField(source='attraction.name', read_only=True)
     food_name = serializers.CharField(source='food.name', read_only=True)
+    sale_id = serializers.IntegerField(source='sale.id', read_only=True)
+    sale_line_id = serializers.IntegerField(source='sale_line.id', read_only=True)
+    receipt_id = serializers.IntegerField(source='receipt.id', read_only=True)
 
     class Meta:
         model = BraceletTransaction
@@ -117,6 +124,50 @@ class BraceletTransactionSerializer(serializers.ModelSerializer):
             'attraction_name',
             'food',
             'food_name',
+            'sale_id',
+            'sale_line_id',
+            'receipt_id',
             'occurred_at',
+        ]
+        read_only_fields = fields
+
+
+class SaleLineSerializer(serializers.ModelSerializer):
+    bracelet_type = BraceletTypeSerializer(read_only=True)
+    bracelet = BraceletSerializer(read_only=True)
+
+    class Meta:
+        model = SaleLine
+        fields = [
+            'id',
+            'bracelet_type',
+            'bracelet',
+            'quantity',
+            'unit_price',
+            'line_total',
+            'initial_food_balance',
+            'initial_attraction_uses',
+        ]
+        read_only_fields = fields
+
+
+class SaleSerializer(serializers.ModelSerializer):
+    customer = UserBasicSerializer(read_only=True)
+    receipt = PurchaseReceiptSerializer(read_only=True)
+    lines = SaleLineSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Sale
+        fields = [
+            'id',
+            'customer',
+            'receipt',
+            'status',
+            'channel',
+            'total_amount',
+            'created_at',
+            'confirmed_at',
+            'created_by',
+            'lines',
         ]
         read_only_fields = fields

@@ -296,6 +296,8 @@ Flujo con saldo interno:
 4. guarda el `receiptId` mediante el helper temporal de compra;
 5. navega a `/recibo-compra`.
 
+Si el backend rechaza la compra, por ejemplo por saldo insuficiente, la pagina muestra el mensaje de negocio devuelto por la API y mantiene al usuario en el formulario para que pueda revisar su saldo o elegir otro brazalete.
+
 Flujo con PayPal:
 
 1. renderiza `PayPalButton`;

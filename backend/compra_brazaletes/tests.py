@@ -12,6 +12,8 @@ from compra_brazaletes.models import (
     BraceletTransaction,
     BraceletType,
     PurchaseReceipt,
+    Sale,
+    SaleLine,
 )
 from login.models import User
 
@@ -291,6 +293,37 @@ class BraceletPermissionsTests(APITestCase):
             receipt.bracelet.attraction_uses_remaining,
             self.bracelet_type.attraction_uses,
         )
+        self.assertEqual(receipt.bracelet.owner, self.client_user)
+
+        sale = receipt.sale
+        sale_line = sale.lines.get()
+        activation = receipt.bracelet_transactions.get()
+
+        self.assertEqual(sale.customer, self.client_user)
+        self.assertEqual(sale.status, Sale.STATUS_CONFIRMED)
+        self.assertEqual(sale.channel, Sale.CHANNEL_INTERNAL_BALANCE)
+        self.assertEqual(sale.total_amount, self.bracelet_type.price)
+        self.assertEqual(sale_line.bracelet, receipt.bracelet)
+        self.assertEqual(sale_line.bracelet_type, self.bracelet_type)
+        self.assertEqual(sale_line.quantity, 1)
+        self.assertEqual(sale_line.unit_price, self.bracelet_type.price)
+        self.assertEqual(sale_line.line_total, self.bracelet_type.price)
+        self.assertEqual(
+            sale_line.initial_food_balance,
+            self.bracelet_type.food_balance,
+        )
+        self.assertEqual(
+            sale_line.initial_attraction_uses,
+            self.bracelet_type.attraction_uses,
+        )
+        self.assertEqual(activation.transaction_type, BraceletTransaction.TYPE_ACTIVATION)
+        self.assertEqual(activation.sale, sale)
+        self.assertEqual(activation.sale_line, sale_line)
+        self.assertEqual(activation.receipt, receipt)
+        self.assertEqual(activation.balance_before, Decimal('0.00'))
+        self.assertEqual(activation.balance_after, self.bracelet_type.food_balance)
+        self.assertEqual(activation.uses_before, 0)
+        self.assertEqual(activation.uses_after, self.bracelet_type.attraction_uses)
 
     def test_internal_purchase_rejects_inactive_bracelet_type(self):
         self.bracelet_type.is_active = False
@@ -310,6 +343,9 @@ class BraceletPermissionsTests(APITestCase):
         self.client_user.save(update_fields=['account_balance'])
         initial_receipt_count = PurchaseReceipt.objects.count()
         initial_bracelet_count = Bracelet.objects.count()
+        initial_sale_count = Sale.objects.count()
+        initial_sale_line_count = SaleLine.objects.count()
+        initial_transaction_count = BraceletTransaction.objects.count()
         self.authenticate_client()
 
         response = self.client.post(
@@ -327,6 +363,42 @@ class BraceletPermissionsTests(APITestCase):
         self.assertEqual(self.client_user.account_balance, Decimal('20.00'))
         self.assertEqual(PurchaseReceipt.objects.count(), initial_receipt_count)
         self.assertEqual(Bracelet.objects.count(), initial_bracelet_count)
+        self.assertEqual(Sale.objects.count(), initial_sale_count)
+        self.assertEqual(SaleLine.objects.count(), initial_sale_line_count)
+        self.assertEqual(BraceletTransaction.objects.count(), initial_transaction_count)
+
+    def test_admin_cannot_delete_receipt_with_commercial_sale(self):
+        self.authenticate_client()
+        purchase_response = self.client.post(
+            '/api/compra_brazaletes/recibos/',
+            {'bracelet_type_id': self.bracelet_type.id},
+            format='json',
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.delete(
+            f"/api/compra_brazaletes/recibos/{purchase_response.data['id']}/"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(PurchaseReceipt.objects.filter(id=purchase_response.data['id']).exists())
+
+    def test_admin_cannot_delete_bracelet_with_commercial_sale_line(self):
+        self.authenticate_client()
+        purchase_response = self.client.post(
+            '/api/compra_brazaletes/recibos/',
+            {'bracelet_type_id': self.bracelet_type.id},
+            format='json',
+        )
+        receipt = PurchaseReceipt.objects.get(id=purchase_response.data['id'])
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.delete(
+            f'/api/compra_brazaletes/brazaletes/{receipt.bracelet_id}/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(Bracelet.objects.filter(id=receipt.bracelet_id).exists())
 
     def test_receipt_list_is_scoped_to_authenticated_user(self):
         other_user = User.objects.create_user(
@@ -452,6 +524,22 @@ class BraceletPermissionsTests(APITestCase):
         self.assertEqual(receipt.amount_paid, Decimal('49.99'))
         self.assertEqual(receipt.purchase_code, f'ORDER-{receipt.id}')
         self.assertEqual(receipt.bracelet.bracelet_code, f'BR-{receipt.bracelet.id}')
+        self.assertEqual(receipt.bracelet.owner, self.client_user)
+
+        sale = receipt.sale
+        sale_line = sale.lines.get()
+        activation = receipt.bracelet_transactions.get()
+
+        self.assertEqual(sale.customer, self.client_user)
+        self.assertEqual(sale.status, Sale.STATUS_CONFIRMED)
+        self.assertEqual(sale.channel, Sale.CHANNEL_PAYPAL)
+        self.assertEqual(sale.total_amount, Decimal('49.99'))
+        self.assertEqual(sale_line.bracelet, receipt.bracelet)
+        self.assertEqual(sale_line.bracelet_type, self.bracelet_type)
+        self.assertEqual(activation.transaction_type, BraceletTransaction.TYPE_ACTIVATION)
+        self.assertEqual(activation.sale, sale)
+        self.assertEqual(activation.sale_line, sale_line)
+        self.assertEqual(activation.receipt, receipt)
 
     @patch('compra_brazaletes.views.requests.post')
     @patch('compra_brazaletes.views.PayPalClient')

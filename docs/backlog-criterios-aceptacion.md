@@ -154,18 +154,20 @@ Criterios de aceptacion propuestos:
 
 ### Completar modelo comercial `Sale` y `SaleLine`
 
-Estado: Pendiente
+Estado: Completada
 
 Documentos relacionados:
 
 - [modelo-transaccional-brazaletes.md](modelo-transaccional-brazaletes.md)
 - [backend-funcionamiento.md](backend-funcionamiento.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
 
-Criterios de aceptacion propuestos:
+Criterios de aceptacion:
 
 - `PurchaseReceipt` conserva responsabilidad de comprobante de pago.
 - `Sale` representa el hecho comercial de venta.
 - `SaleLine` representa el detalle de brazalete vendido.
-- La compra de brazalete crea recibo, venta, linea, brazalete y movimiento inicial de activacion de forma consistente.
+- La compra interna crea recibo, venta, linea, brazalete y movimiento inicial de activacion de forma consistente.
+- La captura PayPal crea recibo, venta, linea, brazalete y movimiento inicial de activacion de forma consistente.
 - Las migraciones y pruebas cubren el flujo principal y los rechazos de negocio.
 - Los documentos tecnicos explican el nuevo modelo vigente.
