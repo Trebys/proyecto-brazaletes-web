@@ -33,6 +33,7 @@ frontend/frontend_react/
       AuthContext.jsx
     components/
       AutoLogout.jsx
+      BraceletMovementHistory.jsx
       LoginForm.jsx
       MasterPageCliente.jsx
       MyBracelets.jsx
@@ -71,6 +72,7 @@ Define el enrutamiento principal.
 - `MasterPageCliente` funciona como layout con `Outlet` para las rutas publicas del cliente
 - `PrivateRoutes` protege `/mi-perfil`
 - las rutas internas de perfil (`info` y `mis-brazaletes`) se declaran en la misma jerarquia de rutas de `App`
+- el perfil tambien incluye `historial-movimientos` para consultar el ledger transaccional de brazaletes del cliente
 
 Estado vigente: el enrutamiento principal usa rutas anidadas declarativas de React Router v6 con `Outlet`. Esto evita tener `Routes` embebidos dentro de `element` y deja una estructura mas clara para extender paneles, roles y secciones protegidas.
 
@@ -128,9 +130,11 @@ Funciones principales:
 - `getFoods()`
 - `consumeAttraction(attractionId, braceletId)`
 - `purchaseFood(foodId, braceletId, paymentSource)`
-- `getBraceletTransactions()`
+- `getBraceletTransactions(params)`
 - `buildMediaUrl(path)`
 - helpers administrativos: `getAdminClients`, `updateAdminClient`, `deleteAdminClient`, `getAdminBraceletTypes`, `createAdminBraceletType`, `updateAdminBraceletType`, `deleteAdminBraceletType`, `getAdminBracelets`, `updateAdminBracelet`, `deleteAdminBracelet`, `getAdminReceipts`, `updateAdminReceipt`, `deleteAdminReceipt`, `createAdminFood`, `updateAdminFood`, `deleteAdminFood`, `createAdminAttraction`, `updateAdminAttraction`, `deleteAdminAttraction`
+
+Detalle practico: `getBraceletTransactions` consume el mismo endpoint para cliente y administrador. Cuando recibe `bracelet_id`, lo envia como query param para filtrar el historial de un brazalete especifico.
 
 Decisiones actuales a tener presentes:
 
@@ -311,10 +315,9 @@ Detalle de seguridad: el `receiptId` temporal se borra al cerrar sesion junto co
 
 Nota de alcance vigente:
 
-- el frontend actual solo cubre la compra inicial del brazalete y la consulta del recibo;
+- el frontend actual cubre compra inicial, consulta de recibo e historial completo de movimientos del brazalete;
 - los consumos de comida y atracciones no se modelan como nuevas ventas de brazalete;
-- el panel administrativo ya expone una vista de movimientos para consultar activaciones, consumos, ajustes y reversos;
-- queda pendiente una vista equivalente para clientes si se quiere mostrar ese historial dentro de `mi-perfil`.
+- el panel administrativo y el perfil del cliente consumen el mismo ledger de `BraceletTransaction`.
 
 Estado vigente para este flujo:
 
@@ -356,6 +359,7 @@ Es una pagina contenedora con rutas internas:
 
 - `info` -> `ProfileDataForm`
 - `mis-brazaletes` -> `MyBracelets`
+- `historial-movimientos` -> `BraceletMovementHistory`
 
 ### `src/components/ProfileDataForm.jsx`
 
@@ -375,11 +379,22 @@ Responsabilidades:
 - mostrar datos resumidos del brazalete comprado;
 - guardar `receiptId` mediante el helper temporal de compra cuando el usuario pulsa "Ver Recibo";
 - redirigir a `ReciboCompraPage`.
+- permitir abrir el historial filtrado del brazalete con "Ver movimientos".
 
 Detalle practico del estado actual:
 
 - la tarjeta ya no muestra solo los valores iniciales del tipo de brazalete;
 - ahora refleja el saldo y los usos restantes reales del brazalete.
+
+### `src/components/BraceletMovementHistory.jsx`
+
+Responsabilidades:
+
+- consultar `/api/compra_brazaletes/transacciones/` con la sesion activa;
+- mostrar movimientos propios del cliente autenticado;
+- aceptar el query param `bracelet` para abrir directamente el historial de un brazalete;
+- mostrar fecha, brazalete, tipo, concepto, saldo antes/despues, usos antes/despues y variaciones aplicadas;
+- permitir quitar el filtro para ver todos los movimientos propios.
 
 ### `src/pages/AtraccionesComidasPage.jsx`
 
@@ -466,7 +481,19 @@ Criterios resueltos:
 Comentario de continuidad:
 
 - esta version queda lista para pruebas funcionales del MVP;
-- mas adelante conviene agregar historial de consumos, una vista para movimientos del brazalete y mejoras de administracion visual del catalogo.
+- mas adelante conviene agregar mejoras de administracion visual del catalogo.
+
+### Requerimiento completado: historial transaccional completo del brazalete
+
+El requerimiento "Exponer historial transaccional completo del brazalete en frontend" quedo cerrado desde frontend.
+
+Criterios resueltos:
+
+- el cliente consulta movimientos de sus propios brazaletes desde `/mi-perfil/historial-movimientos`;
+- `MyBracelets` permite abrir el historial filtrado de un brazalete especifico;
+- el administrador consulta movimientos de cualquier brazalete desde la seccion `Movimientos` de `/administrador`;
+- cada movimiento muestra fecha, tipo, concepto, saldo antes/despues, usos antes/despues y variacion aplicada;
+- cliente y administrador consumen la API existente de `BraceletTransaction`.
 
 ### Requerimiento completado: pruebas backend para autenticacion, compra interna y pagos
 
@@ -500,6 +527,7 @@ Esta matriz resume que deberia pasar en la interfaz segun el tipo de usuario.
 | intento de compra interna | bloqueado por falta de sesion | permitido | permitido |
 | inicio de flujo PayPal | bloqueado por falta de sesion | permitido | permitido |
 | `/mi-perfil/*` | redirige a `/login` | permitido | permitido |
+| `/mi-perfil/historial-movimientos` | redirige a `/login` | permitido, solo movimientos propios | permitido |
 | `/administrador` | redirige a `/login` | redirige a `/inicio` | permitido |
 | gestion en `/administrador` | no disponible | no disponible | permitido |
 
@@ -522,6 +550,7 @@ Notas practicas:
 - respaldo automatizado en backend para los flujos criticos de login, compra interna y pagos
 - visualizacion de recibo
 - visualizacion y edicion basica del perfil
+- vista de historial de movimientos para clientes dentro de `mi-perfil`
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
 - panel operativo administrativo para clientes, brazaletes, tipos de brazalete, ventas, comidas y atracciones
 - vista administrativa de historial de movimientos de brazaletes
@@ -533,13 +562,13 @@ Notas practicas:
 
 ### Siguiente mejora definida
 
-El proyecto ya dejo definido el modelo de dominio para la siguiente etapa:
+El proyecto ya dejo definido el modelo de dominio para futuras mejoras comerciales:
 
 - `PurchaseReceipt` seguira representando el pago de la compra inicial;
-- la venta de brazaletes se separara conceptualmente del historial operativo del brazalete;
-- los consumos de comida y atracciones ya aparecen como movimientos del brazalete, no como nuevas compras del mismo.
+- la venta de brazaletes se separa conceptualmente del historial operativo del brazalete;
+- los consumos de comida y atracciones aparecen como movimientos del brazalete, no como nuevas compras del mismo.
 
-La interfaz ya consume el estado actual del brazalete para atracciones y comidas y muestra el numero de transaccion devuelto por el backend. Lo que queda para una mejora posterior es exponer una vista de historial transaccional completa.
+La interfaz ya consume el estado actual del brazalete, muestra el numero de transaccion devuelto por el backend y permite consultar el historial transaccional completo.
 
 ### Partes incompletas o minimas
 
@@ -552,7 +581,7 @@ La interfaz ya consume el estado actual del brazalete para atracciones y comidas
 - `localStorage` sigue existiendo como persistencia, pero ya no es la fuente principal de verdad para la UI de autenticacion;
 - parte del estado del usuario sigue viviendo duplicado entre backend, memoria y almacenamiento persistente, aunque ahora hay una frontera mas clara mediante `AuthContext`;
 - varios textos del codigo muestran problemas de codificacion de caracteres;
-- el modulo de atracciones y comidas esta completo como MVP y el panel administrativo ya expone una vista de historial transaccional del brazalete.
+- el modulo de atracciones y comidas esta completo como MVP y ya existen vistas de historial transaccional para cliente y administrador.
 
 ### Requerimiento completado: refactor frontend de autenticacion y rutas
 

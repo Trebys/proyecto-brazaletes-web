@@ -360,8 +360,8 @@ export const getAdminReceipts = async () => {
   return response.data;
 };
 
-export const getBraceletTransactions = async () => {
-  const response = await api.get('compra_brazaletes/transacciones/');
+export const getBraceletTransactions = async (params = {}) => {
+  const response = await api.get('compra_brazaletes/transacciones/', { params });
   return response.data;
 };
 

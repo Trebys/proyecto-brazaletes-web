@@ -19,6 +19,12 @@ export function PerfilClientePage() {
         >
           Mis Brazaletes
         </Link>
+        <Link
+          to="historial-movimientos"
+          className="rounded bg-teal-600 px-4 py-2 text-white hover:bg-teal-500"
+        >
+          Historial
+        </Link>
       </div>
 
       <Outlet />

@@ -299,6 +299,100 @@ class BraceletPermissionsTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['owner']['id'], self.client_user.id)
 
+    def test_client_can_filter_own_bracelet_transactions_by_bracelet(self):
+        second_bracelet = Bracelet.objects.create(
+            bracelet_type=self.bracelet_type,
+            current_balance=Decimal('40.00'),
+            attraction_uses_remaining=4,
+        )
+        first_movement = BraceletTransaction.objects.create(
+            bracelet=self.bracelet,
+            owner=self.client_user,
+            performed_by=self.client_user,
+            transaction_type=BraceletTransaction.TYPE_FOOD_CONSUMPTION,
+            concept='Compra de comida: Pizza',
+            balance_delta=Decimal('-8.00'),
+            balance_before=Decimal('100.00'),
+            balance_after=Decimal('92.00'),
+            uses_before=10,
+            uses_after=10,
+        )
+        BraceletTransaction.objects.create(
+            bracelet=second_bracelet,
+            owner=self.client_user,
+            performed_by=self.client_user,
+            transaction_type=BraceletTransaction.TYPE_ATTRACTION_CONSUMPTION,
+            concept='Uso de atraccion: Carrusel',
+            uses_delta=-1,
+            balance_before=Decimal('40.00'),
+            balance_after=Decimal('40.00'),
+            uses_before=4,
+            uses_after=3,
+        )
+        self.authenticate_client()
+
+        response = self.client.get(
+            f'/api/compra_brazaletes/transacciones/?bracelet_id={self.bracelet.id}'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], first_movement.id)
+
+    def test_client_cannot_filter_transactions_from_another_owner(self):
+        other_user = User.objects.create_user(
+            username='otro-cliente',
+            email='otro@test.com',
+            password='secret123',
+        )
+        other_bracelet = Bracelet.objects.create(
+            bracelet_type=self.bracelet_type,
+            current_balance=Decimal('25.00'),
+            attraction_uses_remaining=2,
+        )
+        BraceletTransaction.objects.create(
+            bracelet=other_bracelet,
+            owner=other_user,
+            performed_by=other_user,
+            transaction_type=BraceletTransaction.TYPE_FOOD_CONSUMPTION,
+            concept='Compra de comida: Pizza',
+            balance_delta=Decimal('-8.00'),
+            balance_before=Decimal('25.00'),
+            balance_after=Decimal('17.00'),
+            uses_before=2,
+            uses_after=2,
+        )
+        self.authenticate_client()
+
+        response = self.client.get(
+            f'/api/compra_brazaletes/transacciones/?bracelet_id={other_bracelet.id}'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_transaction_filter_with_invalid_bracelet_id_returns_empty_list(self):
+        BraceletTransaction.objects.create(
+            bracelet=self.bracelet,
+            owner=self.client_user,
+            performed_by=self.client_user,
+            transaction_type=BraceletTransaction.TYPE_FOOD_CONSUMPTION,
+            concept='Compra de comida: Pizza',
+            balance_delta=Decimal('-8.00'),
+            balance_before=Decimal('100.00'),
+            balance_after=Decimal('92.00'),
+            uses_before=10,
+            uses_after=10,
+        )
+        self.authenticate_client()
+
+        response = self.client.get(
+            '/api/compra_brazaletes/transacciones/?bracelet_id=abc'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
     def test_admin_can_query_adjustment_and_reversal_transactions(self):
         adjustment = BraceletTransaction.objects.create(
             bracelet=self.bracelet,

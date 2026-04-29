@@ -178,24 +178,23 @@ Seguimiento:
 
 - Si se crean endpoints administrativos para ejecutar ajustes o reversos, deben actualizar el estado materializado de `Bracelet` y crear la transaccion en una misma operacion atomica.
 
-## Limitaciones vigentes
+## Limitaciones y seguimiento
 
 ### Historial de movimientos visible para usuarios
 
-Estado: vigente
+Estado: reemplazada
 
 Limitacion:
 
-- El backend ya registra `BraceletTransaction` para consumos, pero el frontend todavia no tiene una vista dedicada de historial completo.
+- El backend ya registraba `BraceletTransaction` para consumos, pero el frontend no tenia una vista dedicada de historial completo.
 
 Impacto:
 
-- El usuario ve estado actualizado del brazalete y feedback del movimiento, pero no una linea de tiempo completa.
-- El administrador tampoco cuenta aun con una vista especializada de auditoria de movimientos.
+- Esta limitacion quedo resuelta al exponer el historial en `/mi-perfil/historial-movimientos` para clientes y en la seccion `Movimientos` del backoffice para administradores.
 
 Seguimiento:
 
-- La historia propuesta esta en [backlog-criterios-aceptacion.md](backlog-criterios-aceptacion.md).
+- Mantener el contrato de permisos del endpoint de transacciones: cliente solo ve movimientos propios; administrador ve cualquier brazalete.
 
 ### Configuracion productiva depende del entorno
 
