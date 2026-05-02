@@ -39,11 +39,6 @@ backend/
     serializers.py
     views.py
     urls.py
-  testimonios/
-    models.py
-    serializers.py
-    views.py
-    urls.py
   compra_brazaletes/
     apps.py
     models.py
@@ -94,7 +89,6 @@ Centraliza las rutas:
 - `/admin/`
 - `/docs/`
 - `/api/` -> app `login`
-- `/api/` -> app `testimonios`
 - `/api/compra_brazaletes/` -> app `compra_brazaletes`
 - `/api/atracciones-comidas/` -> app `atracciones_comidas`
 
@@ -113,11 +107,9 @@ Archivo: `login/models.py`
 Extiende `AbstractUser` y agrega:
 
 - `account_balance`
-- `profile_image`
 - `is_admin_user` como propiedad derivada para centralizar la regla de acceso administrativo
 
 Esto permite que el mismo usuario tenga saldo interno para comprar brazaletes sin usar PayPal.
-La imagen de perfil es opcional y se usa, entre otros lugares, para mostrar testimonios en la pagina de inicio. Si no existe imagen, el frontend muestra un avatar generico.
 
 Regla vigente para distinguir clientes y administradores:
 
@@ -197,7 +189,6 @@ Permite actualizar:
 - last_name
 - email
 - password
-- profile_image
 
 Detalle practico: si la password llega como `******`, no la cambia.
 
@@ -205,7 +196,6 @@ Observacion importante del estado actual:
 
 - un cliente autenticado ya no puede alterarse su propio `account_balance` desde este endpoint;
 - el saldo queda reservado para operaciones administrativas o flujos de negocio controlados por backend.
-- la imagen de perfil puede viajar como `multipart/form-data` desde el formulario de perfil.
 
 #### `delete_user`
 
@@ -298,86 +288,6 @@ Escalabilidad ya contemplada:
 - hoy: `is_staff` separa clientes de operadores;
 - futuro: grupos como `operaciones`, `finanzas` o `soporte` podran vivir encima de `is_staff`;
 - cuando existan permisos mas finos, `is_staff` seguira siendo la puerta de entrada al backoffice y los grupos definiran que puede hacer cada rol dentro de ese backoffice.
-
-## App `testimonios`
-
-Esta app vuelve operativa la seccion de testimonios de la pagina de inicio.
-
-### Modelo
-
-Archivo: `testimonios/models.py`
-
-#### `Testimonial`
-
-Representa un comentario publico potencial de un cliente autenticado.
-
-Campos importantes:
-
-- `user`
-- `comment`
-- `rating`
-- `status`
-- `moderation_note`
-- `created_at`
-- `updated_at`
-
-Estados vigentes:
-
-- `PENDING`
-- `PUBLISHED`
-- `REJECTED`
-
-Regla de publicacion vigente:
-
-- los clientes autenticados pueden crear testimonios, pero siempre nacen en estado `PENDING`;
-- solo los testimonios `PUBLISHED` aparecen en la API publica que consume la home;
-- la moderacion se puede hacer por Django Admin o por API usando una cuenta administrativa;
-- el nombre visible y la imagen se toman del usuario asociado;
-- si el usuario no tiene imagen de perfil, el frontend muestra un avatar generico.
-
-### Serializador
-
-Archivo: `testimonios/serializers.py`
-
-`TestimonialSerializer` expone:
-
-- nombre visible derivado del nombre completo del usuario o `username`;
-- comentario;
-- fecha de creacion;
-- valoracion simple de 1 a 5;
-- URL absoluta de la imagen de perfil del usuario cuando existe.
-
-Validaciones relevantes:
-
-- el comentario debe tener al menos 10 caracteres;
-- la valoracion, si se envia, debe estar entre 1 y 5;
-- un cliente no puede forzar `status = PUBLISHED` al crear o editar.
-
-### Endpoints
-
-Archivo: `testimonios/views.py`
-
-Ruta base:
-
-- `/api/testimonios/`
-
-Comportamiento:
-
-- `GET /api/testimonios/` es publico y devuelve solo testimonios publicados;
-- `POST /api/testimonios/` exige autenticacion y crea un testimonio pendiente;
-- administradores pueden consultar y moderar testimonios, incluyendo pendientes y rechazados;
-- clientes no pueden modificar el estado de publicacion.
-
-### Cobertura automatica vigente
-
-El backend cuenta con pruebas para:
-
-- lectura publica limitada a testimonios publicados;
-- creacion autenticada en estado pendiente;
-- rechazo de creacion anonima;
-- validacion de rango de valoracion;
-- moderacion por administrador;
-- bloqueo de cambio de estado por cliente.
 
 ## App `compra_brazaletes`
 
@@ -925,20 +835,6 @@ Comentario de continuidad:
 - esta version se considera completa para pruebas funcionales del MVP;
 - mas adelante se recomienda sumar vistas especificas de historial de consumos y reglas mas avanzadas de pagos o recargas.
 
-### Requerimiento completado: testimonios visibles en la pagina de inicio
-
-El requerimiento "Como cliente quiero dejar testimonios visibles en la pagina de inicio" quedo resuelto desde backend.
-
-Criterios resueltos:
-
-- existe el modelo `Testimonial` ligado al usuario autenticado;
-- un cliente autenticado puede registrar comentario y valoracion;
-- la imagen de perfil se gestiona desde el perfil del usuario y se reutiliza en testimonios;
-- los testimonios nuevos se crean siempre en estado `PENDING`;
-- la home solo consume testimonios `PUBLISHED`;
-- administradores pueden moderar testimonios desde Django Admin, API o panel administrativo;
-- existen pruebas automaticas para creacion, publicacion, permisos y validaciones principales.
-
 ## Flujo de datos entre backend y frontend
 
 ### Autenticacion
@@ -990,15 +886,6 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | `DELETE /api/delete-user` | `401` | permitido sobre su propia cuenta | permitido sobre su propia cuenta |
 | `GET /api/Users/` | `401` | `403` | permitido |
 | `POST/PATCH/DELETE /api/Users/` | `401` | `403` | permitido |
-
-### Testimonios
-
-| Endpoint | Sin autenticacion | Cliente autenticado | Administrador |
-| --- | --- | --- | --- |
-| `GET /api/testimonios/` | permitido, solo publicados | permitido, solo publicados | permitido, todos los estados |
-| `POST /api/testimonios/` | `401` | permitido, crea en `PENDING` | permitido, crea en `PENDING` |
-| `PATCH /api/testimonios/{id}/` | `401` | `403` | permitido para moderar |
-| `DELETE /api/testimonios/{id}/` | `401` | `403` | permitido |
 
 ### Catalogo y brazaletes
 
@@ -1066,7 +953,6 @@ Notas practicas:
 - activacion inicial del brazalete auditada con `BraceletTransaction`;
 - ajustes administrativos y reversos representables en `BraceletTransaction` sin sobrecargar `PurchaseReceipt`;
 - consulta autenticada del historial completo de movimientos, con aislamiento por cliente y acceso total para administradores;
-- testimonios reales de clientes autenticados con moderacion previa a publicacion;
 - estados de `PurchaseReceipt` alineados con el flujo real de compra y captura;
 - webhook de PayPal alineado con estados persistibles del modelo;
 - serializacion anidada util para el frontend;

@@ -5,21 +5,12 @@ from rest_framework.authtoken.models import Token
 from .authentication import is_token_expired
 
 
-def user_profile_image_path(instance, filename):
-    return f'users/user_{instance.id}/profile/{filename}'
-
-
 class User(AbstractUser):
     account_balance = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-    )
-    profile_image = models.ImageField(
-        upload_to=user_profile_image_path,
-        blank=True,
-        null=True,
     )
 
     @property
