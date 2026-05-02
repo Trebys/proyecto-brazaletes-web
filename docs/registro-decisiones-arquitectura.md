@@ -178,6 +178,36 @@ Seguimiento:
 
 - Si se crean endpoints administrativos para ejecutar ajustes o reversos, deben actualizar el estado materializado de `Bracelet` y crear la transaccion en una misma operacion atomica.
 
+### 2026-04-29 - Testimonios con publicacion moderada
+
+Estado: vigente
+
+Contexto:
+
+- La home tenia testimonios estaticos y el proyecto necesita prueba social real.
+- Permitir publicacion inmediata desde clientes autenticados puede exponer contenido inconsistente o no deseado.
+- El alcance actual pide una moderacion minima, no un panel editorial completo.
+
+Decision:
+
+- Crear el modelo `Testimonial` como recurso propio del backend.
+- Todo testimonio creado por cliente autenticado nace en `PENDING`.
+- La API publica de la home solo devuelve testimonios `PUBLISHED`.
+- La moderacion inicial se resuelve desde Django Admin, API administrativa o panel administrativo.
+- La imagen de perfil pertenece al usuario, no al testimonio.
+- El formulario publico de testimonio solo solicita comentario y valoracion.
+
+Impacto:
+
+- La home puede mostrar testimonios reales sin exponer contenido pendiente.
+- Un cambio de imagen en el perfil del usuario se refleja en sus testimonios.
+- El testimonio queda como contenido de opinion, no como duplicado de datos personales.
+- Si mas adelante se necesita gestion editorial completa, puede agregarse al panel administrativo usando el mismo modelo.
+
+Seguimiento:
+
+- Evaluar una vista administrativa dedicada si el volumen de testimonios crece o si se requieren filtros, aprobacion masiva o motivos de rechazo visibles para clientes.
+
 ## Limitaciones y seguimiento
 
 ### Historial de movimientos visible para usuarios

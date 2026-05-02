@@ -1,7 +1,13 @@
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    parser_classes,
+    permission_classes,
+)
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -19,6 +25,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = [IsAdminUserReal]
     serializer_class = UserSerializer
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
 
 def build_session_payload(replaced_existing_session=False):
@@ -60,7 +67,7 @@ def login(request):
     had_active_session = any(not is_token_expired(token) for token in existing_tokens)
     Token.objects.filter(user=user).delete()
     token = Token.objects.create(user=user)
-    serializer = UserSerializer(instance=user)
+    serializer = UserSerializer(instance=user, context={'request': request})
 
     return Response(
         {
@@ -96,7 +103,7 @@ def register_client(request):
         user.save()
 
         token = ExpiringToken.objects.create(user=user)
-        response_serializer = UserSerializer(instance=user)
+        response_serializer = UserSerializer(instance=user, context={'request': request})
 
         return Response(
             {
@@ -114,6 +121,7 @@ def register_client(request):
 @api_view(['PATCH'])
 @authentication_classes([ExpiringTokenAuthentication])
 @permission_classes([IsAuthenticated])
+@parser_classes([JSONParser, FormParser, MultiPartParser])
 def update_user_profile(request):
     user = request.user
 
@@ -128,13 +136,19 @@ def update_user_profile(request):
             user.account_balance,
         )
 
+    if 'profile_image' in request.FILES:
+        user.profile_image = request.FILES['profile_image']
+
     password = request.data.get('password', None)
     if password and password != '******':
         user.set_password(password)
 
     user.save()
 
-    return Response(UserSerializer(instance=user).data, status=status.HTTP_200_OK)
+    return Response(
+        UserSerializer(instance=user, context={'request': request}).data,
+        status=status.HTTP_200_OK,
+    )
 
 
 @api_view(['DELETE'])
@@ -157,7 +171,7 @@ def delete_user(request):
 @authentication_classes([ExpiringTokenAuthentication])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
-    serializer = UserSerializer(instance=request.user)
+    serializer = UserSerializer(instance=request.user, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
