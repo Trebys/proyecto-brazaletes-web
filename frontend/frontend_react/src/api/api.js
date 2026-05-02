@@ -184,9 +184,20 @@ export const submitClientData = async (userData) => {
   }
 
   try {
-    const response = await api.patch('edit-user/', userData, {
+    const hasProfileImage = Boolean(userData.profile_image);
+    const payload = hasProfileImage ? new FormData() : userData;
+
+    if (hasProfileImage) {
+      Object.entries(userData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          payload.append(key, value);
+        }
+      });
+    }
+
+    const response = await api.patch('edit-user/', payload, {
       headers: {
-        'Content-Type': 'application/json',
+        ...(hasProfileImage ? {} : { 'Content-Type': 'application/json' }),
         Authorization: `Token ${token}`,
       },
     });
@@ -362,6 +373,26 @@ export const getAdminReceipts = async () => {
 
 export const getBraceletTransactions = async (params = {}) => {
   const response = await api.get('compra_brazaletes/transacciones/', { params });
+  return response.data;
+};
+
+export const getTestimonials = async () => {
+  const response = await api.get('testimonios/');
+  return response.data;
+};
+
+export const createTestimonial = async (testimonialData) => {
+  const response = await api.post('testimonios/', testimonialData);
+  return response.data;
+};
+
+export const getAdminTestimonials = async () => {
+  const response = await api.get('testimonios/');
+  return response.data;
+};
+
+export const updateAdminTestimonial = async (testimonialId, testimonialData) => {
+  const response = await api.patch(`testimonios/${testimonialId}/`, testimonialData);
   return response.data;
 };
 

@@ -131,6 +131,10 @@ Funciones principales:
 - `consumeAttraction(attractionId, braceletId)`
 - `purchaseFood(foodId, braceletId, paymentSource)`
 - `getBraceletTransactions(params)`
+- `getTestimonials()`
+- `createTestimonial(testimonialData)`
+- `getAdminTestimonials()`
+- `updateAdminTestimonial(testimonialId, testimonialData)`
 - `buildMediaUrl(path)`
 - helpers administrativos: `getAdminClients`, `updateAdminClient`, `deleteAdminClient`, `getAdminBraceletTypes`, `createAdminBraceletType`, `updateAdminBraceletType`, `deleteAdminBraceletType`, `getAdminBracelets`, `updateAdminBracelet`, `deleteAdminBracelet`, `getAdminReceipts`, `updateAdminReceipt`, `deleteAdminReceipt`, `createAdminFood`, `updateAdminFood`, `deleteAdminFood`, `createAdminAttraction`, `updateAdminAttraction`, `deleteAdminAttraction`
 
@@ -277,6 +281,33 @@ Responsabilidades:
 - cargar tipos de brazaletes desde el backend;
 - mostrar tarjetas por tipo;
 - navegar a compra enviando `tipoId` por `location.state`.
+- cargar testimonios publicados desde el backend;
+- mostrar nombre visible, comentario, fecha, valoracion e imagen opcional;
+- permitir a clientes autenticados enviar un testimonio nuevo desde la home escribiendo solo comentario y estrellas;
+- informar que los testimonios enviados quedan pendientes de revision antes de publicarse.
+
+Regla vigente de testimonios:
+
+- la seccion ya no usa datos estaticos;
+- la lectura publica consume `GET /api/testimonios/`;
+- el formulario autenticado envia `POST /api/testimonios/`;
+- si el usuario no tiene sesion, se muestra una llamada a iniciar sesion;
+- el nombre visible se toma del usuario autenticado;
+- la imagen de perfil se toma del perfil del usuario;
+- si el usuario no tiene imagen, se muestra un avatar generico.
+
+### Requerimiento completado: testimonios visibles en la pagina de inicio
+
+El requerimiento "Como cliente quiero dejar testimonios visibles en la pagina de inicio" quedo cerrado desde frontend.
+
+Criterios resueltos:
+
+- la home muestra testimonios reales obtenidos del backend;
+- cada testimonio muestra nombre visible, comentario, fecha y valoracion;
+- la interfaz conserva la idea del mockup con tarjetas blancas, imagen lateral y estrellas;
+- un cliente autenticado puede enviar un comentario nuevo desde la pagina de inicio usando estrellas clicables;
+- el flujo comunica que el contenido queda pendiente de moderacion;
+- la capa de API incluye funciones dedicadas para listar y crear testimonios.
 
 ### `src/pages/ComprarBrazaletesPage.jsx`
 
@@ -367,9 +398,17 @@ Responsabilidades:
 
 - cargar perfil del usuario autenticado;
 - permitir editar datos;
+- permitir subir una imagen de perfil;
 - permitir eliminar la cuenta.
 
 Detalle importante: el campo `password` se rellena con `******` como valor visual. El backend evita cambiarla si llega exactamente ese valor.
+
+Detalle de imagen de perfil:
+
+- si el usuario sube una imagen, el formulario envia `multipart/form-data`;
+- la imagen se guarda en el perfil del usuario;
+- los testimonios de la home reutilizan esa imagen;
+- si no existe imagen, la UI usa el avatar generico `perfil.svg`.
 
 ### `src/components/MyBracelets.jsx`
 
@@ -432,6 +471,7 @@ Responsabilidades:
 - consultar y gestionar brazaletes emitidos dentro de la misma seccion, incluyendo tipo, saldo y usos restantes;
 - consultar ventas/recibos y editar su estado operativo;
 - consultar el historial de movimientos del brazalete, incluyendo activaciones, consumos, ajustes administrativos y reversos;
+- moderar testimonios de clientes aprobando o rechazando comentarios pendientes;
 - consultar y gestionar comidas y atracciones, incluyendo imagenes;
 - mantener botones de perfil y cierre de sesion consistentes con el layout principal;
 - mostrar footer con anio actual calculado automaticamente.
@@ -554,11 +594,14 @@ Notas practicas:
 - bloqueo del panel administrativo para usuarios sin privilegios administrativos
 - panel operativo administrativo para clientes, brazaletes, tipos de brazalete, ventas, comidas y atracciones
 - vista administrativa de historial de movimientos de brazaletes
+- vista administrativa para moderar testimonios
 - tablas administrativas con busqueda, ordenamiento visual, paginacion y mejor distribucion de espacio en secciones densas
 - listado de compras del usuario
 - catalogo funcional de atracciones y comidas
 - consumo minimo de atracciones y comidas sobre el estado real del brazalete
 - feedback de consumos con numero de movimiento auditado
+- testimonios reales en la home con formulario autenticado y moderacion previa
+- imagen de perfil editable desde `/mi-perfil/info`
 
 ### Siguiente mejora definida
 

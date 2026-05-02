@@ -17,7 +17,9 @@ export function ProfileDataForm() {
     email: '',
     password: '',
     account_balance: '',
+    profile_image: null,
   });
+  const [profileImagePreview, setProfileImagePreview] = useState('');
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -30,7 +32,9 @@ export function ProfileDataForm() {
           email: data.email,
           password: '******',
           account_balance: data.account_balance,
+          profile_image: null,
         });
+        setProfileImagePreview(data.profile_image_url || '');
         updateUser(data);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -49,7 +53,12 @@ export function ProfileDataForm() {
   ];
 
   const handleChange = (e) => {
-    setUserData({ ...userData, [e.target.name]: e.target.value });
+    const value = e.target.type === 'file' ? e.target.files[0] : e.target.value;
+    setUserData({ ...userData, [e.target.name]: value });
+
+    if (e.target.type === 'file' && value) {
+      setProfileImagePreview(URL.createObjectURL(value));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -83,6 +92,34 @@ export function ProfileDataForm() {
   return (
     <div className="bg-teal-700 p-8 rounded-lg mb-10 max-w-md mx-auto">
       <form onSubmit={handleSubmit}>
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <div className="h-28 w-28 overflow-hidden rounded-full bg-white/20">
+            {profileImagePreview ? (
+              <img
+                src={profileImagePreview}
+                alt="Imagen de perfil"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                src="/images/perfil.svg"
+                alt=""
+                className="h-full w-full bg-white object-contain p-5"
+              />
+            )}
+          </div>
+          <label className="w-full">
+            <span className="mb-2 block text-center text-white">Imagen de perfil</span>
+            <input
+              type="file"
+              name="profile_image"
+              accept="image/*"
+              onChange={handleChange}
+              className="w-full rounded bg-white p-2 text-sm text-black file:mr-3 file:rounded file:border-0 file:bg-teal-600 file:px-3 file:py-1 file:text-white"
+            />
+          </label>
+        </div>
+
         {fields.map((field) => (
           <div className="mb-4" key={field.name}>
             <label className="block text-white mb-2">{field.label}</label>

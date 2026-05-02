@@ -119,6 +119,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'login',
+    'testimonios',
     # <--- no solo 'compra_brazaletes'
     'compra_brazaletes.apps.CompraBrazaletesConfig',
     'atracciones_comidas',
