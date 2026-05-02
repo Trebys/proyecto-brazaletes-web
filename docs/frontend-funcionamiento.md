@@ -49,7 +49,9 @@ frontend/frontend_react/
       LoginPage.jsx
       AdministradorPage.jsx
       AtraccionesComidasPage.jsx
+      SobreNosotrosPage.jsx
       ContactoPage.jsx
+      TerminosCondicionesPage.jsx
     App.jsx
     main.jsx
 ```
@@ -70,6 +72,9 @@ Define el enrutamiento principal.
 - `/registro` muestra `RegistroForm`
 - `/administrador` se renderiza fuera del layout del cliente y queda protegido con `PrivateRoutes requireAdmin`
 - `MasterPageCliente` funciona como layout con `Outlet` para las rutas publicas del cliente
+- `/sobre-nosotros` muestra una pagina publica de contexto del parque y del concepto de la experiencia
+- `/contacto` muestra un formulario publico de contacto con informacion de atencion y redes ficticias
+- `/terminos-condiciones` muestra terminos publicos de uso, brazaletes, seguridad y pagos del parque
 - `PrivateRoutes` protege `/mi-perfil`
 - las rutas internas de perfil (`info` y `mis-brazaletes`) se declaran en la misma jerarquia de rutas de `App`
 - el perfil tambien incluye `historial-movimientos` para consultar el ledger transaccional de brazaletes del cliente
@@ -257,11 +262,12 @@ Este componente funciona como layout publico para la mayor parte del sitio.
 Incluye:
 
 - navbar superior;
-- enlaces a inicio, compra, atracciones/comidas y contacto;
+- enlaces a inicio, compra, atracciones/comidas, sobre nosotros y contacto;
 - boton de perfil o de login segun exista `user_data`;
 - boton de cerrar sesion;
-- footer con branding y redes.
+- footer con branding, enlace a sobre nosotros y redes.
 - usa el color `fondoLogin` (`#00565F`) para mantener consistencia con los mockups.
+- las redes sociales del footer son acciones ficticias: muestran un aviso en pantalla y no redirigen fuera del sitio.
 
 Detalles practicos:
 
@@ -295,6 +301,62 @@ Regla vigente de testimonios:
 - el nombre visible se toma del usuario autenticado;
 - la imagen de perfil se toma del perfil del usuario;
 - si el usuario no tiene imagen, se muestra un avatar generico.
+
+### `src/pages/SobreNosotrosPage.jsx`
+
+Es una pagina publica de contexto para completar la navegacion principal.
+
+Responsabilidades:
+
+- explicar la propuesta de Fantasy Land como parque de atracciones digitalizado;
+- describir el concepto del brazalete como centro de la experiencia del visitante;
+- comunicar el valor para el visitante: compra, visita, consumo y atencion operativa;
+- reutilizar imagenes locales del parque para mantener coherencia visual con la home;
+- ofrecer accesos hacia compra de brazaletes, atracciones/comidas, contacto y terminos.
+
+Detalle practico: la pagina no consume API. Es contenido estatico de producto, accesible desde `/sobre-nosotros`, el navbar publico y el footer.
+
+### `src/pages/ContactoPage.jsx`
+
+Es una pagina publica de contacto para visitantes.
+
+Responsabilidades:
+
+- mostrar un formulario tipico con nombre, correo, telefono opcional, fecha de visita, motivo, mensaje y consentimiento de contacto;
+- usar validaciones HTML basicas para campos obligatorios, correo, longitud minima y aceptacion de contacto;
+- simular el envio del formulario con un toast y limpiar los campos;
+- mostrar informacion ficticia de horario, ubicacion, telefono y correo;
+- mostrar redes sociales ficticias con nombre e identificador, sin navegar fuera del sitio.
+
+Detalle practico: la pagina no consume API. El envio es local y sirve para completar la experiencia publica sin crear todavia un endpoint de mensajes.
+
+### `src/pages/TerminosCondicionesPage.jsx`
+
+Es una pagina publica con terminos y condiciones del parque.
+
+Responsabilidades:
+
+- documentar condiciones de acceso al parque;
+- explicar reglas generales de uso de brazaletes, atracciones, saldo y alimentos;
+- mencionar pagos, comprobantes, cambios, reembolsos, seguridad, conducta y datos personales;
+- enlazarse desde el footer y desde la llamada informativa de `SobreNosotrosPage`.
+
+Detalle practico: la pagina no consume API. Es contenido estatico legal-operativo para dar realismo al flujo publico.
+
+### Requerimiento completado: navegacion publica informativa
+
+El requerimiento "Disenar e implementar la pagina Sobre nosotros" quedo ampliado y cerrado desde frontend con contacto, redes ficticias y terminos.
+
+Criterios resueltos:
+
+- existe la ruta publica `/sobre-nosotros`;
+- la pagina es accesible desde la navegacion superior y desde el footer;
+- el contenido explica propuesta, concepto, experiencia y valor para el visitante;
+- la estructura usa hero visual, bloques de beneficios, lista de valor y llamada a contacto en lugar de un bloque plano de texto;
+- el contenido evita presentarse como proyecto de portafolio y mantiene tono de parque real;
+- existe la ruta publica `/contacto` con formulario, informacion de atencion y redes ficticias;
+- existe la ruta publica `/terminos-condiciones` con condiciones tipicas de un parque de atracciones;
+- el diseno reutiliza colores, tipografias e imagenes del sitio para mantener alineacion visual.
 
 ### Requerimiento completado: testimonios visibles en la pagina de inicio
 
@@ -563,6 +625,9 @@ Esta matriz resume que deberia pasar en la interfaz segun el tipo de usuario.
 | Ruta o accion | Sin sesion | Cliente autenticado | Administrador |
 | --- | --- | --- | --- |
 | `/inicio` | permitido | permitido | permitido |
+| `/sobre-nosotros` | permitido | permitido | permitido |
+| `/contacto` | permitido | permitido | permitido |
+| `/terminos-condiciones` | permitido | permitido | permitido |
 | `/comprar-brazaletes` | permitido | permitido | permitido |
 | intento de compra interna | bloqueado por falta de sesion | permitido | permitido |
 | inicio de flujo PayPal | bloqueado por falta de sesion | permitido | permitido |
@@ -583,6 +648,9 @@ Notas practicas:
 - login basico
 - registro basico
 - proteccion de rutas por autenticacion y una regla administrativa ya unificada
+- pagina publica de sobre nosotros integrada a rutas, navbar y footer
+- pagina publica de contacto con formulario local, informacion de atencion y redes ficticias
+- pagina publica de terminos y condiciones
 - consulta de tipos de brazalete
 - compra con saldo interno
 - compra con PayPal
