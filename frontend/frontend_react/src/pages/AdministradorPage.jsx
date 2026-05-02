@@ -20,6 +20,7 @@ import {
   getAdminBraceletTypes,
   getAdminClients,
   getAdminReceipts,
+  getAdminTestimonials,
   getBraceletTransactions,
   getAttractions,
   getFoods,
@@ -30,6 +31,7 @@ import {
   updateAdminClient,
   updateAdminFood,
   updateAdminReceipt,
+  updateAdminTestimonial,
 } from '../api/api';
 
 const ADMIN_SECTIONS = [
@@ -38,11 +40,17 @@ const ADMIN_SECTIONS = [
   { id: 'brazaletes', label: 'Brazaletes' },
   { id: 'ventas', label: 'Ventas' },
   { id: 'movimientos', label: 'Movimientos' },
+  { id: 'testimonios', label: 'Testimonios' },
   { id: 'comidas', label: 'Comidas' },
   { id: 'atracciones', label: 'Atracciones' },
 ];
 
 const RECEIPT_STATUSES = ['PENDING', 'APPROVED', 'CAPTURED', 'REFUNDED'];
+const TESTIMONIAL_STATUS_LABELS = {
+  PENDING: 'Pendiente',
+  PUBLISHED: 'Publicado',
+  REJECTED: 'Rechazado',
+};
 
 const initialClientForm = {
   username: '',
@@ -127,6 +135,27 @@ const getTransactionTone = (type) => {
   };
 
   return tones[type] || 'neutral';
+};
+
+const getTestimonialTone = (status) => {
+  const tones = {
+    PUBLISHED: 'success',
+    PENDING: 'warning',
+    REJECTED: 'danger',
+  };
+
+  return tones[status] || 'neutral';
+};
+
+const renderRatingStars = (rating) => {
+  if (!rating) {
+    return 'Sin valoracion';
+  }
+
+  const normalizedRating = Math.max(1, Math.min(5, Number(rating)));
+  return Array.from({ length: 5 })
+    .map((_, index) => (index < normalizedRating ? '★' : '☆'))
+    .join(' ');
 };
 
 const buildFormData = (values, fileField = 'photo') => {
@@ -459,6 +488,7 @@ export function AdministradorPage() {
   const [receipts, setReceipts] = useState([]);
   const [braceletTypes, setBraceletTypes] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [foods, setFoods] = useState([]);
   const [attractions, setAttractions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -488,6 +518,7 @@ export function AdministradorPage() {
         receiptsData,
         braceletTypesData,
         transactionsData,
+        testimonialsData,
         foodsData,
         attractionsData,
       ] = await Promise.all([
@@ -496,6 +527,7 @@ export function AdministradorPage() {
         getAdminReceipts(),
         getAdminBraceletTypes(),
         getBraceletTransactions(),
+        getAdminTestimonials(),
         getFoods(),
         getAttractions(),
       ]);
@@ -505,6 +537,7 @@ export function AdministradorPage() {
       setReceipts(normalizeList(receiptsData));
       setBraceletTypes(normalizeList(braceletTypesData));
       setTransactions(normalizeList(transactionsData));
+      setTestimonials(normalizeList(testimonialsData));
       setFoods(normalizeList(foodsData));
       setAttractions(normalizeList(attractionsData));
     } catch (error) {
@@ -719,6 +752,27 @@ export function AdministradorPage() {
     setReceiptStatus(receipt.status || 'CAPTURED');
   };
 
+  const moderateTestimonial = async (testimonial, nextStatus) => {
+    setSaving(true);
+
+    try {
+      await updateAdminTestimonial(testimonial.id, {
+        status: nextStatus,
+        moderation_note:
+          nextStatus === 'PUBLISHED'
+            ? 'Aprobado desde panel administrativo.'
+            : 'Rechazado desde panel administrativo.',
+      });
+      await loadAdminData();
+      toast.success('Testimonio actualizado.');
+    } catch (error) {
+      console.error('Error moderating testimonial:', error);
+      toast.error('No se pudo moderar el testimonio.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleFoodChange = (event) => {
     const value = event.target.type === 'file' ? event.target.files[0] : event.target.value;
     setFoodForm((current) => ({
@@ -810,6 +864,8 @@ export function AdministradorPage() {
     bracelets: bracelets.length,
     receipts: receipts.length,
     transactions: transactions.length,
+    testimonials: testimonials.length,
+    pendingTestimonials: testimonials.filter((testimonial) => testimonial.status === 'PENDING').length,
     income: receipts.reduce((sum, receipt) => sum + Number(receipt.amount_paid || 0), 0),
   };
 
@@ -903,6 +959,10 @@ export function AdministradorPage() {
                 <p className="mt-2 text-3xl font-extrabold">{totals.transactions}</p>
               </div>
               <div className="rounded bg-teal-950/70 p-5">
+                <p className="text-sm text-white/70">Testimonios pendientes</p>
+                <p className="mt-2 text-3xl font-extrabold">{totals.pendingTestimonials}</p>
+              </div>
+              <div className="rounded bg-teal-950/70 p-5">
                 <p className="text-sm text-white/70">Ingresos registrados</p>
                 <p className="mt-2 text-3xl font-extrabold">{formatCurrency(totals.income)}</p>
               </div>
@@ -948,6 +1008,16 @@ export function AdministradorPage() {
                   <span className="text-2xl font-extrabold">Ver movimientos</span>
                   <span className="mt-3 block text-sm text-white/70">
                     Historial de activaciones, consumos, ajustes y reversos.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('testimonios')}
+                  className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
+                >
+                  <span className="text-2xl font-extrabold">Moderar testimonios</span>
+                  <span className="mt-3 block text-sm text-white/70">
+                    Aprobar o rechazar comentarios enviados por clientes.
                   </span>
                 </button>
                 <button
@@ -1451,6 +1521,84 @@ export function AdministradorPage() {
                       label: 'Hecho por',
                       render: (movement) => movement.performed_by?.username || 'Sistema',
                       sortValue: (movement) => movement.performed_by?.username || '',
+                    },
+                  ]}
+                />
+              </section>
+            ) : null}
+
+            {activeSection === 'testimonios' ? (
+              <section className="grid gap-6">
+                <DataTable
+                  title="Moderacion de testimonios"
+                  emptyText="No hay testimonios registrados."
+                  rows={testimonials}
+                  columns={[
+                    {
+                      key: 'created_at',
+                      label: 'Fecha',
+                      render: (testimonial) => formatDate(testimonial.created_at),
+                      sortValue: (testimonial) => new Date(testimonial.created_at || 0).getTime(),
+                    },
+                    {
+                      key: 'visible_name',
+                      label: 'Cliente',
+                      render: (testimonial) => (
+                        <div>
+                          <p className="font-bold">{testimonial.visible_name}</p>
+                          <p className="text-xs text-neutral-500">
+                            {testimonial.profile_image_url ? 'Con foto de perfil' : 'Sin foto de perfil'}
+                          </p>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'comment',
+                      label: 'Comentario',
+                      render: (testimonial) => (
+                        <p className="min-w-72 text-sm leading-5">{testimonial.comment}</p>
+                      ),
+                    },
+                    {
+                      key: 'rating',
+                      label: 'Valoracion',
+                      render: (testimonial) => (
+                        <span className="whitespace-nowrap text-lg text-amber-500">
+                          {renderRatingStars(testimonial.rating)}
+                        </span>
+                      ),
+                      sortValue: (testimonial) => Number(testimonial.rating || 0),
+                    },
+                    {
+                      key: 'status',
+                      label: 'Estado',
+                      render: (testimonial) => (
+                        <Badge tone={getTestimonialTone(testimonial.status)}>
+                          {TESTIMONIAL_STATUS_LABELS[testimonial.status] || testimonial.status}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: 'actions',
+                      label: 'Acciones',
+                      sortable: false,
+                      render: (testimonial) => (
+                        <div className="flex flex-wrap gap-2">
+                          <AdminButton
+                            disabled={saving || testimonial.status === 'PUBLISHED'}
+                            onClick={() => moderateTestimonial(testimonial, 'PUBLISHED')}
+                          >
+                            Aprobar
+                          </AdminButton>
+                          <AdminButton
+                            variant="danger"
+                            disabled={saving || testimonial.status === 'REJECTED'}
+                            onClick={() => moderateTestimonial(testimonial, 'REJECTED')}
+                          >
+                            Rechazar
+                          </AdminButton>
+                        </div>
+                      ),
                     },
                   ]}
                 />
