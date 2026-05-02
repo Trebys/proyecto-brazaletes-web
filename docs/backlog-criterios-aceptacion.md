@@ -155,6 +155,26 @@ Criterios de aceptacion:
 
 ## Historias recientes y pendientes
 
+### Completar navegacion publica informativa
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+
+Criterios de aceptacion:
+
+- Existe una pagina publica de Sobre nosotros accesible desde la navegacion y el footer.
+- La pagina explica la propuesta del parque, su concepto, experiencia y valor para el visitante.
+- El contenido mantiene la idea general del parque y se alinea con el estilo visual existente.
+- La pagina evita lenguaje de proyecto, portafolio o demostracion para sentirse como un sitio real.
+- La pagina tiene una estructura visual profesional con hero, bloques de contenido, beneficios y llamadas a otras secciones publicas.
+- Existe una pagina publica de Contactenos con formulario tipico, informacion de atencion y redes ficticias.
+- Las redes ficticias del contacto y el footer muestran un aviso y no redirigen fuera del sitio.
+- Existe una pagina publica de terminos y condiciones para el parque.
+- El flujo queda documentado en frontend al agregar las rutas `/sobre-nosotros`, `/contacto`, `/terminos-condiciones` y los enlaces principales.
+
 ### Exponer historial transaccional completo del brazalete en frontend
 
 Estado: Completada

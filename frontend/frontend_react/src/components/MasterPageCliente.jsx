@@ -1,7 +1,23 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import perfilIcon from '/images/perfil.svg';
 import { useAuth } from '../auth/AuthContext.jsx';
+
+const footerSocialLinks = [
+  {
+    name: 'Facebook',
+    icon: '/images/facebook.svg',
+  },
+  {
+    name: 'Instagram',
+    icon: '/images/instagram.svg',
+  },
+  {
+    name: 'TikTok',
+    icon: '/images/tiktok.svg',
+  },
+];
 
 export function MasterPageCliente() {
   const navigate = useNavigate();
@@ -16,9 +32,13 @@ export function MasterPageCliente() {
     }
   };
 
+  const handleSocialClick = (socialName) => {
+    toast(`Redireccion ficticia a ${socialName}.`);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-fondoPrincipal">
-      <nav className="sticky top-0 z-50 flex items-center justify-between bg-fondoLogin px-8 py-4 text-white">
+      <nav className="sticky top-0 z-50 flex flex-col gap-4 bg-fondoLogin px-6 py-4 text-white lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <button
           type="button"
           className="flex cursor-pointer items-center space-x-4"
@@ -28,7 +48,7 @@ export function MasterPageCliente() {
           <span className="text-xl font-bold">Fantasy Land</span>
         </button>
 
-        <div className="flex space-x-6">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold lg:text-base">
           <Link to="/inicio" className="cursor-pointer">
             Inicio
           </Link>
@@ -38,12 +58,15 @@ export function MasterPageCliente() {
           <Link to="/atracciones-comidas" className="cursor-pointer">
             Atracciones y Comidas
           </Link>
+          <Link to="/sobre-nosotros" className="cursor-pointer">
+            Sobre Nosotros
+          </Link>
           <Link to="/contacto" className="cursor-pointer">
             Contacto
           </Link>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-center gap-2">
           {user ? (
             <>
               <button
@@ -79,31 +102,31 @@ export function MasterPageCliente() {
       </main>
 
       <footer className="bg-fondoLogin py-4 text-white">
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-6 text-center md:flex-row md:text-left">
           <div className="flex items-center space-x-2">
             <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-8" />
             <div className="flex flex-col">
               <span className="text-lg font-bold">Fantasy Land</span>
-              <p className="text-sm">Sobre nosotros</p>
+              <Link to="/sobre-nosotros" className="text-sm hover:underline">
+                Sobre nosotros
+              </Link>
             </div>
           </div>
 
           <div className="flex flex-col items-center">
             <h2 className="mb-2 text-lg font-bold">Redes Sociales</h2>
             <div className="flex space-x-3">
-              <a href="#" aria-label="Facebook">
-                <img src="/images/facebook.svg" alt="Facebook Logo" className="h-6" />
-              </a>
-              <a href="#" aria-label="Instagram">
-                <img
-                  src="/images/instagram.svg"
-                  alt="Instagram Logo"
-                  className="h-6"
-                />
-              </a>
-              <a href="#" aria-label="TikTok">
-                <img src="/images/tiktok.svg" alt="TikTok Logo" className="h-6" />
-              </a>
+              {footerSocialLinks.map((social) => (
+                <button
+                  key={social.name}
+                  type="button"
+                  onClick={() => handleSocialClick(social.name)}
+                  aria-label={social.name}
+                  className="transition hover:opacity-80"
+                >
+                  <img src={social.icon} alt="" className="h-6" />
+                </button>
+              ))}
             </div>
           </div>
 

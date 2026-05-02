@@ -11,6 +11,8 @@ import PrivateRoutes from './components/PrivateRoutes';
 import { PerfilClientePage } from './pages/PerfilClientePage';
 import { AtraccionesComidasPage } from './pages/AtraccionesComidasPage';
 import { ContactoPage } from './pages/ContactoPage';
+import { SobreNosotrosPage } from './pages/SobreNosotrosPage';
+import { TerminosCondicionesPage } from './pages/TerminosCondicionesPage';
 import { ReciboCompraPage } from './pages/ReciboCompraPage';
 import { AuthProvider } from './auth/AuthContext';
 import { AutoLogout } from './components/AutoLogout';
@@ -43,7 +45,12 @@ function App() {
                 path="/atracciones-comidas"
                 element={<AtraccionesComidasPage />}
               />
+              <Route path="/sobre-nosotros" element={<SobreNosotrosPage />} />
               <Route path="/contacto" element={<ContactoPage />} />
+              <Route
+                path="/terminos-condiciones"
+                element={<TerminosCondicionesPage />}
+              />
 
               <Route element={<PrivateRoutes />}>
                 <Route path="/mi-perfil" element={<PerfilClientePage />}>
