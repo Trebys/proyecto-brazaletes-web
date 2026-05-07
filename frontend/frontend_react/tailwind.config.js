@@ -5,14 +5,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        fondoLogin: '#00565F',
-        fondoPrincipal: '#39826F',
-        fondoInput: '#398269',
+        fondoLogin: '#004C55',
+        fondoPrincipal: '#398269',
+        fondoInput: '#E7F3EF',
 
         // Colores específicos para brazaletes
-        braceletEstandar: '#bbf7d0',
-        braceletEspecial: '#fed7aa',
-        braceletPremium: '#bfdbfe',
+        braceletEstandar: '#DDF8E8',
+        braceletEspecial: '#FFE2BD',
+        braceletPremium: '#DCEBFF',
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],

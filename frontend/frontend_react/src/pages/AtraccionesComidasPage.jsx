@@ -208,24 +208,33 @@ export function AtraccionesComidasPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-fondoPrincipal px-6 py-16 text-center text-white">
+      <div className="app-shell px-6 py-16 text-center text-slate-700">
         Cargando atracciones y comidas...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-fondoPrincipal px-4 py-10 text-white">
+    <div className="app-shell px-4 py-12">
       <div className="mx-auto max-w-6xl">
+        <header className="mb-10 text-center">
+          <p className="section-eyebrow">Catalogo del parque</p>
+          <h1 className="section-title mt-3">Atracciones y comidas</h1>
+          <p className="section-copy mx-auto mt-4 max-w-2xl">
+            Consulta lo que puedes disfrutar y usa tu brazalete activo para
+            registrar consumos durante la visita.
+          </p>
+        </header>
+
         {isAuthenticated ? (
-          <section className="mx-auto mb-10 max-w-4xl rounded-lg bg-teal-800/50 px-5 py-4 shadow-lg">
+          <section className="surface-card mx-auto mb-10 max-w-5xl px-5 py-4">
             <div className="grid gap-4 text-sm md:grid-cols-[1.3fr_1fr_1fr_1fr] md:items-center">
               <label className="block">
-                <span className="mb-1 block font-bold">Brazalete activo</span>
+                <span className="form-label">Brazalete activo</span>
                 <select
                   value={selectedBraceletId}
                   onChange={(event) => setSelectedBraceletId(event.target.value)}
-                  className="w-full rounded bg-fondoInput px-3 py-2 text-white outline-none"
+                  className="form-input"
                 >
                   {bracelets.length === 0 ? (
                     <option value="">Sin brazaletes</option>
@@ -239,31 +248,31 @@ export function AtraccionesComidasPage() {
                 </select>
               </label>
               <div>
-                <span className="block font-bold">Usos disponibles</span>
-                <span>{selectedBracelet?.attraction_uses_remaining ?? 0}</span>
+                <span className="block text-xs font-extrabold uppercase tracking-wide text-slate-500">Usos disponibles</span>
+                <span className="text-lg font-extrabold text-slate-950">{selectedBracelet?.attraction_uses_remaining ?? 0}</span>
               </div>
               <div>
-                <span className="block font-bold">Saldo brazalete</span>
-                <span>{formatCurrency(selectedBracelet?.current_balance)}</span>
+                <span className="block text-xs font-extrabold uppercase tracking-wide text-slate-500">Saldo brazalete</span>
+                <span className="text-lg font-extrabold text-slate-950">{formatCurrency(selectedBracelet?.current_balance)}</span>
               </div>
               <div>
-                <span className="block font-bold">Saldo cuenta</span>
-                <span>{formatCurrency(accountBalance)}</span>
+                <span className="block text-xs font-extrabold uppercase tracking-wide text-slate-500">Saldo cuenta</span>
+                <span className="text-lg font-extrabold text-slate-950">{formatCurrency(accountBalance)}</span>
               </div>
             </div>
           </section>
         ) : null}
 
         {errorMessage ? (
-          <div className="mx-auto mb-8 max-w-3xl rounded bg-red-950/50 px-5 py-3 text-center text-sm text-red-100">
+          <div className="mx-auto mb-8 max-w-3xl rounded-md border border-red-200 bg-red-50 px-5 py-3 text-center text-sm font-semibold text-red-700">
             {errorMessage}
           </div>
         ) : null}
 
         <section>
-          <h1 className="text-center font-montserrat text-4xl font-extrabold">
+          <h2 className="text-center font-montserrat text-3xl font-extrabold text-white">
             Atracciones
-          </h1>
+          </h2>
 
           <div className="mt-10 grid gap-x-12 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {attractions.length === 0 ? (
@@ -289,33 +298,34 @@ export function AtraccionesComidasPage() {
                 return (
                   <article
                     key={attraction.id}
-                    className="mx-auto flex w-full max-w-[280px] flex-col items-center text-center"
+                    className="surface-card mx-auto flex h-full w-full max-w-[320px] flex-col overflow-hidden text-center"
                   >
-                    <div className="w-full border-4 border-sky-300 bg-sky-300">
+                    <div className="w-full bg-sky-100">
                       {imageUrl ? (
                         <img
                           src={imageUrl}
                           alt={attraction.name}
-                          className="h-36 w-full object-cover"
+                          className="h-44 w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-36 items-center justify-center bg-teal-900 text-sm">
+                        <div className="flex h-44 items-center justify-center bg-teal-900 text-sm text-white">
                           Sin imagen
                         </div>
                       )}
                     </div>
 
-                    <h2 className="mt-2 text-sm font-extrabold text-black">
+                    <div className="flex flex-1 flex-col p-5">
+                    <h3 className="font-montserrat text-lg font-extrabold text-slate-950">
                       {attraction.name}
-                    </h2>
-                    <p className="mt-5 min-h-[88px] text-left text-sm font-bold leading-5 text-white">
+                    </h3>
+                    <p className="mt-3 flex-1 text-left text-sm font-semibold leading-6 text-slate-600">
                       {attraction.description}
                     </p>
-                    <p className="mt-4 text-sm font-extrabold">
+                    <p className="mt-4 text-sm font-extrabold text-teal-800">
                       Gasta {formatUsesLabel(requiredUses)}
                     </p>
                     {isAuthenticated && selectedBracelet ? (
-                      <p className="mt-1 text-xs text-white/80">
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
                         Te quedan {remainingUses} usos
                       </p>
                     ) : null}
@@ -323,7 +333,7 @@ export function AtraccionesComidasPage() {
                       type="button"
                       disabled={!canConsume || isProcessing}
                       onClick={() => handleConsumeAttraction(attraction)}
-                      className="mt-5 rounded bg-neutral-900 px-8 py-4 text-sm font-extrabold text-white shadow-md transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-white/60"
+                      className="btn-dark mt-5 w-full"
                     >
                       {isProcessing
                         ? 'Procesando...'
@@ -331,6 +341,7 @@ export function AtraccionesComidasPage() {
                           ? 'Usar Atraccion'
                           : 'Sin usos'}
                     </button>
+                    </div>
                   </article>
                 );
               })
@@ -339,7 +350,7 @@ export function AtraccionesComidasPage() {
         </section>
 
         <section className="mt-28 pb-24">
-          <h2 className="text-center font-montserrat text-4xl font-extrabold">
+          <h2 className="text-center font-montserrat text-3xl font-extrabold text-white">
             Comidas
           </h2>
 
@@ -365,34 +376,35 @@ export function AtraccionesComidasPage() {
                 return (
                   <article
                     key={food.id}
-                    className="mx-auto flex w-full max-w-[280px] flex-col items-center text-center"
+                    className="surface-card mx-auto flex h-full w-full max-w-[320px] flex-col overflow-hidden text-center"
                   >
-                    <div className="w-full border-4 border-red-600 bg-red-600">
+                    <div className="w-full bg-amber-100">
                       {imageUrl ? (
                         <img
                           src={imageUrl}
                           alt={food.name}
-                          className="h-36 w-full object-cover"
+                          className="h-44 w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-36 items-center justify-center bg-teal-900 text-sm">
+                        <div className="flex h-44 items-center justify-center bg-teal-900 text-sm text-white">
                           Sin imagen
                         </div>
                       )}
                     </div>
 
-                    <h3 className="mt-2 text-sm font-extrabold text-black">
+                    <div className="flex flex-1 flex-col p-5">
+                    <h3 className="font-montserrat text-lg font-extrabold text-slate-950">
                       {food.name}
                     </h3>
-                    <p className="mt-4 text-sm font-extrabold">
+                    <p className="mt-3 text-2xl font-extrabold text-teal-800">
                       {formatCurrency(food.price)}
                     </p>
                     {isAuthenticated && selectedBracelet ? (
-                      <p className="mt-1 min-h-[32px] text-xs text-white/80">
+                      <p className="mt-2 min-h-[32px] text-xs font-semibold text-slate-500">
                         Saldo disponible {formatCurrency(braceletBalance)}
                       </p>
                     ) : (
-                      <p className="mt-1 min-h-[32px] text-xs text-white/80">
+                      <p className="mt-2 min-h-[32px] text-xs font-semibold text-slate-500">
                         Inicia sesion para comprar
                       </p>
                     )}
@@ -400,7 +412,7 @@ export function AtraccionesComidasPage() {
                       type="button"
                       disabled={!canBuy || isProcessing}
                       onClick={() => handlePurchaseFood(food, paymentSource)}
-                      className="mt-5 rounded bg-neutral-900 px-10 py-4 text-sm font-extrabold text-white shadow-md transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-white/60"
+                      className="btn-dark mt-5 w-full"
                     >
                       {isProcessing
                         ? 'Procesando...'
@@ -408,6 +420,7 @@ export function AtraccionesComidasPage() {
                             ? 'Comprar'
                             : 'Sin saldo'}
                     </button>
+                    </div>
                   </article>
                 );
               })

@@ -90,10 +90,10 @@ export function ProfileDataForm() {
   };
 
   return (
-    <div className="bg-teal-700 p-8 rounded-lg mb-10 max-w-md mx-auto">
+    <div className="surface-card mx-auto mb-10 max-w-xl p-6 md:p-8">
       <form onSubmit={handleSubmit}>
         <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="h-28 w-28 overflow-hidden rounded-full bg-white/20">
+          <div className="h-28 w-28 overflow-hidden rounded-full border-4 border-white bg-teal-50 shadow-md">
             {profileImagePreview ? (
               <img
                 src={profileImagePreview}
@@ -109,40 +109,40 @@ export function ProfileDataForm() {
             )}
           </div>
           <label className="w-full">
-            <span className="mb-2 block text-center text-white">Imagen de perfil</span>
+            <span className="form-label text-center">Imagen de perfil</span>
             <input
               type="file"
               name="profile_image"
               accept="image/*"
               onChange={handleChange}
-              className="w-full rounded bg-white p-2 text-sm text-black file:mr-3 file:rounded file:border-0 file:bg-teal-600 file:px-3 file:py-1 file:text-white"
+              className="form-input file:mr-3 file:rounded-md file:border-0 file:bg-teal-700 file:px-3 file:py-1 file:text-white"
             />
           </label>
         </div>
 
         {fields.map((field) => (
           <div className="mb-4" key={field.name}>
-            <label className="block text-white mb-2">{field.label}</label>
+            <label className="form-label">{field.label}</label>
             <input
               type={field.type}
               name={field.name}
               value={userData[field.name] ?? ''}
               onChange={handleChange}
-              className="w-full p-2 rounded text-black"
+              className="form-input"
             />
           </div>
         ))}
 
-        <div className="flex justify-between">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row">
           <button
             type="submit"
-            className="bg-teal-500 text-white px-4 py-2 rounded"
+            className="btn-primary"
           >
             Editar Informacion
           </button>
           <button
             type="button"
-            className="bg-red-600 text-white px-4 py-2 rounded"
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-red-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-red-800"
             onClick={handleDeleteAccount}
           >
             Eliminar Cuenta

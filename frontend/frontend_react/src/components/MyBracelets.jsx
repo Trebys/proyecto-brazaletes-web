@@ -44,8 +44,8 @@ export function MyBracelets() {
 
   return (
     <div className="py-8">
-      <h2 className="text-2xl font-bold text-center mb-6">Mis Brazaletes</h2>
-      <div className="flex flex-col space-y-6">
+      <h2 className="mb-6 text-center font-montserrat text-2xl font-extrabold text-white">Mis Brazaletes</h2>
+      <div className="grid gap-5 lg:grid-cols-2">
         {bracelets.map((receipt) => {
           const { id, user, bracelet, purchase_date, purchase_code } = receipt;
           const typeName = bracelet?.bracelet_type?.name || '';
@@ -63,9 +63,9 @@ export function MyBracelets() {
           return (
             <div
               key={id}
-              className={`${cardColorClass} p-6 rounded-lg text-black`}
+              className={`surface-card ${cardColorClass} p-6`}
             >
-              <table className="w-full text-sm mb-4">
+              <table className="mb-5 w-full text-sm">
                 <tbody>
                   <tr>
                     <td className="py-1 font-semibold">Comprador</td>
@@ -110,13 +110,13 @@ export function MyBracelets() {
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => handleViewReceipt(id)}
-                  className="rounded bg-black px-3 py-2 text-white hover:bg-gray-800"
+                  className="btn-dark"
                 >
                   Ver Recibo
                 </button>
                 <button
                   onClick={() => handleViewMovements(bracelet?.id)}
-                  className="rounded bg-teal-700 px-3 py-2 text-white hover:bg-teal-600"
+                  className="btn-primary"
                 >
                   Ver movimientos
                 </button>

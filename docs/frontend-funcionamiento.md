@@ -179,6 +179,8 @@ Flujo:
 4. se redirige al usuario a la ruta previa;
 5. si el usuario es administrador e inicio sesion sin una ruta previa especifica, se redirige a `/administrador`.
 
+Detalle visual: la pantalla de login usa una composicion de acceso con imagen lateral, marca, texto breve de contexto y formulario en panel oscuro. El enlace de recuperacion de contrasena no se muestra como accion funcional porque ese flujo todavia no existe.
+
 ### Registro
 
 Archivo principal: `src/components/RegistroForm.jsx`
@@ -190,6 +192,8 @@ Flujo:
 3. si el backend responde `201`, se limpia el formulario.
 
 Observacion: el frontend no inicia sesion automaticamente despues del registro, aunque el backend si devuelve token.
+
+Detalle visual: el registro usa la misma familia visual que login, con imagen lateral, mensaje de alta de cuenta y formulario organizado para que se sienta como parte del sitio publico y no como una pantalla aislada.
 
 Estado vigente para este flujo:
 
@@ -255,6 +259,20 @@ Criterios resueltos:
 
 ## Layout general
 
+### Sistema visual global
+
+El frontend cuenta ahora con una capa visual reutilizable declarada en `src/index.css` sobre Tailwind.
+
+Responsabilidades:
+
+- definir una superficie base clara mediante `app-shell`;
+- normalizar contenedores de seccion con `section-container`;
+- centralizar jerarquia tipografica con `section-eyebrow`, `section-title` y `section-copy`;
+- unificar tarjetas, formularios, botones y tablas con clases como `surface-card`, `glass-panel`, `btn-primary`, `btn-secondary`, `btn-dark`, `form-input`, `form-input-dark` y `table-shell`;
+- mantener la identidad verde/teal del proyecto con `fondoPrincipal` (`#398269`) como fondo global y acentos ambar para llamadas de atencion.
+
+Detalle practico: los tokens de Tailwind para `fondoLogin`, `fondoPrincipal`, `fondoInput` y colores de brazalete se ajustaron para conservar la direccion visual original, pero con mejor contraste, superficies mas limpias y estados visuales mas consistentes. `fondoPrincipal` vuelve a usar el verde base del proyecto para evitar que las pantallas publicas se sientan desconectadas de los mockups iniciales.
+
 ### `src/components/MasterPageCliente.jsx`
 
 Este componente funciona como layout publico para la mayor parte del sitio.
@@ -266,8 +284,9 @@ Incluye:
 - boton de perfil o de login segun exista `user_data`;
 - boton de cerrar sesion;
 - footer con branding, enlace a sobre nosotros y redes.
-- usa el color `fondoLogin` (`#00565F`) para mantener consistencia con los mockups.
+- usa el color `fondoLogin` (`#004C55`) para mantener consistencia con los mockups y mejorar contraste.
 - las redes sociales del footer son acciones ficticias: muestran un aviso en pantalla y no redirigen fuera del sitio.
+- el navbar y footer incorporan mejor jerarquia, estados hover, sombras sutiles y controles con alto minimo estable para funcionar en desktop y mobile.
 
 Detalles practicos:
 
@@ -291,6 +310,8 @@ Responsabilidades:
 - mostrar nombre visible, comentario, fecha, valoracion e imagen opcional;
 - permitir a clientes autenticados enviar un testimonio nuevo desde la home escribiendo solo comentario y estrellas;
 - informar que los testimonios enviados quedan pendientes de revision antes de publicarse.
+- aplicar una home mas pulida con hero de dos columnas, carrusel visual, llamadas a compra/atracciones, tarjetas de brazalete consistentes y testimonios en una seccion de alto contraste.
+- separar hero, catalogo y testimonios como secciones de viewport con `scroll-snap` suave en modo `proximity`, para que al bajar se perciba una seccion a la vez sin un salto brusco.
 
 Regla vigente de testimonios:
 
@@ -382,6 +403,7 @@ Responsabilidades:
 - permitir compra con saldo interno;
 - permitir compra con PayPal;
 - bloquear compra si el usuario no ha iniciado sesion.
+- mostrar una composicion de compra mas clara, separando explicacion del flujo, resumen del brazalete seleccionado y formulario de pago.
 
 Detalle practico: la pagina consume el catalogo publico de tipos activos. Si un administrador desactiva un tipo, deja de aparecer en inicio y compra, y el backend tambien rechaza intentos de compra con ese ID.
 
@@ -510,6 +532,7 @@ Responsabilidades:
 - comprar comidas descontando saldo del brazalete;
 - reflejar en pantalla el nuevo estado del brazalete sin recargar toda la aplicacion.
 - mostrar feedback de exito con el identificador del movimiento auditado.
+- usar tarjetas visuales consistentes para atracciones y comidas, con imagen estable, jerarquia de nombre/precio/usos y botones con estados deshabilitados claros.
 
 Decision vigente del flujo minimo:
 
@@ -537,6 +560,7 @@ Responsabilidades:
 - consultar y gestionar comidas y atracciones, incluyendo imagenes;
 - mantener botones de perfil y cierre de sesion consistentes con el layout principal;
 - mostrar footer con anio actual calculado automaticamente.
+- alinearse con la capa visual global para que paneles, tablas, formularios y navegacion administrativa tengan contraste y estados coherentes con el resto del sitio.
 
 Detalle practico:
 
@@ -607,6 +631,19 @@ Criterios resueltos desde la perspectiva del frontend:
 - la compra con saldo interno ya tiene pruebas utiles sobre exito y rechazos de negocio;
 - la captura de PayPal y el webhook ya tienen pruebas sobre contratos clave y errores controlados;
 - los flujos visibles para el usuario en login, compra y recibo quedan mejor protegidos frente a regresiones.
+
+### Requerimiento completado: pulido visual global
+
+El requerimiento "Pulir el diseno visual global respetando la base de los mockups de Figma" quedo resuelto desde frontend.
+
+Criterios resueltos:
+
+- la identidad visual actual se conserva usando el verde `#398269` como fondo base, verde/teal para navegacion y acentos calidos para llamadas de atencion;
+- existe una capa reutilizable de estilos para superficies, botones, formularios, tablas y contenedores;
+- se mejoraron jerarquia tipografica, espaciados, contraste, sombras, radios y estados hover/focus/disabled;
+- `InicioPage` se pulio especialmente con hero mas profesional, carrusel enmarcado, catalogo de brazaletes en tarjetas coherentes, testimonios con mejor contraste y secciones separadas por viewport;
+- navegacion, footer, compra, perfil, recibo, atracciones/comidas y panel administrativo quedaron visualmente mas consistentes;
+- el resultado se valido mediante build de produccion de Vite y usa clases responsivas para desktop y mobile.
 
 ## Componentes secundarios
 

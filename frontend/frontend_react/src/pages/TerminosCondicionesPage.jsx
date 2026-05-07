@@ -45,8 +45,8 @@ const termsSections = [
 
 export function TerminosCondicionesPage() {
   return (
-    <div className="min-h-screen bg-fondoPrincipal text-white">
-      <section className="bg-teal-950/40 px-6 py-16">
+    <div className="app-shell">
+      <section className="bg-teal-950 px-6 py-16 text-white">
         <div className="mx-auto max-w-5xl">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal-100">
             Informacion legal

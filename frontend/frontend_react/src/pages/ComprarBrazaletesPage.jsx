@@ -99,7 +99,7 @@ export function ComprarBrazaletesPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-8">
+    <div className="section-container flex min-h-[calc(100vh-88px)] flex-col justify-center py-12">
       {/* Modal */}
       <ModalMessage
         visible={showLoginModal}
@@ -111,20 +111,54 @@ export function ComprarBrazaletesPage() {
         }}
       />
 
-      <div className="bg-fondoLogin w-full max-w-md p-6 rounded-lg shadow-md text-white">
-        <h1 className="text-2xl font-bold mb-4 text-center">
-          Formulario de Compra
-        </h1>
+      <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+        <div>
+          <p className="section-eyebrow">Compra de brazaletes</p>
+          <h1 className="mt-3 font-montserrat text-4xl font-extrabold leading-tight text-white md:text-5xl">
+            Elige tu pase y completa tu compra.
+          </h1>
+          <p className="section-copy mt-5">
+            Puedes pagar con saldo interno o continuar con PayPal. Si aun no
+            inicias sesion, te pediremos entrar antes de confirmar la compra.
+          </p>
+          {selectedTipo ? (
+            <div className="surface-card mt-8 overflow-hidden p-5">
+              <div className="flex gap-4">
+                <img
+                  src={buildMediaUrl(selectedTipo.image_url || selectedTipo.image)}
+                  alt={selectedTipo.name}
+                  className="h-24 w-28 rounded-md object-cover"
+                />
+                <div>
+                  <h2 className="font-montserrat text-xl font-extrabold">
+                    {selectedTipo.name}
+                  </h2>
+                  <p className="mt-1 text-2xl font-extrabold text-teal-800">
+                    ${selectedTipo.price}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {selectedTipo.description || 'Brazalete disponible para compra.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+      <div className="surface-card w-full p-6">
+        <h2 className="font-montserrat text-2xl font-extrabold text-slate-950">
+          Formulario de compra
+        </h2>
 
         {/* COMPRAR CON SALDO INTERNO */}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block mb-1 font-semibold" htmlFor="tipoBrazalete">
+            <label className="form-label" htmlFor="tipoBrazalete">
               Nombre de producto
             </label>
             <select
               id="tipoBrazalete"
-              className="w-full p-2 rounded bg-fondoInput text-white"
+              className="form-input"
               onChange={handleSelectChange}
               value={selectedTipo ? selectedTipo.id : ''}
             >
@@ -139,37 +173,37 @@ export function ComprarBrazaletesPage() {
             </select>
           </div>
 
-          <div className="p-2 rounded flex justify-center">
+          <div className="mb-4 flex justify-center rounded-md bg-slate-50 p-3">
             {selectedTipo && (selectedTipo.image_url || selectedTipo.image) ? (
               <img
                 src={buildMediaUrl(selectedTipo.image_url || selectedTipo.image)}
                 alt={selectedTipo.name}
-                className="max-h-32 object-cover"
+                className="max-h-40 rounded-md object-cover"
               />
             ) : (
-              <p className="text-white">No hay imagen</p>
+              <p className="text-slate-500">No hay imagen</p>
             )}
           </div>
 
           <div className="mb-4">
-            <label className="block mb-1 font-semibold" htmlFor="precio">
+            <label className="form-label" htmlFor="precio">
               Precio del producto
             </label>
             <input
               id="precio"
-              className="w-full p-2 rounded bg-fondoInput text-white"
+              className="form-input"
               value={selectedTipo ? `$${selectedTipo.price}` : ''}
               readOnly
             />
           </div>
 
           <div className="mb-4">
-            <label className="block mb-1 font-semibold" htmlFor="detalles">
+            <label className="form-label" htmlFor="detalles">
               Detalles del producto
             </label>
             <textarea
               id="detalles"
-              className="w-full p-2 rounded bg-fondoInput text-white"
+              className="form-input"
               rows={3}
               readOnly
               value={selectedTipo ? selectedTipo.description : ''}
@@ -179,7 +213,7 @@ export function ComprarBrazaletesPage() {
           <button
             type="submit"
             disabled={!selectedTipo || isSubmitting}
-            className="w-full p-3 rounded bg-green-700 text-white font-bold hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary w-full"
           >
             {isSubmitting ? 'Procesando compra...' : 'Comprar (saldo interno)'}
           </button>
@@ -196,7 +230,9 @@ export function ComprarBrazaletesPage() {
 
         {/* COMPRAR CON PAYPAL */}
         <div className="mt-6 text-center">
-          <h2 className="text-xl font-bold mb-2">O comprar con PayPal</h2>
+          <h2 className="mb-3 text-lg font-extrabold text-slate-900">
+            O comprar con PayPal
+          </h2>
           {selectedTipo && (
             <PayPalButton
               braceletTypeId={selectedTipo.id}
@@ -205,6 +241,7 @@ export function ComprarBrazaletesPage() {
             />
           )}
         </div>
+      </div>
       </div>
     </div>
   );

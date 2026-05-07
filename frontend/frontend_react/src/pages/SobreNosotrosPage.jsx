@@ -28,21 +28,21 @@ const visitValues = [
 
 export function SobreNosotrosPage() {
   return (
-    <div className="bg-fondoPrincipal text-white">
+    <div className="app-shell">
       <section className="relative overflow-hidden">
         <img
           src="/images/FotoCarrusel2.jpeg"
           alt="Atraccion principal de Fantasy Land"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-teal-950/90 via-teal-900/75 to-teal-700/35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-950/95 via-teal-900/82 to-teal-700/50" />
 
         <div className="relative mx-auto grid min-h-[520px] max-w-6xl items-center px-6 py-20 md:grid-cols-[1.05fr_0.95fr] md:gap-10">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal-100">
               Sobre nosotros
             </p>
-            <h1 className="mt-4 max-w-3xl font-montserrat text-4xl font-extrabold leading-tight md:text-6xl">
+            <h1 className="mt-4 max-w-3xl font-montserrat text-4xl font-extrabold leading-tight text-white md:text-6xl">
               Fantasy Land es una experiencia de parque conectada de principio a
               fin.
             </h1>
@@ -68,7 +68,7 @@ export function SobreNosotrosPage() {
           </div>
 
           <div className="mt-12 grid gap-4 md:mt-0">
-            <div className="rounded-lg bg-white/14 p-5 shadow-xl backdrop-blur">
+            <div className="rounded-lg bg-white/10 p-5 shadow-xl backdrop-blur">
               <span className="text-4xl font-extrabold">360</span>
               <p className="mt-2 text-sm font-semibold text-teal-50">
                 grados de experiencia: compra, visita, consumo y seguimiento
@@ -95,13 +95,13 @@ export function SobreNosotrosPage() {
 
       <section className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal-100">
+          <p className="section-eyebrow">
             Nuestra propuesta
           </p>
-            <h2 className="mt-3 font-montserrat text-3xl font-extrabold">
+            <h2 className="section-title mt-3">
             Un parque pensado para visitas mas simples.
           </h2>
-          <p className="mt-5 leading-7 text-white/85">
+          <p className="section-copy mt-5">
             Fantasy Land toma la idea clasica de un parque familiar y la lleva a
             una experiencia gestionada por software. El visitante puede elegir
             su brazalete, entrar al recorrido, usar atracciones y comprar comida
@@ -141,7 +141,7 @@ export function SobreNosotrosPage() {
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal-100">
               Valor para el visitante
             </p>
-            <h2 className="mt-3 font-montserrat text-3xl font-extrabold">
+            <h2 className="mt-3 font-montserrat text-3xl font-extrabold text-white">
               Menos friccion, mas tiempo para disfrutar.
             </h2>
             <p className="mt-5 leading-7 text-white/85">

@@ -51,20 +51,20 @@ export function ContactoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-fondoPrincipal text-white">
+    <div className="app-shell">
       <section className="relative overflow-hidden">
         <img
           src="/images/FotoCarrusel.jpg"
           alt="Entrada principal de Fantasy Land"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-teal-950/90 via-teal-900/80 to-teal-700/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-950/95 via-teal-900/84 to-teal-700/52" />
 
         <div className="relative mx-auto max-w-6xl px-6 py-20">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal-100">
             Contactenos
           </p>
-          <h1 className="mt-4 max-w-3xl font-montserrat text-4xl font-extrabold md:text-6xl">
+          <h1 className="mt-4 max-w-3xl font-montserrat text-4xl font-extrabold text-white md:text-6xl">
             Estamos listos para ayudarte a planear tu visita.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-teal-50">
@@ -188,7 +188,7 @@ export function ContactoPage() {
         </form>
 
         <aside className="grid gap-5">
-          <div className="rounded-lg bg-teal-950/45 p-6 shadow-xl">
+          <div className="rounded-lg bg-fondoLogin p-6 text-white shadow-xl">
             <h2 className="font-montserrat text-2xl font-extrabold">
               Informacion de atencion
             </h2>
