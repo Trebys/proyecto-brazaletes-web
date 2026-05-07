@@ -208,6 +208,34 @@ Seguimiento:
 
 - Evaluar una vista administrativa dedicada si el volumen de testimonios crece o si se requieren filtros, aprobacion masiva o motivos de rechazo visibles para clientes.
 
+### 2026-05-05 - Capa visual global sobre Tailwind
+
+Estado: vigente
+
+Contexto:
+
+- El frontend ya tenia mockups y una identidad verde/teal reconocible.
+- Las pantallas crecieron de forma funcional, pero con diferencias de jerarquia, contraste, espaciado, formularios, tablas y estados visuales.
+- El requerimiento pide mejorar el acabado para portafolio sin romper la direccion visual existente.
+
+Decision:
+
+- Mantener React y Tailwind como base, sin introducir una libreria nueva de componentes.
+- Crear clases reutilizables en `src/index.css` para superficies, secciones, botones, formularios y tablas.
+- Ajustar tokens de color existentes en `tailwind.config.js` en lugar de reemplazar la identidad visual del proyecto, conservando `#398269` como fondo principal.
+- Aplicar el pulido a inicio, navegacion, footer, compra, perfil, recibo, catalogo de atracciones/comidas y panel administrativo.
+- Separar las secciones principales de la home mediante alto de viewport y `scroll-snap` en modo `proximity`, para mejorar la lectura de hero, catalogo y testimonios sin forzar un salto brusco al desplazarse.
+
+Impacto:
+
+- Las futuras pantallas deben preferir las clases globales existentes antes de duplicar estilos por pagina.
+- El proyecto conserva su identidad original, pero con una base mas consistente para desktop y mobile.
+- Los cambios visuales no alteran contratos de API, modelos, permisos ni reglas de negocio.
+
+Seguimiento:
+
+- Si se reciben capturas o un enlace especifico de Figma, comparar contra esta capa visual y ajustar tokens o composicion sin romper los componentes reutilizables.
+
 ## Limitaciones y seguimiento
 
 ### Historial de movimientos visible para usuarios

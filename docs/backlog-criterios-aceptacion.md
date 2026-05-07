@@ -175,6 +175,24 @@ Criterios de aceptacion:
 - Existe una pagina publica de terminos y condiciones para el parque.
 - El flujo queda documentado en frontend al agregar las rutas `/sobre-nosotros`, `/contacto`, `/terminos-condiciones` y los enlaces principales.
 
+### Pulir el diseno visual global respetando la base de los mockups de Figma
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
+
+Criterios de aceptacion:
+
+- El diseno general mantiene la direccion visual base del proyecto y conserva el verde `#398269` como fondo principal.
+- Se mejoran jerarquia tipografica, espaciados, contraste, consistencia de componentes y estados visuales.
+- Inicio, navegacion, footer, paneles, tarjetas, tablas y formularios muestran una apariencia mas pulida y coherente entre si.
+- La pagina de inicio se revisa especialmente para que hero, catalogo y testimonios se sientan mas profesionales y se perciban como secciones independientes al navegar.
+- El resultado funciona correctamente en desktop y mobile mediante estructura responsive y validacion de build.
+- La documentacion frontend describe la capa visual global y el nuevo estado de las pantallas principales.
+
 ### Exponer historial transaccional completo del brazalete en frontend
 
 Estado: Completada

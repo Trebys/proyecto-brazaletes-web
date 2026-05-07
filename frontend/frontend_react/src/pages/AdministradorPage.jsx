@@ -204,7 +204,7 @@ function TextField({ label, name, value, onChange, type = 'text', required = fal
         value={value}
         required={required}
         onChange={onChange}
-        className="w-full rounded border border-white/10 bg-fondoInput px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+        className="w-full rounded-md border border-white/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-300"
       />
     </label>
   );
@@ -222,7 +222,7 @@ function FileField({ label, name, onChange, required = false }) {
         required={required}
         accept="image/*"
         onChange={onChange}
-        className="w-full rounded border border-white/10 bg-fondoInput px-3 py-2 text-sm text-white file:mr-3 file:rounded file:border-0 file:bg-neutral-900 file:px-3 file:py-1 file:text-white"
+        className="w-full rounded-md border border-white/10 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded-md file:border-0 file:bg-neutral-900 file:px-3 file:py-1 file:text-white"
       />
     </label>
   );
@@ -338,7 +338,7 @@ function DataTable({ columns, rows, emptyText, title }) {
   };
 
   return (
-    <div className="overflow-hidden rounded border border-white/20 bg-white text-neutral-950 shadow-lg">
+    <div className="table-shell text-neutral-950">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-neutral-200 bg-neutral-50 px-4 py-4">
         <div>
           <h2 className="text-lg font-extrabold text-neutral-950">{title}</h2>
@@ -870,8 +870,8 @@ export function AdministradorPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-fondoPrincipal text-white">
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin px-4 py-3 shadow-lg">
+    <div className="app-shell flex flex-col">
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin px-4 py-3 text-white shadow-lg">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
           <button
             type="button"
@@ -892,7 +892,7 @@ export function AdministradorPage() {
                 onClick={() => setActiveSection(section.id)}
                 className={`rounded px-3 py-2 text-sm font-extrabold transition ${
                   activeSection === section.id
-                    ? 'bg-cyan-500 text-fondoLogin'
+                    ? 'bg-amber-200 text-fondoLogin'
                     : 'text-white hover:bg-white/10'
                 }`}
               >
@@ -905,7 +905,7 @@ export function AdministradorPage() {
             <button
               type="button"
               onClick={() => navigate('/mi-perfil')}
-              className="flex items-center rounded-full bg-white px-3 py-1 text-fondoLogin"
+              className="flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin"
             >
               <img src="/images/perfil.svg" alt="Perfil" className="mr-2 h-5 w-5" />
               {adminUser?.username || 'Admin'}
@@ -913,7 +913,7 @@ export function AdministradorPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-full bg-red-600 px-3 py-1 text-white"
+              className="min-h-10 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white hover:bg-red-800"
             >
               Cerrar Sesion
             </button>
@@ -923,10 +923,10 @@ export function AdministradorPage() {
 
       <main className="mx-auto w-full max-w-7xl flex-grow px-4 py-8">
         <header className="mb-8 text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-cyan-200">
+          <p className="section-eyebrow">
             Panel operativo
           </p>
-          <h1 className="mt-3 font-montserrat text-3xl font-extrabold md:text-5xl">
+          <h1 className="mt-3 font-montserrat text-3xl font-extrabold text-white md:text-5xl">
             Sistema de Gestion FantasyLand
           </h1>
         </header>
@@ -1120,7 +1120,7 @@ export function AdministradorPage() {
                     <TextField label="Usos de atraccion" name="attraction_uses" type="number" value={braceletTypeForm.attraction_uses} onChange={handleBraceletTypeChange} required />
                     <TextField label="Descripcion" name="description" value={braceletTypeForm.description} onChange={handleBraceletTypeChange} />
                     <FileField label="Imagen" name="image" onChange={handleBraceletTypeChange} required={!selectedBraceletTypeId} />
-                    <label className="flex items-center gap-3 rounded border border-white/10 bg-fondoInput px-3 py-2 text-sm font-bold text-white">
+                    <label className="flex items-center gap-3 rounded-md border border-white/10 bg-white px-3 py-2 text-sm font-bold text-slate-900">
                       <input
                         type="checkbox"
                         name="is_active"
@@ -1293,7 +1293,7 @@ export function AdministradorPage() {
                         value={braceletForm.bracelet_type_id}
                         required
                         onChange={handleBraceletChange}
-                        className="w-full rounded border border-white/10 bg-fondoInput px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+                        className="w-full rounded-md border border-white/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-300"
                       >
                         <option value="">Seleccionar tipo</option>
                         {braceletTypes.map((type) => (
@@ -1408,7 +1408,7 @@ export function AdministradorPage() {
                     <select
                       value={receiptStatus}
                       onChange={(event) => setReceiptStatus(event.target.value)}
-                      className="w-full rounded border border-white/10 bg-fondoInput px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+                      className="w-full rounded-md border border-white/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-300"
                     >
                       {RECEIPT_STATUSES.map((status) => (
                         <option key={status} value={status}>
@@ -1743,7 +1743,7 @@ export function AdministradorPage() {
         )}
       </main>
 
-      <footer className="bg-fondoLogin px-4 py-6 text-center">
+      <footer className="bg-fondoLogin px-4 py-6 text-center text-white">
         <img src="/images/logo.svg" alt="Fantasy Land Logo" className="mx-auto h-14" />
         <p className="mt-2 text-lg font-extrabold">Fantasy Land System</p>
         <p className="text-sm font-extrabold text-white">&copy; Fantasy Land {currentYear}</p>

@@ -37,31 +37,36 @@ export function MasterPageCliente() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-fondoPrincipal">
-      <nav className="sticky top-0 z-50 flex flex-col gap-4 bg-fondoLogin px-6 py-4 text-white lg:flex-row lg:items-center lg:justify-between lg:px-8">
+    <div className="app-shell flex flex-col">
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <button
           type="button"
-          className="flex cursor-pointer items-center space-x-4"
+          className="flex cursor-pointer items-center gap-3"
           onClick={() => navigate('/inicio')}
         >
-          <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-10" />
-          <span className="text-xl font-bold">Fantasy Land</span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white shadow-sm">
+            <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-9" />
+          </span>
+          <span className="font-montserrat text-xl font-extrabold tracking-wide">
+            Fantasy Land
+          </span>
         </button>
 
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold lg:text-base">
-          <Link to="/inicio" className="cursor-pointer">
+        <div className="flex flex-wrap justify-center gap-x-1 gap-y-2 text-sm font-bold lg:text-[0.95rem]">
+          <Link to="/inicio" className="rounded-md px-3 py-2 transition hover:bg-white/10">
             Inicio
           </Link>
-          <Link to="/comprar-brazaletes" className="cursor-pointer">
+          <Link to="/comprar-brazaletes" className="rounded-md px-3 py-2 transition hover:bg-white/10">
             Compra de Brazaletes
           </Link>
-          <Link to="/atracciones-comidas" className="cursor-pointer">
+          <Link to="/atracciones-comidas" className="rounded-md px-3 py-2 transition hover:bg-white/10">
             Atracciones y Comidas
           </Link>
-          <Link to="/sobre-nosotros" className="cursor-pointer">
+          <Link to="/sobre-nosotros" className="rounded-md px-3 py-2 transition hover:bg-white/10">
             Sobre Nosotros
           </Link>
-          <Link to="/contacto" className="cursor-pointer">
+          <Link to="/contacto" className="rounded-md px-3 py-2 transition hover:bg-white/10">
             Contacto
           </Link>
         </div>
@@ -72,7 +77,7 @@ export function MasterPageCliente() {
               <button
                 type="button"
                 onClick={() => navigate('/mi-perfil')}
-                className="flex items-center rounded-full bg-white px-3 py-1 text-fondoLogin"
+                className="flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
               >
                 <img src={perfilIcon} alt="Perfil" className="mr-2 h-5 w-5" />
                 <span>{user.username}</span>
@@ -80,7 +85,7 @@ export function MasterPageCliente() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-full bg-red-600 px-3 py-1 text-white"
+                className="min-h-10 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white transition hover:bg-red-800"
               >
                 Cerrar Sesion
               </button>
@@ -89,11 +94,12 @@ export function MasterPageCliente() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="rounded-full bg-white px-3 py-1 text-fondoLogin"
+              className="min-h-10 rounded-md bg-white px-4 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
             >
               Iniciar Sesion
             </button>
           )}
+        </div>
         </div>
       </nav>
 
@@ -101,20 +107,22 @@ export function MasterPageCliente() {
         <Outlet />
       </main>
 
-      <footer className="bg-fondoLogin py-4 text-white">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-6 text-center md:flex-row md:text-left">
-          <div className="flex items-center space-x-2">
-            <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-8" />
+      <footer className="bg-fondoLogin px-4 py-8 text-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 text-center md:flex-row md:text-left">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-md bg-white">
+              <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-8" />
+            </span>
             <div className="flex flex-col">
-              <span className="text-lg font-bold">Fantasy Land</span>
-              <Link to="/sobre-nosotros" className="text-sm hover:underline">
+              <span className="font-montserrat text-lg font-extrabold">Fantasy Land</span>
+              <Link to="/sobre-nosotros" className="text-sm font-semibold text-teal-50 hover:underline">
                 Sobre nosotros
               </Link>
             </div>
           </div>
 
           <div className="flex flex-col items-center">
-            <h2 className="mb-2 text-lg font-bold">Redes Sociales</h2>
+            <h2 className="mb-3 text-sm font-extrabold uppercase tracking-[0.16em] text-teal-50">Redes Sociales</h2>
             <div className="flex space-x-3">
               {footerSocialLinks.map((social) => (
                 <button
@@ -122,7 +130,7 @@ export function MasterPageCliente() {
                   type="button"
                   onClick={() => handleSocialClick(social.name)}
                   aria-label={social.name}
-                  className="transition hover:opacity-80"
+                  className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10 transition hover:bg-white/20"
                 >
                   <img src={social.icon} alt="" className="h-6" />
                 </button>
@@ -131,7 +139,7 @@ export function MasterPageCliente() {
           </div>
 
           <div className="flex items-center">
-            <Link to="/terminos-condiciones" className="text-lg font-bold">
+            <Link to="/terminos-condiciones" className="rounded-md border border-white/25 px-4 py-2 text-sm font-extrabold transition hover:bg-white/10">
               Terminos y condiciones
             </Link>
           </div>

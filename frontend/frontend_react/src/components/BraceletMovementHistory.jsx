@@ -111,20 +111,20 @@ export function BraceletMovementHistory() {
     <section className="py-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Historial de movimientos</h2>
-          <p className="mt-2 max-w-2xl text-sm text-gray-600">
+          <h2 className="font-montserrat text-2xl font-extrabold text-white">Historial de movimientos</h2>
+          <p className="mt-2 max-w-2xl text-sm text-white/80">
             Consulta las activaciones, consumos, ajustes y reversos registrados en tus brazaletes.
           </p>
         </div>
 
         <label className="w-full md:w-80">
-          <span className="mb-1 block text-sm font-semibold text-gray-700">
+          <span className="form-label">
             Brazalete
           </span>
           <select
             value={selectedBraceletId}
             onChange={handleBraceletFilterChange}
-            className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-teal-600"
+            className="form-input"
           >
             <option value="">Todos mis brazaletes</option>
             {braceletOptions.map((bracelet) => (
@@ -137,27 +137,27 @@ export function BraceletMovementHistory() {
       </div>
 
       {loading ? (
-        <div className="rounded border border-gray-200 bg-white p-6 text-center text-gray-600">
+        <div className="surface-card p-6 text-center text-slate-600">
           Cargando movimientos...
         </div>
       ) : null}
 
       {!loading && error ? (
-        <div className="rounded border border-red-200 bg-red-50 p-6 text-center text-red-700">
+        <div className="rounded-md border border-red-200 bg-red-50 p-6 text-center font-semibold text-red-700">
           {error}
         </div>
       ) : null}
 
       {!loading && !error && movements.length === 0 ? (
-        <div className="rounded border border-gray-200 bg-white p-6 text-center text-gray-600">
+        <div className="surface-card p-6 text-center text-slate-600">
           No hay movimientos registrados para esta seleccion.
         </div>
       ) : null}
 
       {!loading && !error && movements.length > 0 ? (
-        <div className="overflow-x-auto rounded border border-gray-200 bg-white shadow-sm">
+        <div className="table-shell overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-teal-700 text-white">
+            <thead className="bg-fondoLogin text-white">
               <tr>
                 <th className="px-4 py-3 font-bold">Fecha</th>
                 <th className="px-4 py-3 font-bold">Brazalete</th>

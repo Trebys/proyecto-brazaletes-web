@@ -176,53 +176,77 @@ export function InicioPage() {
   );
 
   return (
-    <div className="overflow-y-auto">
-      <section className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-        <div className="text-center md:w-3/4">
-          <h2 className="text-4xl font-bold">Bienvenidos a FantasyLand</h2>
-          <p className="text-lg m-8">
-            FantasyLand es un parque de atracciones de ensueno, disenado para
-            ofrecer diversion ilimitada y experiencias inolvidables para
-            visitantes de todas las edades. Situado en un entorno pintoresco, el
-            parque combina tecnologia de vanguardia con la magia de los cuentos
-            de hadas, brindando un escape perfecto de la rutina diaria.
+    <div className="h-[calc(100vh-76px)] snap-y snap-proximity overflow-y-auto bg-fondoPrincipal text-white">
+      <section className="section-container grid min-h-[calc(100vh-76px)] snap-start items-center gap-10 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:py-16">
+        <div>
+          <p className="section-eyebrow">Parque, brazaletes y experiencias</p>
+          <h1 className="mt-4 font-montserrat text-4xl font-extrabold leading-tight text-white md:text-6xl">
+            Fantasy Land hace que cada visita empiece con una experiencia clara.
+          </h1>
+          <p className="section-copy mt-6 max-w-2xl">
+            Compra tu brazalete, explora atracciones, disfruta alimentos y
+            conserva el control de tus consumos desde un flujo digital pensado
+            para visitantes de todas las edades.
           </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => navigate('/comprar-brazaletes')}
+              className="btn-primary"
+            >
+              Comprar brazalete
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/atracciones-comidas')}
+              className="btn-secondary border-white bg-white/10 text-white hover:bg-white/20"
+            >
+              Ver atracciones
+            </button>
+          </div>
         </div>
         <Carrusel />
       </section>
 
-      <section className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-        <h2 className="text-2xl font-bold text-center mb-8">
-          Tipos de brazaletes
-        </h2>
+      <section className="section-container flex min-h-[calc(100vh-76px)] snap-start flex-col justify-center py-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="section-eyebrow">Elige tu pase</p>
+          <h2 className="section-title mt-3">Tipos de brazaletes</h2>
+          <p className="section-copy mt-4">
+            Encuentra el brazalete que mejor acompana tu recorrido por el parque.
+          </p>
+        </div>
 
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {tipos.map((tipo) => {
             const bgClass = getBraceletBgColor(tipo.name);
 
             return (
               <div
                 key={tipo.id}
-                className={`w-60 p-4 rounded-lg shadow-lg text-center ${bgClass}`}
+                className={`surface-card flex min-h-[360px] flex-col overflow-hidden p-5 text-center ${bgClass}`}
               >
-                <img
-                  src={getImagenUrl(tipo.image_url || tipo.image)}
-                  alt={tipo.name}
-                  className="mx-auto mb-4 h-32 object-cover"
-                />
-                <h3 className="text-xl font-semibold text-black drop-shadow-lg">
+                <div className="overflow-hidden rounded-md bg-white/75">
+                  <img
+                    src={getImagenUrl(tipo.image_url || tipo.image)}
+                    alt={tipo.name}
+                    className="h-40 w-full object-cover"
+                  />
+                </div>
+                <h3 className="mt-5 font-montserrat text-xl font-extrabold text-slate-950">
                   {tipo.name}
                 </h3>
-                <p className="text-lg font-bold mt-2 text-gray-700 drop-shadow-lg">
+                <p className="mt-2 text-2xl font-extrabold text-teal-900">
                   ${tipo.price}
                 </p>
                 {tipo.description && (
-                  <p className="mt-2 font-bold text-gray-700 drop-shadow-lg">
+                  <p className="mt-3 flex-1 text-sm font-semibold leading-6 text-slate-700">
                     {tipo.description}
                   </p>
                 )}
                 <button
-                  className="mt-4 bg-teal-700 text-white px-4 py-2 rounded-full hover:bg-teal-800"
+                  type="button"
+                  className="btn-primary mt-5 w-full"
                   onClick={() => handleComprar(tipo.id)}
                 >
                   Comprar
@@ -233,19 +257,24 @@ export function InicioPage() {
         </div>
       </section>
 
-      <section className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-5xl border-t border-white/40 pt-10">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
-            Testimonios
-          </h2>
+      <section className="flex min-h-[calc(100vh-76px)] snap-start flex-col justify-center bg-teal-950 py-16 text-white">
+        <div className="section-container">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-200">
+              Lo que cuentan los visitantes
+            </p>
+            <h2 className="mt-3 font-montserrat text-3xl font-extrabold md:text-4xl">
+              Testimonios
+            </h2>
+          </div>
 
-          <div className="bg-white text-gray-900 p-5 md:p-8 shadow-xl">
+          <div className="surface-card mt-10 p-5 md:p-8">
             {testimonials.length > 0 ? (
-              <div className="space-y-5">
+              <div className="grid gap-5 lg:grid-cols-2">
                 {testimonials.map((testimonial) => (
                   <article
                     key={testimonial.id}
-                    className="flex flex-col gap-4 rounded-md border border-gray-200 p-4 sm:flex-row sm:items-center"
+                    className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50/70 p-4 sm:flex-row sm:items-center"
                   >
                     {testimonial.profile_image_url ? (
                       <img
@@ -261,7 +290,7 @@ export function InicioPage() {
                       />
                     )}
 
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 text-slate-900">
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                         <h3 className="text-lg font-bold text-gray-900">
                           {testimonial.visible_name}
@@ -270,7 +299,7 @@ export function InicioPage() {
                           {formatTestimonialDate(testimonial.created_at)}
                         </time>
                       </div>
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
                         {testimonial.comment}
                       </p>
                       <div className="mt-3">{renderStars(testimonial.rating)}</div>
@@ -286,7 +315,7 @@ export function InicioPage() {
             )}
           </div>
 
-          <div className="mt-8 rounded-lg bg-white/10 p-5 shadow-lg backdrop-blur">
+          <div className="glass-panel mt-8 p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
                 <h3 className="text-xl font-bold">Comparte tu experiencia</h3>
@@ -299,7 +328,7 @@ export function InicioPage() {
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
-                  className="rounded-md bg-white px-4 py-2 text-sm font-bold text-teal-800 hover:bg-teal-50"
+                  className="btn-secondary border-white bg-white text-teal-900 hover:bg-teal-50"
                 >
                   Iniciar sesion
                 </button>
@@ -317,7 +346,7 @@ export function InicioPage() {
                     value={testimonialForm.comment}
                     onChange={handleTestimonialChange}
                     placeholder="Cuenta que te gusto de FantasyLand"
-                    className="min-h-28 rounded-md border border-white/20 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-teal-200"
+                    className="form-input-dark min-h-28"
                     maxLength={800}
                     required
                   />
@@ -331,7 +360,7 @@ export function InicioPage() {
                   <button
                     type="submit"
                     disabled={isSubmittingTestimonial}
-                    className="rounded-md bg-teal-950 px-4 py-2 text-sm font-bold text-white hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="btn-dark"
                   >
                     {isSubmittingTestimonial ? 'Enviando...' : 'Enviar'}
                   </button>

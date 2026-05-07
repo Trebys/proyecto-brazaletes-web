@@ -47,7 +47,7 @@ export function ReciboCompraPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center text-white">
+      <div className="app-shell flex min-h-screen flex-col items-center justify-center text-slate-700">
         Cargando recibo...
       </div>
     );
@@ -55,7 +55,7 @@ export function ReciboCompraPage() {
 
   if (!receiptData) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center text-white">
+      <div className="app-shell flex min-h-screen flex-col items-center justify-center text-slate-700">
         No se encontro informacion del recibo.
       </div>
     );
@@ -91,27 +91,28 @@ export function ReciboCompraPage() {
     : 'No especificado';
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-      <div className="mb-6 text-3xl font-bold text-white">Recibo de Compra</div>
+    <div className="section-container flex min-h-[calc(100vh-88px)] flex-col items-center justify-center py-10">
+      <p className="section-eyebrow">Compra confirmada</p>
+      <div className="mb-6 mt-3 font-montserrat text-3xl font-extrabold text-white">Recibo de Compra</div>
 
-      <div className="w-full max-w-md rounded-2xl bg-teal-900 p-6 shadow-lg">
-        <h3 className="mb-4 text-2xl font-semibold text-white">
+      <div className="surface-card w-full max-w-xl p-6">
+        <h3 className="mb-4 font-montserrat text-2xl font-extrabold text-slate-950">
           Resumen de la compra
         </h3>
 
-        <div className="mb-4 flex items-center">
+        <div className="mb-4 flex items-center rounded-md bg-slate-50 p-3">
           <img
             src={imageUrl}
             alt={typeName || 'Brazalete'}
             className="h-20 w-20 rounded object-cover"
           />
-          <div className="ml-4 text-lg font-medium text-white">
+          <div className="ml-4 text-lg font-extrabold text-slate-950">
             {typeName || 'Brazalete'}
           </div>
         </div>
 
-        <div className="rounded-lg bg-teal-800 p-4">
-          <table className="w-full text-sm text-white">
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <table className="w-full text-sm text-slate-800">
             <tbody>
               <tr>
                 <td className="py-2 font-semibold">Comprador</td>
@@ -166,11 +167,11 @@ export function ReciboCompraPage() {
         </div>
       </div>
 
-      <div className="mt-6 text-lg font-bold text-white">
+      <div className="mt-6 text-lg font-extrabold text-slate-800">
         Gracias por tu compra.
       </div>
       <button
-        className="mt-4 rounded bg-black px-6 py-2 text-white transition hover:bg-gray-800"
+        className="btn-dark mt-4"
         onClick={() => navigate('/inicio')}
       >
         Volver al Inicio
