@@ -130,10 +130,10 @@ export function LoginForm() {
                 </span>
                 <input
                   type="text"
-                  placeholder="tuusuario o correo@example.com"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="form-input-dark"
+                  required
                 />
               </label>
 
@@ -143,18 +143,21 @@ export function LoginForm() {
                 </span>
                 <input
                   type="password"
-                  placeholder="Tu contrasena"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="form-input-dark"
+                  required
                 />
               </label>
             </div>
 
             <div className="mt-3 flex justify-end">
-              <span className="text-xs font-semibold text-white/55">
-                Recuperacion de contrasena pendiente
-              </span>
+              <Link
+                to="/recuperar-contrasena"
+                className="text-xs font-extrabold text-amber-200 transition hover:text-amber-100"
+              >
+                Olvide mi contrasena
+              </Link>
             </div>
 
             <button

@@ -71,6 +71,7 @@ Puntos importantes:
 - activa `rest_framework` y `rest_framework.authtoken`;
 - carga desde variables de entorno la configuracion sensible y dependiente del entorno, incluyendo PayPal, `SECRET_KEY`, `DEBUG`, base de datos, `ALLOWED_HOSTS`, CORS y CSRF;
 - define la expiracion de sesion con `SESSION_IDLE_TIMEOUT_MINUTES`, alineada con [docs/politica-sesion.md](politica-sesion.md);
+- define `PASSWORD_RESET_CODE_EXPIRATION_MINUTES`, `PASSWORD_RESET_MAX_ATTEMPTS` y la configuracion `DJANGO_EMAIL_*` para recuperacion de contrasena por correo;
 - configura PostgreSQL como base de datos principal usando variables de entorno;
 - habilita `ExpiringTokenAuthentication` y `SessionAuthentication`;
 - permite CORS para los hosts configurados por entorno, manteniendo valores locales razonables para desarrollo.
@@ -136,6 +137,28 @@ Es un proxy de `Token` con logica para:
 
 La expiracion vigente ya no esta hardcodeada en el modelo. Usa la politica central documentada en [docs/politica-sesion.md](politica-sesion.md), con 15 minutos por defecto.
 
+#### `PasswordResetCode`
+
+Guarda codigos de recuperacion de contrasena generados para usuarios activos.
+
+Campos importantes:
+
+- `user`
+- `email`
+- `code_hash`
+- `expires_at`
+- `used_at`
+- `attempts`
+- `created_at`
+
+Reglas vigentes:
+
+- el codigo real no se guarda en texto plano; se almacena como hash;
+- cada solicitud invalida codigos anteriores pendientes del mismo usuario;
+- el codigo vence segun `PASSWORD_RESET_CODE_EXPIRATION_MINUTES`;
+- los intentos fallidos se limitan con `PASSWORD_RESET_MAX_ATTEMPTS`;
+- al cambiar la contrasena se invalidan los tokens de sesion existentes del usuario.
+
 ### Serializador
 
 Archivo: `login/serializers.py`
@@ -145,6 +168,9 @@ Archivo: `login/serializers.py`
 Puntos importantes del estado actual:
 
 - la password viaja como `write_only`;
+- el registro exige `username`, `first_name`, `last_name`, `email` y `password`;
+- el registro valida correo y usuario duplicados con mensajes claros;
+- la contrasena se valida con los validadores de Django y la regla local de fortaleza;
 - `is_staff` e `is_superuser` son solo lectura;
 - el serializer expone `is_admin` como bandera util para el frontend, derivada de `is_admin_user`;
 - ya no se publica el modelo completo del usuario con `fields = "__all__"`.
@@ -175,12 +201,45 @@ Decision vigente: solo existe una sesion activa por usuario. Si ya habia una ses
 Flujo:
 
 1. valida el payload con `UserSerializer`;
-2. crea un `User`;
-3. cifra la password con `set_password`;
-4. crea un `ExpiringToken`;
-5. devuelve token y datos del usuario serializando la instancia real creada.
+2. normaliza saldo vacio a `0` para evitar rechazos por decimal invalido desde el formulario publico;
+3. valida campos obligatorios, correo duplicado, usuario duplicado y contrasena segura;
+4. crea un `User`;
+5. cifra la password con `set_password`;
+6. crea un `ExpiringToken`;
+7. devuelve token y datos del usuario serializando la instancia real creada.
 
 Detalle practico: la respuesta ya no usa `serializer.data` del serializer de entrada despues de crear el usuario. Esto evita que el campo derivado `is_admin` intente resolverse sobre un `dict` de `validated_data`, caso que podia provocar error 500 aunque el usuario hubiera quedado guardado.
+
+#### `request_password_reset`
+
+Recibe:
+
+- `email`
+
+Flujo:
+
+1. valida formato de correo;
+2. si existe un usuario activo con ese correo, genera un codigo numerico de 6 digitos;
+3. guarda solo el hash del codigo con fecha de vencimiento;
+4. envia un correo HTML con identidad visual de Fantasy Land;
+5. responde siempre con un mensaje generico para no revelar si el correo existe.
+
+#### `confirm_password_reset`
+
+Recibe:
+
+- `email`
+- `code`
+- `new_password`
+
+Flujo:
+
+1. busca el ultimo codigo pendiente para el correo;
+2. rechaza codigos inexistentes, vencidos, usados o con demasiados intentos;
+3. valida la nueva contrasena con los validadores configurados;
+4. actualiza la contrasena dentro de una operacion atomica;
+5. marca el codigo como usado;
+6. elimina tokens existentes del usuario para cerrar sesiones previas.
 
 #### `user_profile`
 
@@ -236,6 +295,10 @@ Cobertura actual:
 - acceso administrativo protegido en `UserViewSet`;
 - proteccion del saldo del usuario en `update_user_profile`, evitando que un cliente se altere su propio `account_balance`;
 - permiso valido para que un administrador actualice su saldo cuando corresponde.
+- registro con saldo vacio normalizado a cero;
+- rechazo de correo duplicado y contrasena debil en registro;
+- solicitud de recuperacion sin revelar si el correo existe;
+- cambio de contrasena con codigo valido, invalidacion de sesiones, rechazo de codigo reutilizado y rechazo de codigo vencido.
 
 ### Requerimiento completado: alineacion de expiracion de sesion
 
@@ -260,6 +323,8 @@ Endpoints relevantes:
 
 - `/api/login`
 - `/api/register`
+- `/api/password-reset/request`
+- `/api/password-reset/confirm`
 - `/api/user-profile`
 - `/api/refresh-token`
 - `/api/logout`
@@ -948,6 +1013,15 @@ Criterios resueltos:
 3. frontend guarda token en `localStorage`
 4. siguientes requests viajan con `Authorization: Token ...`
 
+### Recuperacion de contrasena
+
+1. frontend hace `POST /api/password-reset/request/` con el correo;
+2. backend responde siempre con mensaje generico;
+3. si el correo pertenece a un usuario activo, backend envia un codigo de 6 digitos con vencimiento;
+4. frontend hace `POST /api/password-reset/confirm/` con correo, codigo y nueva contrasena;
+5. backend valida codigo y fortaleza de contrasena;
+6. backend cambia la contrasena, marca el codigo como usado e invalida sesiones existentes.
+
 ### Compra interna
 
 1. frontend hace `POST /api/compra_brazaletes/recibos/`
@@ -985,6 +1059,8 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | --- | --- | --- | --- |
 | `POST /api/login` | permitido | permitido | permitido |
 | `POST /api/register` | permitido, devuelve token y usuario creado | permitido, devuelve token y usuario creado | permitido, devuelve token y usuario creado |
+| `POST /api/password-reset/request` | permitido, respuesta generica | permitido, respuesta generica | permitido, respuesta generica |
+| `POST /api/password-reset/confirm` | permitido con codigo valido | permitido con codigo valido | permitido con codigo valido |
 | `POST /api/user-profile` | `401` | permitido | permitido |
 | `PATCH /api/edit-user` | `401` | permitido para sus datos basicos, sin cambiar saldo | permitido |
 | `DELETE /api/delete-user` | `401` | permitido sobre su propia cuenta | permitido sobre su propia cuenta |
@@ -1051,6 +1127,9 @@ Notas practicas:
 - distincion clara entre cliente y administrador usando una sola regla de dominio;
 - `UserViewSet` protegido con la misma regla administrativa centralizada;
 - registro de clientes devuelve correctamente token y usuario serializado, incluyendo `is_admin`, sin exponer password;
+- registro de clientes valida duplicados, campos obligatorios y contrasena fuerte;
+- el nombre de usuario permite espacios internos, manteniendo unicidad insensible a mayusculas/minusculas desde el serializer;
+- recuperacion de contrasena por codigo de correo con hash, expiracion, limite de intentos e invalidacion de sesiones;
 - `BraceletTypeViewSet` con lectura publica y escritura administrativa consistente;
 - tipos de brazalete con estado activo/inactivo para retirar catalogo de compra sin perder historial;
 - `BraceletViewSet` restringido a administradores con la misma convencion;

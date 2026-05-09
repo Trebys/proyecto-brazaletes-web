@@ -186,6 +186,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'login.validators.StrongPasswordValidator',
+    },
 ]
 
 
@@ -233,6 +236,25 @@ PAYPAL_ENV = os.getenv('PAYPAL_ENV', 'sandbox')
 PAYPAL_WEBHOOK_ID = os.getenv('PAYPAL_WEBHOOK_ID')
 
 SESSION_IDLE_TIMEOUT_MINUTES = int(os.getenv('SESSION_IDLE_TIMEOUT_MINUTES', '15'))
+PASSWORD_RESET_CODE_EXPIRATION_MINUTES = int(
+    os.getenv('PASSWORD_RESET_CODE_EXPIRATION_MINUTES', '15')
+)
+PASSWORD_RESET_MAX_ATTEMPTS = int(os.getenv('PASSWORD_RESET_MAX_ATTEMPTS', '5'))
+
+EMAIL_BACKEND = os.getenv(
+    'DJANGO_EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DJANGO_DEFAULT_FROM_EMAIL',
+    'Fantasy Land <no-reply@fantasyland.local>',
+)
+EMAIL_HOST = os.getenv('DJANGO_EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('DJANGO_EMAIL_PORT', '25'))
+EMAIL_HOST_USER = os.getenv('DJANGO_EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('DJANGO_EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = get_bool_env('DJANGO_EMAIL_USE_TLS', False)
+EMAIL_USE_SSL = get_bool_env('DJANGO_EMAIL_USE_SSL', False)
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

@@ -93,31 +93,52 @@ export function ProfileDataForm() {
     <div className="surface-card mx-auto mb-10 max-w-xl p-6 md:p-8">
       <form onSubmit={handleSubmit}>
         <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="h-28 w-28 overflow-hidden rounded-full border-4 border-white bg-teal-50 shadow-md">
-            {profileImagePreview ? (
-              <img
-                src={profileImagePreview}
-                alt="Imagen de perfil"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <img
-                src="/images/perfil.svg"
-                alt=""
-                className="h-full w-full bg-white object-contain p-5"
-              />
-            )}
-          </div>
-          <label className="w-full">
-            <span className="form-label text-center">Imagen de perfil</span>
+          <div className="relative h-28 w-28">
+            <div className="h-full w-full overflow-hidden rounded-full border-4 border-white bg-teal-50 shadow-md">
+              {profileImagePreview ? (
+                <img
+                  src={profileImagePreview}
+                  alt="Imagen de perfil"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <img
+                  src="/images/perfil.svg"
+                  alt=""
+                  className="h-full w-full bg-white object-contain p-5"
+                />
+              )}
+            </div>
+            <label
+              htmlFor="profile_image"
+              aria-label="Editar imagen de perfil"
+              title="Editar imagen de perfil"
+              className="absolute bottom-1 right-1 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-teal-700 text-white shadow-md transition hover:bg-teal-800"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </label>
             <input
+              id="profile_image"
               type="file"
               name="profile_image"
               accept="image/*"
               onChange={handleChange}
-              className="form-input file:mr-3 file:rounded-md file:border-0 file:bg-teal-700 file:px-3 file:py-1 file:text-white"
+              className="sr-only"
             />
-          </label>
+          </div>
+          <p className="text-sm font-bold text-teal-950">Imagen de perfil</p>
         </div>
 
         {fields.map((field) => (

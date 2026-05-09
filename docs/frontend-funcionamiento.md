@@ -70,6 +70,7 @@ Define el enrutamiento principal.
 
 - `/login` muestra `LoginPage`
 - `/registro` muestra `RegistroForm`
+- `/recuperar-contrasena` muestra `PasswordResetPage`
 - `/administrador` se renderiza fuera del layout del cliente y queda protegido con `PrivateRoutes requireAdmin`
 - `MasterPageCliente` funciona como layout con `Outlet` para las rutas publicas del cliente
 - `/sobre-nosotros` muestra una pagina publica de contexto del parque y del concepto de la experiencia
@@ -113,7 +114,7 @@ Responsabilidades:
 - sincroniza datos persistentes del usuario cuando el perfil cambia o se consulta de nuevo
 - expone helpers para guardar/limpiar sesion y detectar si el usuario actual es admin
 - expone helpers para guardar o limpiar el recibo temporal de compra
-- expone funciones para login, registro, perfil, compra interna y compra por PayPal
+- expone funciones para login, registro, recuperacion de contrasena, perfil, compra interna y compra por PayPal
 - expone tambien helpers para construir URLs de media y consumir atracciones/comidas
 - expone helpers administrativos para consultar y gestionar clientes, tipos de brazalete, brazaletes, recibos, comidas y atracciones
 
@@ -121,6 +122,8 @@ Funciones principales:
 
 - `loginUser(identifier, password)`
 - `registerClient(clientData)`
+- `requestPasswordReset(email)`
+- `confirmPasswordReset({ email, code, newPassword })`
 - `getClientData()`
 - `submitClientData(userData)`
 - `deleteClientAccount()`
@@ -179,7 +182,7 @@ Flujo:
 4. se redirige al usuario a la ruta previa;
 5. si el usuario es administrador e inicio sesion sin una ruta previa especifica, se redirige a `/administrador`.
 
-Detalle visual: la pantalla de login usa una composicion de acceso con imagen lateral, marca, texto breve de contexto y formulario en panel oscuro. El enlace de recuperacion de contrasena no se muestra como accion funcional porque ese flujo todavia no existe.
+Detalle visual: la pantalla de login usa una composicion de acceso con imagen lateral, marca, texto breve de contexto y formulario en panel oscuro. El enlace "Olvide mi contrasena" navega al flujo real de recuperacion.
 
 ### Registro
 
@@ -188,10 +191,12 @@ Archivo principal: `src/components/RegistroForm.jsx`
 Flujo:
 
 1. se arma un objeto `clientData`;
-2. se llama `registerClient`;
-3. si el backend responde `201`, se limpia el formulario.
+2. si el saldo esta vacio, `registerClient` lo omite para que el backend lo normalice a cero;
+3. se llama `registerClient`;
+4. si el backend responde `201`, `AuthContext` guarda token, usuario y politica de sesion;
+5. se limpia el formulario y se redirige a `/inicio`.
 
-Observacion: el frontend no inicia sesion automaticamente despues del registro, aunque el backend si devuelve token.
+Decision vigente: el registro exitoso deja la sesion iniciada, porque el backend ya devuelve token y usuario en la misma respuesta.
 
 Detalle visual: el registro usa la misma familia visual que login, con imagen lateral, mensaje de alta de cuenta y formulario organizado para que se sienta como parte del sitio publico y no como una pantalla aislada.
 
@@ -199,7 +204,30 @@ Estado vigente para este flujo:
 
 - el frontend sigue mostrando el flujo de login y registro como hasta ahora;
 - el backend ya tiene cobertura automatica sobre login, registro, permisos basicos y proteccion del saldo del perfil;
+- el registro muestra errores de validacion devueltos por backend, incluyendo correo duplicado, usuario duplicado, campos obligatorios y contrasena debil;
+- el formulario de registro marca los campos requeridos con asterisco y muestra una nota breve que explica su significado;
+- la recuperacion de contrasena ya existe como flujo funcional por codigo de correo;
 - esto reduce el riesgo de regresiones invisibles en los flujos que alimentan las pantallas de acceso y perfil.
+
+### Recuperacion de contrasena
+
+Archivo principal: `src/pages/PasswordResetPage.jsx`
+
+Flujo:
+
+1. el usuario entra desde `/login` o directamente a `/recuperar-contrasena`;
+2. escribe su correo y la UI llama `requestPasswordReset`;
+3. el backend responde con un mensaje generico, exista o no el correo;
+4. la pantalla pasa al formulario de confirmacion;
+5. el usuario escribe correo, codigo de 6 digitos, nueva contrasena y confirmacion;
+6. `confirmPasswordReset` envia el payload al backend;
+7. si el codigo es valido y la contrasena cumple reglas, el backend cambia la contrasena y la UI muestra confirmacion para volver al login.
+
+Reglas visibles:
+
+- el codigo se captura como 6 digitos;
+- la nueva contrasena exige minimo 8 caracteres desde HTML y el backend valida la regla completa;
+- errores de codigo invalido, vencido o contrasena debil se muestran como mensajes claros.
 
 ### Rutas privadas
 
@@ -482,7 +510,7 @@ Responsabilidades:
 
 - cargar perfil del usuario autenticado;
 - permitir editar datos;
-- permitir subir una imagen de perfil;
+- permitir subir una imagen de perfil desde un boton circular con icono de lapiz sobre el avatar, ocultando el input nativo de archivo;
 - permitir eliminar la cuenta.
 
 Detalle importante: el campo `password` se rellena con `******` como valor visual. El backend evita cambiarla si llega exactamente ese valor.
@@ -665,6 +693,8 @@ Esta matriz resume que deberia pasar en la interfaz segun el tipo de usuario.
 | `/sobre-nosotros` | permitido | permitido | permitido |
 | `/contacto` | permitido | permitido | permitido |
 | `/terminos-condiciones` | permitido | permitido | permitido |
+| `/registro` | permitido, crea cuenta e inicia sesion | permitido, crea otra cuenta e inicia sesion nueva | permitido, crea otra cuenta e inicia sesion nueva |
+| `/recuperar-contrasena` | permitido | permitido | permitido |
 | `/comprar-brazaletes` | permitido | permitido | permitido |
 | intento de compra interna | bloqueado por falta de sesion | permitido | permitido |
 | inicio de flujo PayPal | bloqueado por falta de sesion | permitido | permitido |
@@ -683,7 +713,8 @@ Notas practicas:
 ### Partes funcionales
 
 - login basico
-- registro basico
+- registro publico funcional con inicio de sesion automatico al crear cuenta
+- recuperacion de contrasena por codigo de correo desde `/recuperar-contrasena`
 - proteccion de rutas por autenticacion y una regla administrativa ya unificada
 - pagina publica de sobre nosotros integrada a rutas, navbar y footer
 - pagina publica de contacto con formulario local, informacion de atencion y redes ficticias
@@ -692,7 +723,7 @@ Notas practicas:
 - compra con saldo interno
 - compra con PayPal
 - visualizacion de estados consistentes de recibo para compras internas y PayPal
-- respaldo automatizado en backend para los flujos criticos de login, compra interna y pagos
+- respaldo automatizado en backend para los flujos criticos de login, registro, recuperacion, compra interna y pagos
 - visualizacion de recibo
 - visualizacion y edicion basica del perfil
 - vista de historial de movimientos para clientes dentro de `mi-perfil`
@@ -729,6 +760,7 @@ La interfaz ya consume el estado actual del brazalete, muestra el numero de tran
 - `localStorage` sigue existiendo como persistencia, pero ya no es la fuente principal de verdad para la UI de autenticacion;
 - parte del estado del usuario sigue viviendo duplicado entre backend, memoria y almacenamiento persistente, aunque ahora hay una frontera mas clara mediante `AuthContext`;
 - varios textos del codigo muestran problemas de codificacion de caracteres;
+- la entrega real de correos de recuperacion depende de configurar `DJANGO_EMAIL_*` por entorno; en desarrollo se usa backend de consola si no se configura SMTP;
 - el modulo de atracciones y comidas esta completo como MVP y ya existen vistas de historial transaccional para cliente y administrador.
 
 ### Requerimiento completado: refactor frontend de autenticacion y rutas

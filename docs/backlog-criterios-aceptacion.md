@@ -256,3 +256,47 @@ Criterios de aceptacion:
 - La moderacion se puede hacer desde Django Admin, API administrativa o panel administrativo.
 - El diseno conserva la idea general del mockup con mejor pulido visual.
 - La documentacion tecnica describe el modelo, endpoints y regla de publicacion.
+
+### Fortalecer acceso publico con registro estable y recuperacion de contrasena
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [backend-funcionamiento.md](backend-funcionamiento.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
+
+Criterios de aceptacion:
+
+- La ruta publica `/registro` vuelve a permitir crear cuentas end-to-end desde la interfaz sin quedar en un estado inconsistente.
+- El incidente actual del flujo de registro queda reproducido, corregido y documentado con causa raiz o comportamiento final esperado.
+- El frontend muestra errores de validacion o de servidor de forma clara cuando el registro falla.
+- La pantalla de login expone una accion funcional de "Olvide mi contrasena".
+- El usuario puede iniciar un flujo de recuperacion usando su correo registrado.
+- El backend genera y valida un mecanismo seguro de recuperacion con expiracion adecuada.
+- El codigo de recuperacion se envia por correo, se almacena hasheado y tiene limite de intentos.
+- El usuario puede definir una nueva contrasena y luego iniciar sesion con ella.
+- Los intentos con codigo invalido, vencido o reutilizado se rechazan con mensajes coherentes.
+- La contrasena nueva se valida con parametros minimos de seguridad en backend.
+- Existen pruebas razonables para registro y recuperacion de contrasena.
+- La documentacion tecnica de frontend y backend describe el flujo final.
+
+### Ejecutar revision integral y QA final antes de hosteo
+
+Estado: Pendiente
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [backend-funcionamiento.md](backend-funcionamiento.md)
+- [gestion-documentacion.md](gestion-documentacion.md)
+
+Criterios de aceptacion:
+
+- Existe una lista de chequeo funcional que cubre navegacion publica, autenticacion, registro, recuperacion de contrasena, compra interna, PayPal, recibos, perfil, testimonios, backoffice, movimientos y consumos.
+- Se ejecuta una revision manual extensa del flujo principal en desktop y mobile.
+- Se registran defectos encontrados, severidad, resultado y estado de correccion o decision.
+- Se revalidan los flujos corregidos despues de aplicar fixes.
+- Se deja una conclusion clara de salida tipo go/no-go para despliegue y portafolio.
+- La documentacion final refleja el estado real de la aplicacion despues del QA.
