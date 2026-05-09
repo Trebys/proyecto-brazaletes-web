@@ -285,12 +285,31 @@ export const Logout = async () => {
 
 export const registerClient = async (clientData) => {
   try {
-    const response = await api.post('register/', clientData);
+    const payload = { ...clientData };
+    if (payload.account_balance === '') {
+      delete payload.account_balance;
+    }
+
+    const response = await api.post('register/', payload);
     persistSessionPolicy(response.data.session);
     return response;
   } catch (error) {
     throw error;
   }
+};
+
+export const requestPasswordReset = async (email) => {
+  const response = await api.post('password-reset/request/', { email });
+  return response.data;
+};
+
+export const confirmPasswordReset = async ({ email, code, newPassword }) => {
+  const response = await api.post('password-reset/confirm/', {
+    email,
+    code,
+    new_password: newPassword,
+  });
+  return response.data;
 };
 
 export const getTiposBrazaletes = async () => {

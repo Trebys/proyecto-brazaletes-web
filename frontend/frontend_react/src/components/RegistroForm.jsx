@@ -1,6 +1,30 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { registerClient } from '../api/api';
+import { useAuth } from '../auth/AuthContext';
+
+const formatApiError = (error) => {
+  const data = error?.response?.data;
+
+  if (!data) {
+    return 'No pudimos completar la solicitud. Intenta de nuevo.';
+  }
+
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  if (data.message || data.detail || data.error) {
+    return data.message || data.detail || data.error;
+  }
+
+  return Object.entries(data)
+    .map(([field, messages]) => {
+      const text = Array.isArray(messages) ? messages.join(' ') : String(messages);
+      return `${field}: ${text}`;
+    })
+    .join(' ');
+};
 
 export function RegistroForm() {
   const [username, setUsername] = useState('');
@@ -10,16 +34,23 @@ export function RegistroForm() {
   const [lastName, setLastName] = useState('');
   const [accountBalance, setAccountBalance] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { storeAuthSession } = useAuth();
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
     const clientData = {
-      username,
-      email,
+      username: username.trim(),
+      email: email.trim(),
       password,
-      first_name: firstName,
-      last_name: lastName,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
       account_balance: accountBalance,
     };
 
@@ -27,7 +58,9 @@ export function RegistroForm() {
       const res = await registerClient(clientData);
 
       if (res.status === 201) {
-        alert('Cliente registrado exitosamente');
+        const { Token, User, session } = res.data;
+        storeAuthSession({ token: Token, user: User, session });
+        setSuccess('Cuenta creada correctamente. Te llevaremos al inicio.');
         setUsername('');
         setEmail('');
         setPassword('');
@@ -35,11 +68,14 @@ export function RegistroForm() {
         setLastName('');
         setAccountBalance('');
         setError('');
+        setTimeout(() => navigate('/inicio'), 700);
       } else {
-        setError('Error en el registro');
+        setError('No pudimos crear la cuenta. Revisa tus datos.');
       }
     } catch (error) {
-      setError('Error en el servidor o datos invalidos');
+      setError(formatApiError(error));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,6 +142,9 @@ export function RegistroForm() {
             <p className="mt-2 text-sm leading-6 text-teal-50">
               Completa tus datos para crear una cuenta de visitante.
             </p>
+            <p className="mt-3 text-xs font-semibold text-teal-100">
+              Los campos marcados con <span className="text-amber-200">*</span> son obligatorios.
+            </p>
           </div>
 
           <form onSubmit={handleRegister}>
@@ -113,63 +152,72 @@ export function RegistroForm() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label>
                   <span className="mb-2 block text-sm font-bold text-teal-50">
-                    Nombre
+                    Nombre <span className="text-amber-200">*</span>
                   </span>
                   <input
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="form-input-dark"
+                    required
                   />
                 </label>
 
                 <label>
                   <span className="mb-2 block text-sm font-bold text-teal-50">
-                    Apellido
+                    Apellido <span className="text-amber-200">*</span>
                   </span>
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="form-input-dark"
+                    required
                   />
                 </label>
               </div>
 
               <label>
                 <span className="mb-2 block text-sm font-bold text-teal-50">
-                  Nombre de usuario
+                  Nombre de usuario <span className="text-amber-200">*</span>
                 </span>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="form-input-dark"
+                  required
                 />
               </label>
 
               <label>
                 <span className="mb-2 block text-sm font-bold text-teal-50">
-                  Email
+                  Email <span className="text-amber-200">*</span>
                 </span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="form-input-dark"
+                  required
                 />
               </label>
 
               <label>
                 <span className="mb-2 block text-sm font-bold text-teal-50">
-                  Contrasena
+                  Contrasena <span className="text-amber-200">*</span>
                 </span>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="form-input-dark"
+                  minLength={8}
+                  required
                 />
+                <span className="mt-2 block text-xs font-semibold text-teal-100">
+                  Usa minimo 8 caracteres con mayuscula, minuscula, numero y simbolo.
+                </span>
               </label>
 
               <label>
@@ -183,17 +231,24 @@ export function RegistroForm() {
                   className="form-input-dark"
                   step="0.01"
                   min="0"
-                  placeholder="0.00"
                 />
               </label>
             </div>
 
             <button
               type="submit"
-              className="btn-primary mt-6 w-full bg-emerald-600 hover:bg-emerald-700"
+              className={`btn-primary mt-6 w-full bg-emerald-600 hover:bg-emerald-700 ${
+                loading ? 'cursor-not-allowed opacity-50' : ''
+              }`}
+              disabled={loading}
             >
-              Crear cuenta
+              {loading ? 'Creando cuenta...' : 'Crear cuenta'}
             </button>
+            {success && (
+              <p className="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-center text-sm font-semibold text-emerald-800">
+                {success}
+              </p>
+            )}
             {error && (
               <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-center text-sm font-semibold text-red-700">
                 {error}

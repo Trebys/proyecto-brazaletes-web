@@ -236,6 +236,35 @@ Seguimiento:
 
 - Si se reciben capturas o un enlace especifico de Figma, comparar contra esta capa visual y ajustar tokens o composicion sin romper los componentes reutilizables.
 
+### 2026-05-06 - Recuperacion de contrasena por codigo de correo
+
+Estado: vigente
+
+Contexto:
+
+- El flujo publico de autenticacion necesitaba una recuperacion de contrasena funcional.
+- El requerimiento pidio usar un codigo enviado por correo con vencimiento, no un enlace magico.
+- El sistema usa autenticacion por token y guarda sesiones activas en `rest_framework.authtoken`.
+
+Decision:
+
+- Implementar recuperacion en dos endpoints: solicitud de codigo y confirmacion de codigo con nueva contrasena.
+- Guardar los codigos en `PasswordResetCode` como hash, nunca en texto plano.
+- Incluir expiracion, limite de intentos y marca de uso para evitar reutilizacion.
+- Responder la solicitud de recuperacion con mensaje generico aunque el correo no exista.
+- Validar la nueva contrasena con los validadores de Django mas una regla local de fortaleza.
+- Invalidar tokens existentes del usuario despues de cambiar la contrasena.
+
+Impacto:
+
+- Se agrega una migracion de base de datos para `login.PasswordResetCode`.
+- Los entornos deben configurar `DJANGO_EMAIL_*` si necesitan envio real por SMTP; desarrollo puede usar backend de consola.
+- El frontend usa `/recuperar-contrasena` como pantalla dedicada y mantiene el login como entrada principal.
+
+Seguimiento:
+
+- Si se requiere auditoria de seguridad mas avanzada, agregar rate limiting por IP/correo y monitoreo de intentos.
+
 ## Limitaciones y seguimiento
 
 ### Historial de movimientos visible para usuarios

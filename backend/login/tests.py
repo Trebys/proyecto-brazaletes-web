@@ -1,12 +1,13 @@
 from decimal import Decimal
 
+from django.core import mail
 from django.test import override_settings
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from .models import User
+from .models import PasswordResetCode, User
 
 
 class UserPermissionsTests(APITestCase):
@@ -76,8 +77,8 @@ class UserPermissionsTests(APITestCase):
             'first_name': 'Nuevo',
             'last_name': 'Cliente',
             'email': 'nuevo@test.com',
-            'password': 'secret123',
-            'account_balance': '150.00',
+            'password': 'Secret123!',
+            'account_balance': '',
         }
 
         response = self.client.post('/api/register/', payload, format='json')
@@ -91,6 +92,54 @@ class UserPermissionsTests(APITestCase):
 
         created_user = User.objects.get(username=payload['username'])
         self.assertTrue(created_user.check_password(payload['password']))
+        self.assertEqual(str(created_user.account_balance), '0.00')
+
+    def test_register_client_rejects_duplicate_email(self):
+        response = self.client.post(
+            '/api/register/',
+            {
+                'username': 'otro_cliente',
+                'first_name': 'Otro',
+                'last_name': 'Cliente',
+                'email': self.client_user.email,
+                'password': 'Secret123!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+    def test_register_client_allows_username_with_spaces(self):
+        payload = {
+            'username': 'Nuevo Cliente VIP',
+            'first_name': 'Nuevo',
+            'last_name': 'Cliente',
+            'email': 'cliente.vip@test.com',
+            'password': 'Secret123!',
+        }
+
+        response = self.client.post('/api/register/', payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['User']['username'], payload['username'])
+        self.assertTrue(User.objects.filter(username=payload['username']).exists())
+
+    def test_register_client_rejects_weak_password(self):
+        response = self.client.post(
+            '/api/register/',
+            {
+                'username': 'weak_user',
+                'first_name': 'Weak',
+                'last_name': 'User',
+                'email': 'weak@test.com',
+                'password': 'secret123',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
 
     @override_settings(SESSION_IDLE_TIMEOUT_MINUTES=15)
     def test_login_allows_authentication_with_username(self):
@@ -250,3 +299,94 @@ class UserPermissionsTests(APITestCase):
             str(response.data['detail']),
             'Tu sesion ya no esta activa. Inicia sesion nuevamente.',
         )
+
+    @override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        PASSWORD_RESET_CODE_EXPIRATION_MINUTES=15,
+        PASSWORD_RESET_MAX_ATTEMPTS=5,
+    )
+    def test_password_reset_request_sends_code_without_exposing_accounts(self):
+        response = self.client.post(
+            '/api/password-reset/request/',
+            {'email': self.client_user.email},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('Si el correo existe', response.data['message'])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(PasswordResetCode.objects.count(), 1)
+
+        missing_response = self.client.post(
+            '/api/password-reset/request/',
+            {'email': 'no-existe@test.com'},
+            format='json',
+        )
+
+        self.assertEqual(missing_response.status_code, status.HTTP_200_OK)
+        self.assertIn('Si el correo existe', missing_response.data['message'])
+        self.assertEqual(len(mail.outbox), 1)
+
+    @override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        PASSWORD_RESET_CODE_EXPIRATION_MINUTES=15,
+        PASSWORD_RESET_MAX_ATTEMPTS=5,
+    )
+    def test_password_reset_confirm_changes_password_and_invalidates_tokens(self):
+        self.client.post(
+            '/api/password-reset/request/',
+            {'email': self.client_user.email},
+            format='json',
+        )
+        code = mail.outbox[-1].body.split('codigo antes de que expire.')[1]
+        code = ''.join(char for char in code if char.isdigit())[:6]
+
+        response = self.client.post(
+            '/api/password-reset/confirm/',
+            {
+                'email': self.client_user.email,
+                'code': code,
+                'new_password': 'Nueva123!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.client_user.refresh_from_db()
+        self.assertTrue(self.client_user.check_password('Nueva123!'))
+        self.assertFalse(Token.objects.filter(user=self.client_user).exists())
+
+        reused_response = self.client.post(
+            '/api/password-reset/confirm/',
+            {
+                'email': self.client_user.email,
+                'code': code,
+                'new_password': 'Otra123!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(reused_response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(PASSWORD_RESET_CODE_EXPIRATION_MINUTES=15)
+    def test_password_reset_confirm_rejects_expired_code(self):
+        reset_code = PasswordResetCode.objects.create(
+            user=self.client_user,
+            email=self.client_user.email,
+            code_hash='unused',
+            expires_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+
+        response = self.client.post(
+            '/api/password-reset/confirm/',
+            {
+                'email': self.client_user.email,
+                'code': '123456',
+                'new_password': 'Nueva123!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        reset_code.refresh_from_db()
+        self.assertIsNotNone(reset_code.used_at)

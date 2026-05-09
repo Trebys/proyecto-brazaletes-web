@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
+import { PasswordResetPage } from './pages/PasswordResetPage';
 import { AdministradorPage } from './pages/AdministradorPage';
 import { Toaster } from 'react-hot-toast';
 import { RegistroForm } from './components/RegistroForm';
@@ -29,6 +30,7 @@ function App() {
             <Route path="/" element={<Navigate to="/inicio" replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroForm />} />
+            <Route path="/recuperar-contrasena" element={<PasswordResetPage />} />
 
             <Route element={<PrivateRoutes requireAdmin />}>
               <Route path="/administrador" element={<AdministradorPage />} />
