@@ -46,12 +46,58 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     parser_classes = [JSONParser, FormParser, MultiPartParser]
 
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if user.is_staff:
+            return Response(
+                {'error': 'No se pueden eliminar usuarios administradores desde este panel.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        deactivate_user_account(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 def build_session_payload(replaced_existing_session=False):
     return {
         'idle_timeout_seconds': get_session_idle_timeout_seconds(),
         'replaced_existing_session': replaced_existing_session,
     }
+
+
+def deactivate_user_account(user):
+    deleted_identifier = f'deleted-user-{user.pk}'
+
+    with transaction.atomic():
+        Token.objects.filter(user=user).delete()
+        PasswordResetCode.objects.filter(user=user, used_at__isnull=True).update(
+            used_at=timezone.now()
+        )
+
+        if user.profile_image:
+            user.profile_image.delete(save=False)
+
+        user.username = deleted_identifier
+        user.email = f'{deleted_identifier}@deleted.local'
+        user.first_name = 'Cuenta'
+        user.last_name = 'eliminada'
+        user.account_balance = 0
+        user.profile_image = None
+        user.is_active = False
+        user.set_unusable_password()
+        user.save(
+            update_fields=[
+                'username',
+                'email',
+                'first_name',
+                'last_name',
+                'account_balance',
+                'profile_image',
+                'is_active',
+                'password',
+            ]
+        )
 
 
 def build_password_reset_email(code, expiration_minutes):
@@ -189,8 +235,13 @@ def request_password_reset(request):
     serializer = PasswordResetRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
+    username = serializer.validated_data['username']
     email = serializer.validated_data['email']
-    user = User.objects.filter(email__iexact=email, is_active=True).first()
+    user = User.objects.filter(
+        username__iexact=username,
+        email__iexact=email,
+        is_active=True,
+    ).first()
 
     if user:
         code = f'{secrets.randbelow(1000000):06d}'
@@ -215,7 +266,7 @@ def request_password_reset(request):
     return Response(
         {
             'message': (
-                'Si el correo existe, enviaremos un codigo para recuperar la cuenta.'
+                'Si los datos coinciden, enviaremos un codigo para recuperar la cuenta.'
             )
         },
         status=status.HTTP_200_OK,
@@ -228,13 +279,18 @@ def confirm_password_reset(request):
     serializer = PasswordResetConfirmSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
+    username = serializer.validated_data['username']
     email = serializer.validated_data['email']
     code = serializer.validated_data['code']
     new_password = serializer.validated_data['new_password']
 
     reset_code = (
         PasswordResetCode.objects.select_related('user')
-        .filter(email__iexact=email, used_at__isnull=True)
+        .filter(
+            user__username__iexact=username,
+            email__iexact=email,
+            used_at__isnull=True,
+        )
         .order_by('-created_at')
         .first()
     )
@@ -335,12 +391,13 @@ def delete_user(request):
     user = request.user
 
     try:
-        user.delete()
+        deactivate_user_account(user)
         return Response(
-            {'detail': 'User deleted successfully.'},
+            {'detail': 'Cuenta eliminada correctamente.'},
             status=status.HTTP_204_NO_CONTENT,
         )
     except Exception as exc:
+        logger.exception('Unable to deactivate user account.')
         return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
 

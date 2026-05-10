@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   clearStoredAuth,
   consumeSessionMessage,
@@ -7,11 +8,15 @@ import {
   loginUser,
 } from '../api/api';
 import { useAuth } from '../auth/AuthContext';
+import ModalMessage from './ModalMessage';
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(() => consumeSessionMessage() || '');
+  const [sessionModalMessage, setSessionModalMessage] = useState(
+    () => consumeSessionMessage() || ''
+  );
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { storeAuthSession } = useAuth();
 
@@ -31,7 +36,7 @@ export function LoginForm() {
       if (res.status === 200) {
         const { Token, User, session } = res.data;
         storeAuthSession({ token: Token, user: User, session });
-        alert(res.data.message || `Bienvenido, ${User.username}`);
+        toast.success(res.data.message || `Bienvenido, ${User.username}`);
         setError('');
 
         const targetPath = isAdminUser(User) && from === '/inicio'
@@ -59,6 +64,14 @@ export function LoginForm() {
 
   return (
     <div className="app-shell flex min-h-screen items-center justify-center px-4 py-10">
+      <ModalMessage
+        visible={Boolean(sessionModalMessage)}
+        title="Sesion cerrada"
+        message={sessionModalMessage}
+        variant="info"
+        closeOnBackdrop={false}
+        onClose={() => setSessionModalMessage('')}
+      />
       <div className="grid w-full max-w-5xl overflow-hidden rounded-lg bg-fondoLogin shadow-[0_28px_70px_rgba(0,0,0,0.28)] lg:grid-cols-[1.05fr_0.95fr]">
         <section className="relative hidden min-h-[560px] overflow-hidden lg:block">
           <img

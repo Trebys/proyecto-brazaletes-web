@@ -55,6 +55,113 @@ class UserPermissionsTests(APITestCase):
         self.assertTrue(response.data['is_staff'])
         self.assertTrue(response.data['is_admin'])
 
+    def test_delete_user_deactivates_account_and_invalidates_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.client_token.key}')
+
+        response = self.client.delete('/api/delete-user/')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.client_user.refresh_from_db()
+        self.assertFalse(self.client_user.is_active)
+        self.assertEqual(self.client_user.username, f'deleted-user-{self.client_user.pk}')
+        self.assertEqual(
+            self.client_user.email,
+            f'deleted-user-{self.client_user.pk}@deleted.local',
+        )
+        self.assertFalse(Token.objects.filter(user=self.client_user).exists())
+
+    def test_delete_user_with_sales_preserves_history(self):
+        from compra_brazaletes.models import Bracelet, BraceletType, PurchaseReceipt, Sale
+
+        bracelet_type = BraceletType.objects.create(
+            name='Delete Test',
+            price=Decimal('25.00'),
+            attraction_uses=3,
+            food_balance=Decimal('40.00'),
+        )
+        bracelet = Bracelet.objects.create(
+            owner=self.client_user,
+            bracelet_type=bracelet_type,
+            current_balance=bracelet_type.food_balance,
+            attraction_uses_remaining=bracelet_type.attraction_uses,
+        )
+        receipt = PurchaseReceipt.objects.create(
+            user=self.client_user,
+            bracelet=bracelet,
+            payment_method=PurchaseReceipt.PAYMENT_METHOD_INTERNAL,
+            amount_paid=bracelet_type.price,
+            status=PurchaseReceipt.STATUS_CAPTURED,
+        )
+        sale = Sale.objects.create(
+            customer=self.client_user,
+            receipt=receipt,
+            status=Sale.STATUS_CONFIRMED,
+            channel=Sale.CHANNEL_INTERNAL_BALANCE,
+            total_amount=bracelet_type.price,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.client_token.key}')
+
+        response = self.client.delete('/api/delete-user/')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.client_user.refresh_from_db()
+        sale.refresh_from_db()
+        receipt.refresh_from_db()
+        self.assertFalse(self.client_user.is_active)
+        self.assertEqual(sale.customer, self.client_user)
+        self.assertEqual(receipt.user, self.client_user)
+
+    def test_admin_delete_client_with_sales_deactivates_and_preserves_history(self):
+        from compra_brazaletes.models import Bracelet, BraceletType, PurchaseReceipt, Sale
+
+        bracelet_type = BraceletType.objects.create(
+            name='Admin Delete Test',
+            price=Decimal('25.00'),
+            attraction_uses=3,
+            food_balance=Decimal('40.00'),
+        )
+        bracelet = Bracelet.objects.create(
+            owner=self.client_user,
+            bracelet_type=bracelet_type,
+            current_balance=bracelet_type.food_balance,
+            attraction_uses_remaining=bracelet_type.attraction_uses,
+        )
+        receipt = PurchaseReceipt.objects.create(
+            user=self.client_user,
+            bracelet=bracelet,
+            payment_method=PurchaseReceipt.PAYMENT_METHOD_INTERNAL,
+            amount_paid=bracelet_type.price,
+            status=PurchaseReceipt.STATUS_CAPTURED,
+        )
+        sale = Sale.objects.create(
+            customer=self.client_user,
+            receipt=receipt,
+            status=Sale.STATUS_CONFIRMED,
+            channel=Sale.CHANNEL_INTERNAL_BALANCE,
+            total_amount=bracelet_type.price,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.delete(f'/api/Users/{self.client_user.pk}/')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.client_user.refresh_from_db()
+        sale.refresh_from_db()
+        receipt.refresh_from_db()
+        self.assertFalse(self.client_user.is_active)
+        self.assertEqual(self.client_user.username, f'deleted-user-{self.client_user.pk}')
+        self.assertEqual(sale.customer, self.client_user)
+        self.assertEqual(receipt.user, self.client_user)
+
+    def test_admin_delete_admin_user_is_rejected(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.delete(f'/api/Users/{self.admin_user.pk}/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.admin_user.refresh_from_db()
+        self.assertTrue(self.admin_user.is_active)
+
     def test_is_admin_user_depends_on_is_staff(self):
         self.assertFalse(self.client_user.is_admin_user)
         self.assertTrue(self.admin_user.is_admin_user)
@@ -308,24 +415,55 @@ class UserPermissionsTests(APITestCase):
     def test_password_reset_request_sends_code_without_exposing_accounts(self):
         response = self.client.post(
             '/api/password-reset/request/',
-            {'email': self.client_user.email},
+            {
+                'username': self.client_user.username,
+                'email': self.client_user.email,
+            },
             format='json',
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('Si el correo existe', response.data['message'])
+        self.assertIn('Si los datos coinciden', response.data['message'])
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(PasswordResetCode.objects.count(), 1)
 
         missing_response = self.client.post(
             '/api/password-reset/request/',
-            {'email': 'no-existe@test.com'},
+            {
+                'username': self.client_user.username,
+                'email': 'no-existe@test.com',
+            },
             format='json',
         )
 
         self.assertEqual(missing_response.status_code, status.HTTP_200_OK)
-        self.assertIn('Si el correo existe', missing_response.data['message'])
+        self.assertIn('Si los datos coinciden', missing_response.data['message'])
         self.assertEqual(len(mail.outbox), 1)
+
+    @override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        PASSWORD_RESET_CODE_EXPIRATION_MINUTES=15,
+        PASSWORD_RESET_MAX_ATTEMPTS=5,
+    )
+    def test_password_reset_request_requires_username_email_match(self):
+        other_user = User.objects.create_user(
+            username='otro_cliente',
+            email='otro@test.com',
+            password='secret123',
+        )
+
+        response = self.client.post(
+            '/api/password-reset/request/',
+            {
+                'username': other_user.username,
+                'email': self.client_user.email,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(PasswordResetCode.objects.count(), 0)
 
     @override_settings(
         EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
@@ -335,7 +473,10 @@ class UserPermissionsTests(APITestCase):
     def test_password_reset_confirm_changes_password_and_invalidates_tokens(self):
         self.client.post(
             '/api/password-reset/request/',
-            {'email': self.client_user.email},
+            {
+                'username': self.client_user.username,
+                'email': self.client_user.email,
+            },
             format='json',
         )
         code = mail.outbox[-1].body.split('codigo antes de que expire.')[1]
@@ -344,6 +485,7 @@ class UserPermissionsTests(APITestCase):
         response = self.client.post(
             '/api/password-reset/confirm/',
             {
+                'username': self.client_user.username,
                 'email': self.client_user.email,
                 'code': code,
                 'new_password': 'Nueva123!',
@@ -359,6 +501,7 @@ class UserPermissionsTests(APITestCase):
         reused_response = self.client.post(
             '/api/password-reset/confirm/',
             {
+                'username': self.client_user.username,
                 'email': self.client_user.email,
                 'code': code,
                 'new_password': 'Otra123!',
@@ -367,6 +510,30 @@ class UserPermissionsTests(APITestCase):
         )
 
         self.assertEqual(reused_response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(PASSWORD_RESET_CODE_EXPIRATION_MINUTES=15)
+    def test_password_reset_confirm_rejects_mismatched_username_email(self):
+        PasswordResetCode.objects.create(
+            user=self.client_user,
+            email=self.client_user.email,
+            code_hash='unused',
+            expires_at=timezone.now() + timezone.timedelta(minutes=15),
+        )
+
+        response = self.client.post(
+            '/api/password-reset/confirm/',
+            {
+                'username': 'otro_cliente',
+                'email': self.client_user.email,
+                'code': '123456',
+                'new_password': 'Nueva123!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.client_user.refresh_from_db()
+        self.assertFalse(self.client_user.check_password('Nueva123!'))
 
     @override_settings(PASSWORD_RESET_CODE_EXPIRATION_MINUTES=15)
     def test_password_reset_confirm_rejects_expired_code(self):
@@ -380,6 +547,7 @@ class UserPermissionsTests(APITestCase):
         response = self.client.post(
             '/api/password-reset/confirm/',
             {
+                'username': self.client_user.username,
                 'email': self.client_user.email,
                 'code': '123456',
                 'new_password': 'Nueva123!',

@@ -122,8 +122,8 @@ Funciones principales:
 
 - `loginUser(identifier, password)`
 - `registerClient(clientData)`
-- `requestPasswordReset(email)`
-- `confirmPasswordReset({ email, code, newPassword })`
+- `requestPasswordReset({ username, email })`
+- `confirmPasswordReset({ username, email, code, newPassword })`
 - `getClientData()`
 - `submitClientData(userData)`
 - `deleteClientAccount()`
@@ -144,6 +144,7 @@ Funciones principales:
 - `getAdminTestimonials()`
 - `updateAdminTestimonial(testimonialId, testimonialData)`
 - `buildMediaUrl(path)`
+- `getBraceletTypeImageUrl(braceletType)`
 - helpers administrativos: `getAdminClients`, `updateAdminClient`, `deleteAdminClient`, `getAdminBraceletTypes`, `createAdminBraceletType`, `updateAdminBraceletType`, `deleteAdminBraceletType`, `getAdminBracelets`, `updateAdminBracelet`, `deleteAdminBracelet`, `getAdminReceipts`, `updateAdminReceipt`, `deleteAdminReceipt`, `createAdminFood`, `updateAdminFood`, `deleteAdminFood`, `createAdminAttraction`, `updateAdminAttraction`, `deleteAdminAttraction`
 
 Detalle practico: `getBraceletTransactions` consume el mismo endpoint para cliente y administrador. Cuando recibe `bracelet_id`, lo envia como query param para filtrar el historial de un brazalete especifico.
@@ -216,16 +217,17 @@ Archivo principal: `src/pages/PasswordResetPage.jsx`
 Flujo:
 
 1. el usuario entra desde `/login` o directamente a `/recuperar-contrasena`;
-2. escribe su correo y la UI llama `requestPasswordReset`;
-3. el backend responde con un mensaje generico, exista o no el correo;
+2. escribe su usuario y correo registrado, y la UI llama `requestPasswordReset`;
+3. el backend responde con un mensaje generico, exista o no la combinacion;
 4. la pantalla pasa al formulario de confirmacion;
-5. el usuario escribe correo, codigo de 6 digitos, nueva contrasena y confirmacion;
+5. el usuario conserva usuario/correo, escribe codigo de 6 digitos, nueva contrasena y confirmacion;
 6. `confirmPasswordReset` envia el payload al backend;
 7. si el codigo es valido y la contrasena cumple reglas, el backend cambia la contrasena y la UI muestra confirmacion para volver al login.
 
 Reglas visibles:
 
 - el codigo se captura como 6 digitos;
+- usuario y correo deben corresponder a la misma cuenta activa;
 - la nueva contrasena exige minimo 8 caracteres desde HTML y el backend valida la regla completa;
 - errores de codigo invalido, vencido o contrasena debil se muestran como mensajes claros.
 
@@ -315,10 +317,12 @@ Incluye:
 - usa el color `fondoLogin` (`#004C55`) para mantener consistencia con los mockups y mejorar contraste.
 - las redes sociales del footer son acciones ficticias: muestran un aviso en pantalla y no redirigen fuera del sitio.
 - el navbar y footer incorporan mejor jerarquia, estados hover, sombras sutiles y controles con alto minimo estable para funcionar en desktop y mobile.
+- el logo se muestra dentro de un contenedor blanco reutilizado como referencia visual tambien por el panel administrativo.
+- los enlaces principales usan estado activo con fondo blanco y texto `fondoLogin`, evitando resaltados de color no alineados con la identidad visual.
 
 Detalles practicos:
 
-- usa `Link`, `Outlet` y `navigate` de React Router para mantener navegacion SPA;
+- usa `Link`, `NavLink`, `Outlet` y `navigate` de React Router para mantener navegacion SPA y marcar la ruta publica activa;
 - toma el usuario desde `AuthContext`, por lo que responde a login, logout y cambios entre pestanas sin depender de una lectura inicial de `localStorage`.
 
 ## Paginas y flujos principales
@@ -344,7 +348,7 @@ Responsabilidades:
 Regla vigente de testimonios:
 
 - la seccion ya no usa datos estaticos;
-- la lectura publica consume `GET /api/testimonios/`;
+- la lectura publica consume `GET /api/testimonios/?published_only=1` para ocultar pendientes y rechazados incluso si la sesion actual es administrativa;
 - el formulario autenticado envia `POST /api/testimonios/`;
 - si el usuario no tiene sesion, se muestra una llamada a iniciar sesion;
 - el nombre visible se toma del usuario autenticado;
@@ -461,6 +465,8 @@ Nota de alcance vigente:
 - el frontend actual cubre compra inicial, consulta de recibo e historial completo de movimientos del brazalete;
 - los consumos de comida y atracciones no se modelan como nuevas ventas de brazalete;
 - el panel administrativo y el perfil del cliente consumen el mismo ledger de `BraceletTransaction`.
+- el formulario visual de compra usa un panel verde oscuro alineado al mockup original, con campos verdes, imagen del brazalete sin contenedor decorativo y boton de compra con el estilo primario global.
+- las imagenes de tipos de brazalete se resuelven mediante `getBraceletTypeImageUrl`, que normaliza `image_url` o `image` antes de renderizar; si no hay imagen valida, la UI evita mostrar iconos rotos.
 
 Estado vigente para este flujo:
 
@@ -495,6 +501,7 @@ Detalle practico del estado actual:
 
 - si el brazalete ya tuvo consumos, la pagina ya muestra `current_balance` y `attraction_uses_remaining` reales del brazalete;
 - si todavia no hubo consumos, sigue mostrando el estado inicial esperado.
+- el resumen visual de la compra usa un panel verde oscuro alineado al mockup, con imagen del brazalete, nombre destacado y filas separadas por lineas finas.
 
 ### `src/pages/PerfilClientePage.jsx`
 
@@ -511,7 +518,7 @@ Responsabilidades:
 - cargar perfil del usuario autenticado;
 - permitir editar datos;
 - permitir subir una imagen de perfil desde un boton circular con icono de lapiz sobre el avatar, ocultando el input nativo de archivo;
-- permitir eliminar la cuenta.
+- permitir solicitar la eliminacion de la cuenta mediante una baja logica en backend.
 
 Detalle importante: el campo `password` se rellena con `******` como valor visual. El backend evita cambiarla si llega exactamente ese valor.
 
@@ -521,6 +528,12 @@ Detalle de imagen de perfil:
 - la imagen se guarda en el perfil del usuario;
 - los testimonios de la home reutilizan esa imagen;
 - si no existe imagen, la UI usa el avatar generico `perfil.svg`.
+
+Detalle de eliminacion de cuenta:
+
+- la accion pide confirmacion con `ModalMessage`;
+- al confirmar, el backend desactiva y anonimiza la cuenta en lugar de borrar fisicamente el historial asociado;
+- la sesion local se limpia y el usuario vuelve al inicio.
 
 ### `src/components/MyBracelets.jsx`
 
@@ -579,7 +592,7 @@ Responsabilidades:
 - cargar tambien movimientos auditados de brazaletes;
 - mostrar un resumen operativo con totales de clientes, brazaletes, ventas, movimientos e ingresos registrados;
 - ofrecer accesos directos a clientes, brazaletes, ventas, movimientos, comidas y atracciones;
-- consultar clientes y gestionar alta, edicion de datos basicos, saldo y eliminacion de clientes no administradores;
+- consultar clientes y gestionar alta, edicion de datos basicos, saldo y eliminacion logica de clientes no administradores;
 - consultar y gestionar tipos de brazalete dentro de la seccion Brazaletes, incluyendo precio, saldo de comida, usos de atraccion, descripcion, imagen, activacion/desactivacion y eliminacion cuando no tienen historial asociado;
 - consultar y gestionar brazaletes emitidos dentro de la misma seccion, incluyendo tipo, saldo y usos restantes;
 - consultar ventas/recibos y editar su estado operativo;
@@ -601,7 +614,10 @@ Detalle practico:
 - la tabla administrativa incluye busqueda local, ordenamiento ascendente/descendente por columna con indicadores visuales, paginacion local y selector de filas por pagina;
 - las secciones con muchas columnas, como clientes y ventas, priorizan el ancho de la tabla y mueven el formulario debajo hasta pantallas mas amplias para mejorar lectura;
 - las acciones de eliminacion piden confirmacion antes de llamar al backend;
+- en Clientes, la tabla muestra el estado activo/eliminada y la eliminacion administrativa advierte que compras, brazaletes y movimientos se conservan como historial operativo;
+- los formularios laterales de creacion/edicion del panel no se estiran al alto de la tabla para mantener una lectura mas compacta;
 - los roles administrativos no se editan desde este panel por seguridad; `is_staff` e `is_superuser` siguen siendo de solo lectura desde la API publica del backoffice.
+- el header administrativo usa el mismo tratamiento de logo y patron responsive del layout cliente, separando marca, secciones y acciones de usuario cuando el ancho no permite una sola fila.
 
 ### Requerimiento completado: gestion administrativa de tipos de brazalete
 
@@ -681,7 +697,16 @@ Carrusel manual de imagenes locales para la home.
 
 ### `src/components/ModalMessage.jsx`
 
-Modal simple usado para avisar que el usuario debe iniciar sesion antes de comprar.
+Modal reutilizable para avisos y confirmaciones importantes.
+
+Uso vigente:
+
+- aviso de sesion requerida antes de comprar;
+- confirmacion de eliminacion de cuenta desde perfil;
+- confirmaciones destructivas del panel administrativo;
+- mensaje persistente de sesion cerrada o expirada al volver a login.
+
+Decision visual: los mensajes bloqueantes usan este componente para mantener un mismo diseno. Los mensajes de exito o error no bloqueantes usan `react-hot-toast`.
 
 ## Matriz de acceso en frontend
 
@@ -714,7 +739,7 @@ Notas practicas:
 
 - login basico
 - registro publico funcional con inicio de sesion automatico al crear cuenta
-- recuperacion de contrasena por codigo de correo desde `/recuperar-contrasena`
+- recuperacion de contrasena por codigo de correo desde `/recuperar-contrasena`, validando usuario y correo asociados
 - proteccion de rutas por autenticacion y una regla administrativa ya unificada
 - pagina publica de sobre nosotros integrada a rutas, navbar y footer
 - pagina publica de contacto con formulario local, informacion de atencion y redes ficticias
@@ -754,6 +779,7 @@ La interfaz ya consume el estado actual del brazalete, muestra el numero de tran
 - varias paginas vacias en `src/pages/`
 - `MasterPageAdmin.jsx`
 - `FormularioCompra.jsx`
+- no existe todavia una suite E2E automatizada para navegador real y responsive visual; el QA final quedo registrado en [revision-qa-final.md](revision-qa-final.md).
 
 ### Deuda tecnica visible
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import perfilIcon from '/images/perfil.svg';
 import { useAuth } from '../auth/AuthContext.jsx';
@@ -18,6 +18,21 @@ const footerSocialLinks = [
     icon: '/images/tiktok.svg',
   },
 ];
+
+const NAV_LINKS = [
+  { to: '/inicio', label: 'Inicio' },
+  { to: '/comprar-brazaletes', label: 'Compra de Brazaletes' },
+  { to: '/atracciones-comidas', label: 'Atracciones y Comidas' },
+  { to: '/sobre-nosotros', label: 'Sobre Nosotros' },
+  { to: '/contacto', label: 'Contacto' },
+];
+
+const navLinkClass = ({ isActive }) =>
+  `rounded-md px-3 py-2 transition ${
+    isActive
+      ? 'bg-white text-fondoLogin shadow-sm'
+      : 'text-white hover:bg-white/10'
+  }`;
 
 export function MasterPageCliente() {
   const navigate = useNavigate();
@@ -53,22 +68,12 @@ export function MasterPageCliente() {
           </span>
         </button>
 
-        <div className="flex flex-wrap justify-center gap-x-1 gap-y-2 text-sm font-bold lg:text-[0.95rem]">
-          <Link to="/inicio" className="rounded-md px-3 py-2 transition hover:bg-white/10">
-            Inicio
-          </Link>
-          <Link to="/comprar-brazaletes" className="rounded-md px-3 py-2 transition hover:bg-white/10">
-            Compra de Brazaletes
-          </Link>
-          <Link to="/atracciones-comidas" className="rounded-md px-3 py-2 transition hover:bg-white/10">
-            Atracciones y Comidas
-          </Link>
-          <Link to="/sobre-nosotros" className="rounded-md px-3 py-2 transition hover:bg-white/10">
-            Sobre Nosotros
-          </Link>
-          <Link to="/contacto" className="rounded-md px-3 py-2 transition hover:bg-white/10">
-            Contacto
-          </Link>
+        <div className="flex flex-wrap justify-center gap-x-1 gap-y-2 text-sm font-extrabold lg:text-[0.95rem]">
+          {NAV_LINKS.map((link) => (
+            <NavLink key={link.to} to={link.to} className={navLinkClass}>
+              {link.label}
+            </NavLink>
+          ))}
         </div>
 
         <div className="flex items-center justify-center gap-2">

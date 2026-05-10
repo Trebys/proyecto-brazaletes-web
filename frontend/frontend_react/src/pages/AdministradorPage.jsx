@@ -33,6 +33,7 @@ import {
   updateAdminReceipt,
   updateAdminTestimonial,
 } from '../api/api';
+import ModalMessage from '../components/ModalMessage';
 
 const ADMIN_SECTIONS = [
   { id: 'resumen', label: 'Resumen' },
@@ -274,7 +275,7 @@ function compareValues(firstValue, secondValue) {
   });
 }
 
-function DataTable({ columns, rows, emptyText, title }) {
+function DataTable({ columns, rows, emptyText, title, tableClassName = 'min-w-full' }) {
   const [searchValue, setSearchValue] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: columns[0]?.key || '', direction: 'asc' });
   const [pageSize, setPageSize] = useState(10);
@@ -380,7 +381,7 @@ function DataTable({ columns, rows, emptyText, title }) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse text-left text-sm">
+        <table className={`${tableClassName} border-collapse text-left text-sm`}>
           <thead>
             <tr className="bg-neutral-100">
               {columns.map((column) => {
@@ -505,6 +506,7 @@ export function AdministradorPage() {
   const [foodForm, setFoodForm] = useState(initialFoodForm);
   const [selectedAttractionId, setSelectedAttractionId] = useState('');
   const [attractionForm, setAttractionForm] = useState(initialAttractionForm);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const adminUser = getStoredUser();
 
@@ -557,19 +559,27 @@ export function AdministradorPage() {
     navigate('/login');
   };
 
-  const handleDelete = async (message, action) => {
-    if (!window.confirm(message)) {
+  const handleDelete = async (message, action, successMessage = 'Registro eliminado.') => {
+    setPendingDelete({ message, action, successMessage });
+  };
+
+  const confirmDelete = async () => {
+    const deleteRequest = pendingDelete;
+    setPendingDelete(null);
+
+    if (!deleteRequest) {
       return;
     }
 
     setSaving(true);
     try {
-      await action();
+      await deleteRequest.action();
       await loadAdminData();
-      toast.success('Registro eliminado.');
+      toast.success(deleteRequest.successMessage);
     } catch (error) {
       console.error('Error deleting record:', error);
-      toast.error('No se pudo eliminar el registro.');
+      const apiMessage = error?.response?.data?.error || error?.response?.data?.detail;
+      toast.error(apiMessage || 'No se pudo eliminar el registro.');
     } finally {
       setSaving(false);
     }
@@ -860,7 +870,7 @@ export function AdministradorPage() {
   };
 
   const totals = {
-    clients: clients.filter((client) => !client.is_staff).length,
+    clients: clients.filter((client) => !client.is_staff && client.is_active !== false).length,
     bracelets: bracelets.length,
     receipts: receipts.length,
     transactions: transactions.length,
@@ -871,28 +881,40 @@ export function AdministradorPage() {
 
   return (
     <div className="app-shell flex flex-col">
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin px-4 py-3 text-white shadow-lg">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+      <ModalMessage
+        visible={Boolean(pendingDelete)}
+        title="Confirmar eliminacion"
+        message={pendingDelete?.message || ''}
+        variant="danger"
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+      />
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <button
             type="button"
             onClick={() => setActiveSection('resumen')}
-            className="flex items-center gap-3"
+            className="flex items-center gap-3 self-start"
           >
-            <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-10" />
-            <span className="text-left text-xl font-extrabold leading-5">
-              Fantasy<br />Land
+            <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white shadow-sm">
+              <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-9" />
+            </span>
+            <span className="font-montserrat text-xl font-extrabold tracking-wide">
+              Fantasy Land
             </span>
           </button>
 
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-sm font-extrabold lg:text-[0.95rem] xl:flex-1">
             {ADMIN_SECTIONS.map((section) => (
               <button
                 key={section.id}
                 type="button"
                 onClick={() => setActiveSection(section.id)}
-                className={`rounded px-3 py-2 text-sm font-extrabold transition ${
+                className={`rounded-md px-3 py-2 transition ${
                   activeSection === section.id
-                    ? 'bg-amber-200 text-fondoLogin'
+                    ? 'bg-white text-fondoLogin shadow-sm'
                     : 'text-white hover:bg-white/10'
                 }`}
               >
@@ -901,11 +923,11 @@ export function AdministradorPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2 xl:justify-end">
             <button
               type="button"
               onClick={() => navigate('/mi-perfil')}
-              className="flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin"
+              className="flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
             >
               <img src="/images/perfil.svg" alt="Perfil" className="mr-2 h-5 w-5" />
               {adminUser?.username || 'Admin'}
@@ -913,7 +935,7 @@ export function AdministradorPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="min-h-10 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white hover:bg-red-800"
+              className="min-h-10 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white transition hover:bg-red-800"
             >
               Cerrar Sesion
             </button>
@@ -921,7 +943,7 @@ export function AdministradorPage() {
         </div>
       </nav>
 
-      <main className="mx-auto w-full max-w-7xl flex-grow px-4 py-8">
+      <main className="mx-auto w-full max-w-[92rem] flex-grow px-4 py-8">
         <header className="mb-8 text-center">
           <p className="section-eyebrow">
             Panel operativo
@@ -1109,7 +1131,7 @@ export function AdministradorPage() {
                   ]}
                 />
 
-                <form onSubmit={handleBraceletTypeSubmit} className="rounded bg-teal-950/70 p-5">
+                <form onSubmit={handleBraceletTypeSubmit} className="self-start rounded bg-teal-950/70 p-5">
                   <h2 className="text-xl font-extrabold">
                     {selectedBraceletTypeId ? 'Editar tipo' : 'Crear tipo'}
                   </h2>
@@ -1148,11 +1170,12 @@ export function AdministradorPage() {
             ) : null}
 
             {activeSection === 'clientes' ? (
-              <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_360px]">
+              <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_300px]">
                 <DataTable
                   title="Clientes registrados"
                   emptyText="No hay clientes registrados."
                   rows={clients}
+                  tableClassName="min-w-[1050px]"
                   columns={[
                     { key: 'id', label: 'ID' },
                     { key: 'username', label: 'Usuario' },
@@ -1176,18 +1199,32 @@ export function AdministradorPage() {
                       sortValue: (client) => (client.is_staff ? 'Admin' : 'Cliente'),
                     },
                     {
+                      key: 'is_active',
+                      label: 'Estado',
+                      render: (client) => (
+                        <Badge tone={client.is_active === false ? 'warning' : 'success'}>
+                          {client.is_active === false ? 'Eliminada' : 'Activa'}
+                        </Badge>
+                      ),
+                      sortValue: (client) => (client.is_active === false ? 'Eliminada' : 'Activa'),
+                    },
+                    {
                       key: 'actions',
                       label: 'Acciones',
                       sortable: false,
                       render: (client) => (
                         <div className="flex flex-wrap gap-2">
-                          <AdminButton onClick={() => editClient(client)}>Editar</AdminButton>
-                          {!client.is_staff ? (
+                          {client.is_active === false ? null : (
+                            <AdminButton onClick={() => editClient(client)}>Editar</AdminButton>
+                          )}
+                          {!client.is_staff && client.is_active !== false ? (
                             <AdminButton
                               variant="danger"
                               onClick={() =>
-                                handleDelete('Eliminar este cliente?', () =>
-                                  deleteAdminClient(client.id)
+                                handleDelete(
+                                  'Esta accion desactivara la cuenta del cliente. Si ya tiene compras, brazaletes o movimientos, esos registros se conservaran como historial operativo y sus datos de acceso se anonimizaran. Deseas continuar?',
+                                  () => deleteAdminClient(client.id),
+                                  'Cuenta de cliente eliminada.'
                                 )
                               }
                             >
@@ -1200,11 +1237,11 @@ export function AdministradorPage() {
                   ]}
                 />
 
-                <form onSubmit={handleClientSubmit} className="rounded bg-teal-950/70 p-5">
-                  <h2 className="text-xl font-extrabold">
+                <form onSubmit={handleClientSubmit} className="self-start rounded bg-teal-950/70 p-4">
+                  <h2 className="text-lg font-extrabold">
                     {selectedClientId ? 'Editar cliente' : 'Registrar cliente'}
                   </h2>
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-4 space-y-2.5">
                     <TextField label="Usuario" name="username" value={clientForm.username} onChange={handleClientChange} required />
                     <TextField label="Nombre" name="first_name" value={clientForm.first_name} onChange={handleClientChange} required />
                     <TextField label="Apellido" name="last_name" value={clientForm.last_name} onChange={handleClientChange} required />
@@ -1279,7 +1316,7 @@ export function AdministradorPage() {
                   ]}
                 />
 
-                <form onSubmit={handleBraceletSubmit} className="rounded bg-teal-950/70 p-5">
+                <form onSubmit={handleBraceletSubmit} className="self-start rounded bg-teal-950/70 p-5">
                   <h2 className="text-xl font-extrabold">
                     {selectedBraceletId ? 'Editar brazalete' : 'Crear brazalete'}
                   </h2>
@@ -1396,7 +1433,7 @@ export function AdministradorPage() {
                   ]}
                 />
 
-                <form onSubmit={handleReceiptSubmit} className="rounded bg-teal-950/70 p-5">
+                <form onSubmit={handleReceiptSubmit} className="self-start rounded bg-teal-950/70 p-5">
                   <h2 className="text-xl font-extrabold">Editar estado de venta</h2>
                   <p className="mt-2 text-sm text-white/70">
                     Venta seleccionada: {selectedReceiptId || 'ninguna'}
@@ -1647,7 +1684,7 @@ export function AdministradorPage() {
                   ]}
                 />
 
-                <form onSubmit={handleFoodSubmit} className="rounded bg-teal-950/70 p-5">
+                <form onSubmit={handleFoodSubmit} className="self-start rounded bg-teal-950/70 p-5">
                   <h2 className="text-xl font-extrabold">
                     {selectedFoodId ? 'Editar comida' : 'Crear comida'}
                   </h2>
@@ -1714,7 +1751,7 @@ export function AdministradorPage() {
                   ]}
                 />
 
-                <form onSubmit={handleAttractionSubmit} className="rounded bg-teal-950/70 p-5">
+                <form onSubmit={handleAttractionSubmit} className="self-start rounded bg-teal-950/70 p-5">
                   <h2 className="text-xl font-extrabold">
                     {selectedAttractionId ? 'Editar atraccion' : 'Crear atraccion'}
                   </h2>

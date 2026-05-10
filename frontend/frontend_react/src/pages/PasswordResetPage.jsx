@@ -22,6 +22,7 @@ const formatApiError = (error) => {
 };
 
 export function PasswordResetPage() {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -38,7 +39,10 @@ export function PasswordResetPage() {
     setMessage('');
 
     try {
-      const data = await requestPasswordReset(email.trim());
+      const data = await requestPasswordReset({
+        username: username.trim(),
+        email: email.trim(),
+      });
       setMessage(data.message);
       setStep('confirm');
     } catch (error) {
@@ -62,6 +66,7 @@ export function PasswordResetPage() {
 
     try {
       const data = await confirmPasswordReset({
+        username: username.trim(),
         email: email.trim(),
         code: code.trim(),
         newPassword,
@@ -134,12 +139,26 @@ export function PasswordResetPage() {
               Cambiar contrasena
             </h1>
             <p className="mt-2 text-sm leading-6 text-teal-50">
-              Ingresa tu correo y confirma el codigo para definir una nueva clave.
+              Ingresa tu usuario y correo registrado. Deben coincidir con la misma cuenta.
             </p>
           </div>
 
           {step === 'request' ? (
             <form onSubmit={handleRequest} className="grid gap-4">
+              <label>
+                <span className="mb-2 block text-sm font-bold text-teal-50">
+                  Usuario
+                </span>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  className="form-input-dark"
+                  autoComplete="username"
+                  required
+                />
+              </label>
+
               <label>
                 <span className="mb-2 block text-sm font-bold text-teal-50">
                   Email registrado
@@ -149,6 +168,7 @@ export function PasswordResetPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="form-input-dark"
+                  autoComplete="email"
                   required
                 />
               </label>
@@ -165,6 +185,19 @@ export function PasswordResetPage() {
             </form>
           ) : (
             <form onSubmit={handleConfirm} className="grid gap-4">
+              <label>
+                <span className="mb-2 block text-sm font-bold text-teal-50">
+                  Usuario
+                </span>
+                <input
+                  type="text"
+                  value={username}
+                  readOnly
+                  className="form-input-dark cursor-not-allowed bg-white/80"
+                  required
+                />
+              </label>
+
               <label>
                 <span className="mb-2 block text-sm font-bold text-teal-50">
                   Email registrado

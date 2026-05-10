@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
-  buildMediaUrl,
+  getBraceletTypeImageUrl,
   getPurchaseReceiptById,
   getStoredPurchaseReceiptId,
 } from '../api/api';
@@ -82,10 +82,9 @@ export function ReciboCompraPage() {
     name: typeName,
     price,
     food_balance,
-    image,
     attraction_uses,
   } = bracelet_type || {};
-  const imageUrl = buildMediaUrl(image);
+  const imageUrl = getBraceletTypeImageUrl(bracelet_type);
   const fechaCompra = purchase_date
     ? new Date(purchase_date).toLocaleDateString('es-ES')
     : 'No especificado';
@@ -95,72 +94,74 @@ export function ReciboCompraPage() {
       <p className="section-eyebrow">Compra confirmada</p>
       <div className="mb-6 mt-3 font-montserrat text-3xl font-extrabold text-white">Recibo de Compra</div>
 
-      <div className="surface-card w-full max-w-xl p-6">
-        <h3 className="mb-4 font-montserrat text-2xl font-extrabold text-slate-950">
-          Resumen de la compra
+      <div className="w-full max-w-2xl bg-fondoLogin px-6 py-7 text-white shadow-[0_24px_60px_rgba(0,0,0,0.18)] sm:px-9">
+        <h3 className="mb-6 font-montserrat text-2xl font-extrabold">
+          3. Resumen de la compra
         </h3>
 
-        <div className="mb-4 flex items-center rounded-md bg-slate-50 p-3">
-          <img
-            src={imageUrl}
-            alt={typeName || 'Brazalete'}
-            className="h-20 w-20 rounded object-cover"
-          />
-          <div className="ml-4 text-lg font-extrabold text-slate-950">
-            {typeName || 'Brazalete'}
-          </div>
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={typeName || 'Brazalete'}
+              className="h-28 w-28 shrink-0 object-cover"
+            />
+          ) : null}
+          <h4 className="font-montserrat text-2xl font-extrabold">
+            Brazalete {typeName || 'N/A'}
+          </h4>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <table className="w-full text-sm text-slate-800">
+        <div>
+          <table className="w-full table-fixed text-left text-sm text-white">
             <tbody>
               <tr>
-                <td className="py-2 font-semibold">Comprador</td>
-                <td className="text-right">{fullName}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Comprador</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">{fullName}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Fecha de compra</td>
-                <td className="text-right">{fechaCompra}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Fecha de compra</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">{fechaCompra}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">ID de Recibo</td>
-                <td className="text-right">{id}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">ID de Recibo</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">{id}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Codigo brazalete</td>
-                <td className="text-right">{bracelet_code || 'N/A'}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Codigo brazalete</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">{bracelet_code || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Numero Compra</td>
-                <td className="text-right">{purchase_code || 'N/A'}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Numero Compra</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">{purchase_code || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Tipo</td>
-                <td className="text-right">{typeName || 'N/A'}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Tipo</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">{typeName || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Precio Brazalete</td>
-                <td className="text-right">${price ?? '0.00'}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Precio Brazalete</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">${price ?? '0.00'}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Usos atracciones</td>
-                <td className="text-right">
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Usos atracciones</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">
                   {bracelet?.attraction_uses_remaining ?? attraction_uses ?? 0}
                 </td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Saldo Comidas</td>
-                <td className="text-right">
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Saldo Comidas</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">
                   ${bracelet?.current_balance ?? food_balance ?? '0.00'}
                 </td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Total Pagado</td>
-                <td className="text-right">${amount_paid ?? '0.00'}</td>
+                <td className="border-b border-white/35 py-2 pr-4 font-extrabold">Total Pagado</td>
+                <td className="border-b border-white/35 py-2 text-right font-bold">${amount_paid ?? '0.00'}</td>
               </tr>
               <tr>
-                <td className="py-2 font-semibold">Metodo de Pago</td>
-                <td className="text-right">{getMethodLabel(payment_method)}</td>
+                <td className="py-2 pr-4 font-extrabold">Metodo de Pago</td>
+                <td className="py-2 text-right font-bold">{getMethodLabel(payment_method)}</td>
               </tr>
             </tbody>
           </table>
