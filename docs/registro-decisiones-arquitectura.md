@@ -249,9 +249,10 @@ Contexto:
 Decision:
 
 - Implementar recuperacion en dos endpoints: solicitud de codigo y confirmacion de codigo con nueva contrasena.
+- Exigir `username` y `email` en la solicitud y confirmacion para verificar que ambos correspondan a la misma cuenta activa.
 - Guardar los codigos en `PasswordResetCode` como hash, nunca en texto plano.
 - Incluir expiracion, limite de intentos y marca de uso para evitar reutilizacion.
-- Responder la solicitud de recuperacion con mensaje generico aunque el correo no exista.
+- Responder la solicitud de recuperacion con mensaje generico aunque el usuario, el correo o la combinacion no existan.
 - Validar la nueva contrasena con los validadores de Django mas una regla local de fortaleza.
 - Invalidar tokens existentes del usuario despues de cambiar la contrasena.
 
@@ -260,10 +261,62 @@ Impacto:
 - Se agrega una migracion de base de datos para `login.PasswordResetCode`.
 - Los entornos deben configurar `DJANGO_EMAIL_*` si necesitan envio real por SMTP; desarrollo puede usar backend de consola.
 - El frontend usa `/recuperar-contrasena` como pantalla dedicada y mantiene el login como entrada principal.
+- El flujo reduce solicitudes accidentales o maliciosas sobre correos conocidos porque no genera codigo si el correo no pertenece al usuario indicado.
 
 Seguimiento:
 
 - Si se requiere auditoria de seguridad mas avanzada, agregar rate limiting por IP/correo y monitoreo de intentos.
+
+### 2026-05-09 - Mensajes bloqueantes centralizados en modal reutilizable
+
+Estado: vigente
+
+Contexto:
+
+- Durante el QA final se detecto uso mezclado de `alert()`, `window.confirm()`, `toast` y un modal visual anterior.
+- Esto generaba una experiencia inconsistente y hacia mas dificil revisar mensajes, confirmaciones destructivas y estados de error.
+
+Decision:
+
+- Usar `ModalMessage` para avisos bloqueantes y confirmaciones que requieren decision del usuario.
+- Usar `react-hot-toast` para feedback no bloqueante de exito o error.
+- Evitar `alert()` y `window.confirm()` en componentes React.
+
+Impacto:
+
+- Login, compra, PayPal, perfil y panel administrativo usan una experiencia de mensajes mas uniforme.
+- Las futuras acciones destructivas deben usar el modal reutilizable o una extension del mismo patron.
+- Los cierres por expiracion de sesion se muestran como modal persistente en login hasta que el usuario pulse `Ok`.
+
+Seguimiento:
+
+- Si se agregan mas flujos con confirmaciones, reutilizar `ModalMessage` antes de crear modales aislados.
+
+### 2026-05-10 - Baja logica de cuentas con historial
+
+Estado: vigente
+
+Contexto:
+
+- El cliente puede tener recibos, ventas, brazaletes, movimientos y testimonios asociados.
+- El modelo comercial protege parte de ese historial para conservar trazabilidad.
+- Borrar fisicamente un usuario con ventas puede fallar por relaciones `PROTECT` o debilitar auditoria.
+
+Decision:
+
+- La accion `DELETE /api/delete-user/` representa baja de cuenta, no borrado fisico del historial.
+- El backend invalida tokens, marca codigos pendientes como usados, borra referencia de imagen, anonimiza datos personales basicos y deja `is_active = False`.
+- Las ventas, recibos, brazaletes y movimientos se conservan para auditoria.
+
+Impacto:
+
+- El usuario ya no puede iniciar sesion despues de eliminar su cuenta.
+- El historial operativo y comercial permanece consistente.
+- La UI puede tratar la respuesta como eliminacion exitosa desde la perspectiva del cliente.
+
+Seguimiento:
+
+- Si se requiere cumplimiento de privacidad mas estricto, revisar politicas de retencion y anonimizar otros campos derivados que se agreguen en el futuro.
 
 ## Limitaciones y seguimiento
 
@@ -300,3 +353,20 @@ Impacto:
 Seguimiento:
 
 - Mantener `backend/.env.example`, `frontend/frontend_react/.env.example` y la documentacion de configuracion actualizadas cuando cambien variables.
+
+### QA visual automatizado pendiente
+
+Estado: vigente
+
+Limitacion:
+
+- El QA final pudo validar arranque, build, pruebas backend y flujos criticos por API.
+- No existe todavia una suite E2E automatizada ni Playwright/Cypress instalado para repetir navegador limpio, screenshots y responsive visual de forma reproducible.
+
+Impacto:
+
+- La salida local queda apta para portafolio con cautelas menores, pero un despliegue publico deberia sumar una pasada visual real en navegador y, preferiblemente, pruebas E2E basicas.
+
+Seguimiento:
+
+- Agregar una suite E2E minima para login, registro, compra interna, perfil, consumos y panel admin.

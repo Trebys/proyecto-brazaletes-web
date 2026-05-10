@@ -214,27 +214,29 @@ Detalle practico: la respuesta ya no usa `serializer.data` del serializer de ent
 
 Recibe:
 
+- `username`
 - `email`
 
 Flujo:
 
-1. valida formato de correo;
-2. si existe un usuario activo con ese correo, genera un codigo numerico de 6 digitos;
+1. valida usuario y formato de correo;
+2. si existe un usuario activo donde `username` y `email` corresponden a la misma cuenta, genera un codigo numerico de 6 digitos;
 3. guarda solo el hash del codigo con fecha de vencimiento;
 4. envia un correo HTML con identidad visual de Fantasy Land;
-5. responde siempre con un mensaje generico para no revelar si el correo existe.
+5. responde siempre con un mensaje generico para no revelar si el usuario, el correo o la combinacion existen.
 
 #### `confirm_password_reset`
 
 Recibe:
 
+- `username`
 - `email`
 - `code`
 - `new_password`
 
 Flujo:
 
-1. busca el ultimo codigo pendiente para el correo;
+1. busca el ultimo codigo pendiente para la combinacion de usuario y correo;
 2. rechaza codigos inexistentes, vencidos, usados o con demasiados intentos;
 3. valida la nueva contrasena con los validadores configurados;
 4. actualiza la contrasena dentro de una operacion atomica;
@@ -268,7 +270,20 @@ Observacion importante del estado actual:
 
 #### `delete_user`
 
-Elimina al usuario autenticado.
+Da de baja la cuenta autenticada.
+
+Detalle practico: no borra fisicamente el registro `User` cuando puede existir historial comercial u operativo asociado. En su lugar:
+
+- invalida tokens activos;
+- marca codigos pendientes de recuperacion como usados;
+- elimina la referencia a imagen de perfil;
+- anonimiza usuario, correo y nombres;
+- deja `is_active = False`;
+- reemplaza la contrasena por una no usable.
+
+Esto evita errores por relaciones protegidas con ventas, recibos y movimientos, y conserva la trazabilidad del historial del parque.
+
+La misma regla se aplica desde el panel administrativo para `DELETE /api/Users/{id}/` cuando el objetivo es una cuenta cliente. Las cuentas administrativas no se eliminan desde ese endpoint para evitar bloquear el acceso operativo al sistema.
 
 #### `refresh_token`
 
@@ -297,7 +312,7 @@ Cobertura actual:
 - permiso valido para que un administrador actualice su saldo cuando corresponde.
 - registro con saldo vacio normalizado a cero;
 - rechazo de correo duplicado y contrasena debil en registro;
-- solicitud de recuperacion sin revelar si el correo existe;
+- solicitud de recuperacion sin revelar si usuario, correo o combinacion existen;
 - cambio de contrasena con codigo valido, invalidacion de sesiones, rechazo de codigo reutilizado y rechazo de codigo vencido.
 
 ### Requerimiento completado: alineacion de expiracion de sesion
@@ -429,6 +444,7 @@ Ruta base:
 Comportamiento:
 
 - `GET /api/testimonios/` es publico y devuelve solo testimonios publicados;
+- `GET /api/testimonios/?published_only=1` fuerza la lectura de solo publicados incluso si la solicitud viene de una sesion administrativa;
 - `POST /api/testimonios/` exige autenticacion y crea un testimonio pendiente;
 - administradores pueden consultar y moderar testimonios, incluyendo pendientes y rechazados;
 - clientes no pueden modificar el estado de publicacion.
@@ -438,6 +454,7 @@ Comportamiento:
 El backend cuenta con pruebas para:
 
 - lectura publica limitada a testimonios publicados;
+- lectura administrativa con `published_only=1` limitada a testimonios publicados;
 - creacion autenticada en estado pendiente;
 - rechazo de creacion anonima;
 - validacion de rango de valoracion;
@@ -1015,10 +1032,10 @@ Criterios resueltos:
 
 ### Recuperacion de contrasena
 
-1. frontend hace `POST /api/password-reset/request/` con el correo;
+1. frontend hace `POST /api/password-reset/request/` con usuario y correo;
 2. backend responde siempre con mensaje generico;
-3. si el correo pertenece a un usuario activo, backend envia un codigo de 6 digitos con vencimiento;
-4. frontend hace `POST /api/password-reset/confirm/` con correo, codigo y nueva contrasena;
+3. si usuario y correo corresponden a la misma cuenta activa, backend envia un codigo de 6 digitos con vencimiento;
+4. frontend hace `POST /api/password-reset/confirm/` con usuario, correo, codigo y nueva contrasena;
 5. backend valida codigo y fortaleza de contrasena;
 6. backend cambia la contrasena, marca el codigo como usado e invalida sesiones existentes.
 
@@ -1063,9 +1080,10 @@ Esta matriz resume el comportamiento actual esperado para los endpoints sensible
 | `POST /api/password-reset/confirm` | permitido con codigo valido | permitido con codigo valido | permitido con codigo valido |
 | `POST /api/user-profile` | `401` | permitido | permitido |
 | `PATCH /api/edit-user` | `401` | permitido para sus datos basicos, sin cambiar saldo | permitido |
-| `DELETE /api/delete-user` | `401` | permitido sobre su propia cuenta | permitido sobre su propia cuenta |
+| `DELETE /api/delete-user` | `401` | permitido, da de baja y anonimiza su propia cuenta | permitido, da de baja y anonimiza su propia cuenta |
 | `GET /api/Users/` | `401` | `403` | permitido |
-| `POST/PATCH/DELETE /api/Users/` | `401` | `403` | permitido |
+| `POST/PATCH /api/Users/` | `401` | `403` | permitido |
+| `DELETE /api/Users/{id}/` | `401` | `403` | permitido para cuentas cliente; da de baja y anonimiza sin romper historial |
 
 ### Testimonios
 
@@ -1129,7 +1147,7 @@ Notas practicas:
 - registro de clientes devuelve correctamente token y usuario serializado, incluyendo `is_admin`, sin exponer password;
 - registro de clientes valida duplicados, campos obligatorios y contrasena fuerte;
 - el nombre de usuario permite espacios internos, manteniendo unicidad insensible a mayusculas/minusculas desde el serializer;
-- recuperacion de contrasena por codigo de correo con hash, expiracion, limite de intentos e invalidacion de sesiones;
+- recuperacion de contrasena por codigo de correo validando usuario y correo asociados, con hash, expiracion, limite de intentos e invalidacion de sesiones;
 - `BraceletTypeViewSet` con lectura publica y escritura administrativa consistente;
 - tipos de brazalete con estado activo/inactivo para retirar catalogo de compra sin perder historial;
 - `BraceletViewSet` restringido a administradores con la misma convencion;

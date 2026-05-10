@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
-  buildMediaUrl,
   createPurchaseReceipt,
+  getBraceletTypeImageUrl,
   getTiposBrazaletes,
   persistPurchaseReceiptId,
 } from '../api/api';
@@ -77,10 +78,7 @@ export function ComprarBrazaletesPage() {
       const result = await createPurchaseReceipt(selectedTipo.id);
       // Supongamos que "result.id" es el ID del PurchaseReceipt
       persistPurchaseReceiptId(result.id);
-      alert(
-        `Compra exitosa con saldo interno. Recibo: ${result.purchase_code}`
-      );
-
+      toast.success(`Compra exitosa. Recibo: ${result.purchase_code}`);
       navigate('/recibo-compra');
     } catch (err) {
       console.error('Error en compra interna:', err);
@@ -97,6 +95,8 @@ export function ComprarBrazaletesPage() {
   const handleNotLoggedIn = () => {
     setShowLoginModal(true);
   };
+
+  const selectedTipoImageUrl = getBraceletTypeImageUrl(selectedTipo);
 
   return (
     <div className="section-container flex min-h-[calc(100vh-88px)] flex-col justify-center py-12">
@@ -124,11 +124,13 @@ export function ComprarBrazaletesPage() {
           {selectedTipo ? (
             <div className="surface-card mt-8 overflow-hidden p-5">
               <div className="flex gap-4">
-                <img
-                  src={buildMediaUrl(selectedTipo.image_url || selectedTipo.image)}
-                  alt={selectedTipo.name}
-                  className="h-24 w-28 rounded-md object-cover"
-                />
+                {selectedTipoImageUrl ? (
+                  <img
+                    src={selectedTipoImageUrl}
+                    alt={selectedTipo.name}
+                    className="h-24 w-28 rounded-md object-cover"
+                  />
+                ) : null}
                 <div>
                   <h2 className="font-montserrat text-xl font-extrabold">
                     {selectedTipo.name}
@@ -145,20 +147,20 @@ export function ComprarBrazaletesPage() {
           ) : null}
         </div>
 
-      <div className="surface-card w-full p-6">
-        <h2 className="font-montserrat text-2xl font-extrabold text-slate-950">
+      <div className="w-full bg-fondoLogin p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:p-8">
+        <h2 className="text-center font-montserrat text-3xl font-extrabold">
           Formulario de compra
         </h2>
 
         {/* COMPRAR CON SALDO INTERNO */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="mx-auto mt-8 max-w-xl">
           <div className="mb-4">
-            <label className="form-label" htmlFor="tipoBrazalete">
+            <label className="mb-2 block text-sm font-extrabold text-white" htmlFor="tipoBrazalete">
               Nombre de producto
             </label>
             <select
               id="tipoBrazalete"
-              className="form-input"
+              className="w-full rounded-md border-0 bg-[#398269] px-4 py-3 text-sm font-extrabold text-white outline-none focus:ring-2 focus:ring-white/60"
               onChange={handleSelectChange}
               value={selectedTipo ? selectedTipo.id : ''}
             >
@@ -173,37 +175,37 @@ export function ComprarBrazaletesPage() {
             </select>
           </div>
 
-          <div className="mb-4 flex justify-center rounded-md bg-slate-50 p-3">
-            {selectedTipo && (selectedTipo.image_url || selectedTipo.image) ? (
+          <div className="mb-5 flex justify-start">
+            {selectedTipoImageUrl ? (
               <img
-                src={buildMediaUrl(selectedTipo.image_url || selectedTipo.image)}
-                alt={selectedTipo.name}
-                className="max-h-40 rounded-md object-cover"
+                src={selectedTipoImageUrl}
+                alt={selectedTipo?.name || 'Brazalete'}
+                className="h-24 w-28 rounded object-cover"
               />
             ) : (
-              <p className="text-slate-500">No hay imagen</p>
+              <p className="text-white/75">No hay imagen</p>
             )}
           </div>
 
           <div className="mb-4">
-            <label className="form-label" htmlFor="precio">
+            <label className="mb-2 block text-sm font-extrabold text-white" htmlFor="precio">
               Precio del producto
             </label>
             <input
               id="precio"
-              className="form-input"
+              className="w-full rounded-md border-0 bg-[#398269] px-4 py-3 text-sm font-extrabold text-white outline-none"
               value={selectedTipo ? `$${selectedTipo.price}` : ''}
               readOnly
             />
           </div>
 
           <div className="mb-4">
-            <label className="form-label" htmlFor="detalles">
+            <label className="mb-2 block text-sm font-extrabold text-white" htmlFor="detalles">
               Detalles del producto
             </label>
             <textarea
               id="detalles"
-              className="form-input"
+              className="w-full rounded-md border-0 bg-[#398269] px-4 py-3 text-sm font-extrabold leading-6 text-white outline-none"
               rows={3}
               readOnly
               value={selectedTipo ? selectedTipo.description : ''}
@@ -213,7 +215,7 @@ export function ComprarBrazaletesPage() {
           <button
             type="submit"
             disabled={!selectedTipo || isSubmitting}
-            className="btn-primary w-full"
+            className="btn-primary mt-3 w-full"
           >
             {isSubmitting ? 'Procesando compra...' : 'Comprar (saldo interno)'}
           </button>
@@ -229,8 +231,8 @@ export function ComprarBrazaletesPage() {
         </form>
 
         {/* COMPRAR CON PAYPAL */}
-        <div className="mt-6 text-center">
-          <h2 className="mb-3 text-lg font-extrabold text-slate-900">
+        <div className="mx-auto mt-6 max-w-xl text-center">
+          <h2 className="mb-3 text-lg font-extrabold text-white">
             O comprar con PayPal
           </h2>
           {selectedTipo && (
@@ -238,6 +240,12 @@ export function ComprarBrazaletesPage() {
               braceletTypeId={selectedTipo.id}
               price={String(selectedTipo.price)}
               onNotLoggedIn={handleNotLoggedIn} //  <<--- PASAMOS EL CALLBACK
+              onSuccess={(receiptId) => {
+                toast.success(`Pago completado. Recibo: ${receiptId}`);
+              }}
+              onError={() => {
+                toast.error('Hubo un error al capturar la orden de PayPal.');
+              }}
             />
           )}
         </div>

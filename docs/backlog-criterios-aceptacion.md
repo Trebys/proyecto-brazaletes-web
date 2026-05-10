@@ -274,6 +274,7 @@ Criterios de aceptacion:
 - El frontend muestra errores de validacion o de servidor de forma clara cuando el registro falla.
 - La pantalla de login expone una accion funcional de "Olvide mi contrasena".
 - El usuario puede iniciar un flujo de recuperacion usando su correo registrado.
+- El usuario debe indicar tambien su nombre de usuario y el backend valida que el correo pertenezca a ese usuario.
 - El backend genera y valida un mecanismo seguro de recuperacion con expiracion adecuada.
 - El codigo de recuperacion se envia por correo, se almacena hasheado y tiene limite de intentos.
 - El usuario puede definir una nueva contrasena y luego iniciar sesion con ella.
@@ -281,16 +282,18 @@ Criterios de aceptacion:
 - La contrasena nueva se valida con parametros minimos de seguridad en backend.
 - Existen pruebas razonables para registro y recuperacion de contrasena.
 - La documentacion tecnica de frontend y backend describe el flujo final.
+- La eliminacion de cuenta funciona desde perfil y desde administracion aunque el cliente tenga historial, aplicando baja logica y conservando trazabilidad comercial.
 
 ### Ejecutar revision integral y QA final antes de hosteo
 
-Estado: Pendiente
+Estado: Completada con hallazgos menores documentados
 
 Documentos relacionados:
 
 - [frontend-funcionamiento.md](frontend-funcionamiento.md)
 - [backend-funcionamiento.md](backend-funcionamiento.md)
 - [gestion-documentacion.md](gestion-documentacion.md)
+- [revision-qa-final.md](revision-qa-final.md)
 
 Criterios de aceptacion:
 
@@ -300,3 +303,14 @@ Criterios de aceptacion:
 - Se revalidan los flujos corregidos despues de aplicar fixes.
 - Se deja una conclusion clara de salida tipo go/no-go para despliegue y portafolio.
 - La documentacion final refleja el estado real de la aplicacion despues del QA.
+
+Resultado:
+
+- Se ejecutaron validaciones automatizadas de backend y frontend.
+- Se valido arranque local de backend y frontend.
+- Se ejecutaron flujos criticos por API con usuario cliente y administrador.
+- Se corrigio la inconsistencia de modales/avisos reemplazando `alert()` y `window.confirm()` por `ModalMessage` y `react-hot-toast`.
+- Se estandarizaron los headers de cliente y administrador para compartir tratamiento de logo y estado activo.
+- Se ajusto la seccion administrativa de clientes para mostrar estado activo/eliminada, compactar el formulario lateral y advertir la baja logica antes de eliminar.
+- El mensaje de sesion cerrada o expirada queda como modal persistente hasta que el usuario confirme.
+- Se registraron limitaciones menores: falta de suite E2E de navegador real, advertencia de Browserslist, PayPal real dependiente de credenciales externas y correo real dependiente de SMTP.

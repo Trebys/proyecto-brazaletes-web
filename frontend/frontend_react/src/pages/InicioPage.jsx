@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  buildMediaUrl,
   createTestimonial,
+  getBraceletTypeImageUrl,
   getTestimonials,
   getTiposBrazaletes,
 } from '../api/api';
@@ -36,13 +36,6 @@ export function InicioPage() {
       return 'bg-braceletPremium';
     }
     return 'bg-gray-100';
-  }
-
-  function getImagenUrl(path) {
-    if (!path) {
-      return '/images/FotoBrazaletes.jpg';
-    }
-    return buildMediaUrl(path);
   }
 
   const loadTestimonials = async () => {
@@ -220,6 +213,7 @@ export function InicioPage() {
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {tipos.map((tipo) => {
             const bgClass = getBraceletBgColor(tipo.name);
+            const imageUrl = getBraceletTypeImageUrl(tipo) || '/images/FotoBrazaletes.jpg';
 
             return (
               <div
@@ -228,7 +222,7 @@ export function InicioPage() {
               >
                 <div className="overflow-hidden rounded-md bg-white/75">
                   <img
-                    src={getImagenUrl(tipo.image_url || tipo.image)}
+                    src={imageUrl}
                     alt={tipo.name}
                     className="h-40 w-full object-cover"
                   />

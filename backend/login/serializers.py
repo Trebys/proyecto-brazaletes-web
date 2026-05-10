@@ -23,6 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
             'is_staff',
             'is_superuser',
             'is_admin',
+            'is_active',
         ]
         extra_kwargs = {
             'password': {'write_only': True},
@@ -33,6 +34,7 @@ class UserSerializer(serializers.ModelSerializer):
             'account_balance': {'required': False},
             'is_staff': {'read_only': True},
             'is_superuser': {'read_only': True},
+            'is_active': {'read_only': True},
         }
 
     def validate_email(self, value):
@@ -83,16 +85,24 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
+    username = serializers.CharField()
     email = serializers.EmailField()
+
+    def validate_username(self, value):
+        return value.strip()
 
     def validate_email(self, value):
         return value.strip().lower()
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
+    username = serializers.CharField()
     email = serializers.EmailField()
     code = serializers.CharField(min_length=6, max_length=6)
     new_password = serializers.CharField(write_only=True)
+
+    def validate_username(self, value):
+        return value.strip()
 
     def validate_email(self, value):
         return value.strip().lower()

@@ -54,6 +54,27 @@ class TestimonialApiTests(APITestCase):
         self.assertEqual(response.data[0]['id'], published.id)
         self.assertEqual(response.data[0]['visible_name'], 'Cliente Feliz')
 
+    def test_admin_published_only_list_hides_rejected_testimonials(self):
+        published = Testimonial.objects.create(
+            user=self.client_user,
+            comment='La visita fue excelente y muy organizada.',
+            rating=5,
+            status=Testimonial.STATUS_PUBLISHED,
+        )
+        Testimonial.objects.create(
+            user=self.other_user,
+            comment='Este comentario fue rechazado por moderacion.',
+            rating=1,
+            status=Testimonial.STATUS_REJECTED,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+
+        response = self.client.get('/api/testimonios/?published_only=1')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], published.id)
+
     def test_authenticated_client_can_create_pending_testimonial(self):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.client_token.key}')
 

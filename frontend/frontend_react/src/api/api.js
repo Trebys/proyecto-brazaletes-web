@@ -123,6 +123,10 @@ export const buildMediaUrl = (path) => {
   return new URL(`/media/${normalizedPath}`, API_BASE_URL).toString();
 };
 
+export const getBraceletTypeImageUrl = (braceletType) => {
+  return buildMediaUrl(braceletType?.image_url || braceletType?.image || '');
+};
+
 export const getStoredUser = () => {
   const rawUser = localStorage.getItem(USER_DATA_KEY);
 
@@ -276,7 +280,7 @@ export const Logout = async () => {
     if (error.response) {
       console.error('Error al cerrar sesion:', error.response.data.error);
     } else {
-      alert('Error al cerrar sesion: ' + error.message);
+      console.error('Error al cerrar sesion:', error.message);
     }
   } finally {
     clearStoredAuth();
@@ -298,13 +302,14 @@ export const registerClient = async (clientData) => {
   }
 };
 
-export const requestPasswordReset = async (email) => {
-  const response = await api.post('password-reset/request/', { email });
+export const requestPasswordReset = async ({ username, email }) => {
+  const response = await api.post('password-reset/request/', { username, email });
   return response.data;
 };
 
-export const confirmPasswordReset = async ({ email, code, newPassword }) => {
+export const confirmPasswordReset = async ({ username, email, code, newPassword }) => {
   const response = await api.post('password-reset/confirm/', {
+    username,
     email,
     code,
     new_password: newPassword,
@@ -396,7 +401,9 @@ export const getBraceletTransactions = async (params = {}) => {
 };
 
 export const getTestimonials = async () => {
-  const response = await api.get('testimonios/');
+  const response = await api.get('testimonios/', {
+    params: { published_only: '1' },
+  });
   return response.data;
 };
 

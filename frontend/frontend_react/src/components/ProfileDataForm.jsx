@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   getClientData,
   submitClientData,
   deleteClientAccount,
 } from '../api/api';
 import { useAuth } from '../auth/AuthContext';
+import ModalMessage from './ModalMessage';
 
 export function ProfileDataForm() {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ export function ProfileDataForm() {
     profile_image: null,
   });
   const [profileImagePreview, setProfileImagePreview] = useState('');
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -68,29 +71,38 @@ export function ProfileDataForm() {
       if (updatedUser) {
         updateUser(updatedUser);
       }
-      alert('User data updated successfully');
+      toast.success('Datos actualizados correctamente.');
     } catch (error) {
       console.error('Error updating user data:', error);
-      alert('Error updating user data');
+      toast.error('No se pudieron actualizar tus datos.');
     }
   };
 
   const handleDeleteAccount = async () => {
+    setDeleteModalVisible(false);
     try {
-      if (window.confirm('Estas seguro de eliminar tu cuenta?')) {
-        await deleteClientAccount();
-        clearAuth();
-        alert('Cuenta eliminada con exito.');
-        navigate('/inicio', { replace: true });
-      }
+      await deleteClientAccount();
+      clearAuth();
+      toast.success('Cuenta eliminada con exito.');
+      navigate('/inicio', { replace: true });
     } catch (error) {
       console.error('Error deleting account:', error);
-      alert('Error deleting account');
+      toast.error('No se pudo eliminar la cuenta.');
     }
   };
 
   return (
     <div className="surface-card mx-auto mb-10 max-w-xl p-6 md:p-8">
+      <ModalMessage
+        visible={deleteModalVisible}
+        title="Eliminar cuenta"
+        message="Esta accion desactivara tu cuenta y cerrara la sesion actual. Tus datos de acceso se eliminaran, pero el historial de compras y recibos puede conservarse como registro operativo. Deseas continuar?"
+        variant="danger"
+        confirmLabel="Eliminar"
+        cancelLabel="Conservar cuenta"
+        onClose={() => setDeleteModalVisible(false)}
+        onConfirm={handleDeleteAccount}
+      />
       <form onSubmit={handleSubmit}>
         <div className="mb-6 flex flex-col items-center gap-3">
           <div className="relative h-28 w-28">
@@ -164,7 +176,7 @@ export function ProfileDataForm() {
           <button
             type="button"
             className="inline-flex min-h-11 items-center justify-center rounded-md bg-red-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-red-800"
-            onClick={handleDeleteAccount}
+            onClick={() => setDeleteModalVisible(true)}
           >
             Eliminar Cuenta
           </button>

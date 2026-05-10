@@ -14,7 +14,13 @@ import { useAuth } from '../auth/AuthContext';
  * @param {string} price - El precio, en formato "25.00"
  * @param {function} onNotLoggedIn - Callback opcional para indicar que el usuario no está logueado
  */
-export function PayPalButton({ braceletTypeId, price, onNotLoggedIn }) {
+export function PayPalButton({
+  braceletTypeId,
+  price,
+  onNotLoggedIn,
+  onSuccess,
+  onError,
+}) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -43,11 +49,11 @@ export function PayPalButton({ braceletTypeId, price, onNotLoggedIn }) {
       // "result.receipt_id" es tu ID de PurchaseReceipt
       persistPurchaseReceiptId(result.receipt_id);
       console.log('Captura final:', result);
-      alert(`Pago completado! Recibo: ${result.receipt_id}`);
+      onSuccess?.(result.receipt_id);
       navigate('/recibo-compra');
     } catch (error) {
       console.error('Error capturando orden PayPal:', error);
-      alert('Hubo un error al capturar la orden de PayPal.');
+      onError?.(error);
     }
   };
 

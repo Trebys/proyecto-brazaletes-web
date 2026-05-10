@@ -13,6 +13,7 @@ Proyecto web para venta y gestion de brazaletes de parque de atracciones, con ba
 - [Backlog y criterios de aceptacion](docs/backlog-criterios-aceptacion.md)
 - [Registro de decisiones de arquitectura](docs/registro-decisiones-arquitectura.md)
 - [Flujo de ramas Git](docs/flujo-ramas-git.md)
+- [Revision integral y QA final](docs/revision-qa-final.md)
 
 ## Regla de trabajo
 
