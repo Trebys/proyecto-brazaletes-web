@@ -333,3 +333,71 @@ Resultado:
 - Se ajusto la seccion administrativa de clientes para mostrar estado activo/eliminada, compactar el formulario lateral y advertir la baja logica antes de eliminar.
 - El mensaje de sesion cerrada o expirada queda como modal persistente hasta que el usuario confirme.
 - Se registraron limitaciones menores: falta de suite E2E de navegador real, advertencia de Browserslist, PayPal real dependiente de credenciales externas y correo real dependiente de SMTP.
+
+### Preparar configuracion de produccion y estrategia de despliegue
+
+Estado: Pendiente
+
+Documentos relacionados:
+
+- [backend-funcionamiento.md](backend-funcionamiento.md)
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [arranque-servidores.md](arranque-servidores.md)
+
+Criterios de aceptacion:
+
+- Existe una estrategia de despliegue elegida para frontend, backend, base de datos y almacenamiento de medios.
+- El proyecto define variables de entorno de produccion, `ALLOWED_HOSTS`, CORS, CSRF, URLs publicas y configuracion de build sin valores locales acoplados.
+- El backend expone al menos una ruta de health check o verificacion simple para el entorno desplegado.
+- La aplicacion puede construirse y arrancar con comandos documentados para despliegue.
+- La documentacion deja claro que partes quedan en hosting gratuito y que partes podrian requerir plan pago.
+
+### Desplegar el frontend publico en un hosting accesible por internet
+
+Estado: Pendiente
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [arranque-servidores.md](arranque-servidores.md)
+
+Criterios de aceptacion:
+
+- El frontend queda publicado en una URL estable accesible por internet.
+- La configuracion productiva apunta al backend correcto y no a URLs locales.
+- Las rutas publicas y protegidas cargan correctamente en el entorno desplegado.
+- El despliegue queda documentado para poder repetirse o actualizarse.
+
+### Desplegar backend, base de datos y almacenamiento multimedia para entorno publico
+
+Estado: Pendiente
+
+Documentos relacionados:
+
+- [backend-funcionamiento.md](backend-funcionamiento.md)
+- [modelo-transaccional-brazaletes.md](modelo-transaccional-brazaletes.md)
+
+Criterios de aceptacion:
+
+- La API backend queda publicada en una URL estable accesible por internet.
+- La base de datos productiva queda provisionada y conectada mediante variables seguras.
+- Las imagenes y archivos subidos por usuarios o catalogo se almacenan en una solucion persistente compatible con el hosting elegido.
+- Login, registro, perfil, testimonios, compras y panel administrativo funcionan contra el entorno desplegado.
+- La configuracion del backend ya no depende de filesystem efimero para conservar medios relevantes.
+
+### Publicar la aplicacion en el portafolio con enlace real y validacion final
+
+Estado: Pendiente
+
+Documentos relacionados:
+
+- [gestion-documentacion.md](gestion-documentacion.md)
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [backend-funcionamiento.md](backend-funcionamiento.md)
+
+Criterios de aceptacion:
+
+- El proyecto aparece en el portafolio con enlace vivo al frontend desplegado.
+- Existe una descripcion breve del proyecto, stack real, decisiones clave y funcionalidades principales.
+- El README y la documentacion principal enlazan la URL publicada y explican cualquier limitacion del entorno gratuito.
+- Se ejecuta una validacion final sobre la version hosteada antes de considerarla lista para mostrar.
