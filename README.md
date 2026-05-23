@@ -25,6 +25,8 @@ Backend:
 - SQLite como respaldo local solo cuando `DJANGO_DEBUG=True` y no hay configuracion `DB_*`
 - PayPal Checkout Server SDK
 - `django-cors-headers`
+- `gunicorn` y `whitenoise` para despliegue WSGI y archivos estaticos
+- Cloudinary opcional para media persistente en produccion
 
 Frontend:
 
@@ -115,6 +117,8 @@ PAYPAL_ENV=sandbox
 PAYPAL_WEBHOOK_ID=replace-with-your-paypal-webhook-id
 ```
 
+Para produccion tambien se usan variables como `DATABASE_URL`, `DJANGO_USE_CLOUDINARY`, `CLOUDINARY_URL`, `DJANGO_SECURE_*`, hosts publicos, origenes CORS/CSRF y SMTP real. La guia completa esta en [docs/despliegue-produccion.md](docs/despliegue-produccion.md).
+
 Frontend: crear `frontend/frontend_react/.env` a partir de [frontend/frontend_react/.env.example](frontend/frontend_react/.env.example).
 
 ```env
@@ -129,6 +133,19 @@ Notas:
 - Para usar PostgreSQL local, ejecutar migraciones antes de probar flujos.
 - PayPal real depende de credenciales consistentes con `PAYPAL_ENV`.
 - En desarrollo, el correo de recuperacion puede salir por consola si se usa `django.core.mail.backends.console.EmailBackend`.
+
+## Estrategia de despliegue preparada
+
+La estrategia elegida para el primer despliegue publico es:
+
+- Frontend: `Vercel Hobby`
+- Backend: `Render Free`
+- Base de datos: `Neon Free`
+- Media: `Cloudinary Free`
+
+El monorepo se mantiene con `backend/` y `frontend/`. Si Render Free no convence por cold starts, latencia o limites, se deja abierta la migracion solo del backend a `Railway Hobby`.
+
+Mas detalle: [docs/despliegue-produccion.md](docs/despliegue-produccion.md).
 
 ## Flujos principales
 
@@ -194,6 +211,7 @@ La propuesta inicial hablaba de un sistema de venta de tiquetes/brazaletes con a
 - [Politica de sesion](docs/politica-sesion.md)
 - [Modelo transaccional de brazaletes](docs/modelo-transaccional-brazaletes.md)
 - [Gestion de documentacion tecnica](docs/gestion-documentacion.md)
+- [Despliegue de produccion](docs/despliegue-produccion.md)
 - [Backlog y criterios de aceptacion](docs/backlog-criterios-aceptacion.md)
 - [Registro de decisiones de arquitectura](docs/registro-decisiones-arquitectura.md)
 - [Flujo de ramas Git](docs/flujo-ramas-git.md)
@@ -226,6 +244,7 @@ Limitaciones documentadas:
 - Falta una suite E2E automatizada de navegador real.
 - PayPal y correo real dependen de credenciales externas.
 - La configuracion productiva depende de variables de entorno correctas.
+- Render Free usa filesystem efimero; la media productiva queda preparada para Cloudinary.
 
 ## Regla de trabajo
 

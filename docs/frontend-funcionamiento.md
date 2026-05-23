@@ -161,6 +161,7 @@ Decisiones actuales a tener presentes:
 - para la UI, la bandera canonica es `is_admin`, que el backend deriva desde `is_staff`;
 - el `baseURL` ya no esta fijo en codigo; se toma de `VITE_API_BASE_URL`;
 - el frontend falla temprano si faltan variables de entorno obligatorias, lo que evita builds con configuracion incompleta;
+- en produccion, `VITE_API_BASE_URL` debe apuntar al backend publico con sufijo `/api/`, por ejemplo `https://your-render-backend.onrender.com/api/`;
 - la redireccion global por error `401` esta comentada para evitar saltos de pagina automaticos.
 
 Regla administrativa vigente en frontend:
@@ -734,6 +735,17 @@ Notas practicas:
 - aunque el frontend bloquee una ruta, la validacion definitiva sigue estando en el backend.
 
 ## Estado actual del frontend
+
+### Preparacion para despliegue
+
+El frontend queda preparado para publicarse en Vercel desde el monorepo:
+
+- Root Directory: `frontend/frontend_react`;
+- Build Command: `npm run build`;
+- Output Directory: `dist`;
+- variables requeridas: `VITE_API_BASE_URL`, `VITE_PAYPAL_CLIENT_ID` y `VITE_SESSION_IDLE_TIMEOUT_MINUTES`.
+
+La estrategia completa de despliegue esta documentada en [despliegue-produccion.md](despliegue-produccion.md).
 
 ### Partes funcionales
 

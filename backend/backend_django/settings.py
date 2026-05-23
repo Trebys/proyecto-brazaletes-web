@@ -37,6 +37,17 @@ def get_list_env(name, default=None):
 
 
 def get_database_config():
+    database_url = os.getenv('DATABASE_URL')
+    if database_url:
+        try:
+            import dj_database_url
+        except ImportError as exc:
+            raise ImproperlyConfigured(
+                'dj-database-url is required when DATABASE_URL is configured.'
+            ) from exc
+
+        return dj_database_url.parse(database_url, conn_max_age=600)
+
     db_engine = os.getenv('DB_ENGINE')
     db_name = os.getenv('DB_NAME')
 
@@ -126,12 +137,24 @@ INSTALLED_APPS = [
     'corsheaders',
     # Estos puede que los elimine REVISAR
     'coreapi',
-
-
 ]
+
+CLOUDINARY_ENABLED = get_bool_env('DJANGO_USE_CLOUDINARY', False)
+
+if CLOUDINARY_ENABLED and not os.getenv('CLOUDINARY_URL'):
+    raise ImproperlyConfigured(
+        'CLOUDINARY_URL is required when DJANGO_USE_CLOUDINARY is True.'
+    )
+
+if CLOUDINARY_ENABLED:
+    INSTALLED_APPS.extend([
+        'cloudinary_storage',
+        'cloudinary',
+    ])
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -208,10 +231,36 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Media files para poder subir imagenes
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
+if CLOUDINARY_ENABLED:
+    STORAGES['default'] = {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    }
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = get_bool_env('DJANGO_SECURE_SSL_REDIRECT', False)
+SESSION_COOKIE_SECURE = get_bool_env('DJANGO_SESSION_COOKIE_SECURE', False)
+CSRF_COOKIE_SECURE = get_bool_env('DJANGO_CSRF_COOKIE_SECURE', False)
+SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env(
+    'DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS',
+    False,
+)
+SECURE_HSTS_PRELOAD = get_bool_env('DJANGO_SECURE_HSTS_PRELOAD', False)
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

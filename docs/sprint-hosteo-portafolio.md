@@ -33,7 +33,7 @@ Duracion sugerida:
 
 ### Opcion gratis primero
 
-- Frontend: `Cloudflare Pages Free` o `Vercel Hobby`
+- Frontend: `Vercel Hobby`
 - Backend: `Render Free Web Service`
 - Base de datos: `Neon Free`
 - Archivos e imagenes: `Cloudinary Free`
@@ -57,13 +57,13 @@ Esta opcion suele dar una experiencia mas consistente que depender de un backend
 
 ## Recomendacion practica
 
-Si quieres salir rapido con una demo funcional:
+Para este proyecto se elige salir primero con:
 
-- usa `Cloudflare Pages + Render Free + Neon Free + Cloudinary Free`
+- `Vercel Hobby + Render Free + Neon Free + Cloudinary Free`
 
-Si quieres una experiencia mas profesional para mostrar a reclutadores:
+Si Render Free no convence por cold starts, latencia o limites, la alternativa prevista es migrar solo el backend a:
 
-- usa `Cloudflare Pages + Railway Hobby + Neon Free + Cloudinary Free`
+- `Railway Hobby + Neon Free + Cloudinary Free`, manteniendo el frontend en Vercel.
 
 ## Coste esperado
 

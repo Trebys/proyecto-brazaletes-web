@@ -17,6 +17,8 @@ env/
 db.sqlite3
 *.sqlite3
 media/
+staticfiles/
+backend/staticfiles/
 
 # Node / frontend build artifacts
 node_modules/
