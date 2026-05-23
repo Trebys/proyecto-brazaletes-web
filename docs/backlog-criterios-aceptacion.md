@@ -155,6 +155,25 @@ Criterios de aceptacion:
 
 ## Historias recientes y pendientes
 
+### Crear README de portafolio y diagramas clave del sistema
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [../README.md](../README.md)
+- [diagramas-sistema.md](diagramas-sistema.md)
+- [gestion-documentacion.md](gestion-documentacion.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
+
+Criterios de aceptacion:
+
+- El README explica contexto de negocio, stack real, arranque local, variables de entorno y flujos principales.
+- La documentacion incluye diagramas clave del sistema en Mermaid: entidad-relacion, secuencia de compra y navegacion principal.
+- El README explicita diferencias relevantes entre la propuesta inicial y la implementacion actual.
+- Los documentos principales quedan enlazados desde el README.
+- La guia de documentacion reconoce los diagramas como documento vivo cuando cambien relaciones, flujos o navegacion principal.
+
 ### Completar navegacion publica informativa
 
 Estado: Completada

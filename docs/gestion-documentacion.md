@@ -12,6 +12,7 @@ Este documento define que se actualiza, cuando se actualiza y como se verifica a
 | --- | --- | --- |
 | [backend-funcionamiento.md](backend-funcionamiento.md) | Arquitectura, modelos, endpoints, permisos, flujos y riesgos del backend | Cambios en Django, API, permisos, modelos, variables de entorno, pagos o reglas de negocio |
 | [frontend-funcionamiento.md](frontend-funcionamiento.md) | Rutas, componentes, capa de API, flujos de usuario, estado y deuda del frontend | Cambios en React, rutas, pantallas, llamadas a API, sesion, permisos o UX principal |
+| [diagramas-sistema.md](diagramas-sistema.md) | Diagramas ER, secuencia, navegacion y mapa de capas para lectura rapida de portafolio | Cambios que alteren relaciones principales, flujos de compra/consumo, navegacion o capas del sistema |
 | [politica-sesion.md](politica-sesion.md) | Decision vigente sobre expiracion, refresh y concurrencia de sesiones | Cambios en timeout, tokens, logout, mensajes de sesion o regla de sesion unica |
 | [modelo-transaccional-brazaletes.md](modelo-transaccional-brazaletes.md) | Modelo objetivo para ventas, brazaletes y consumos | Cambios de dominio sobre venta, recibo, ledger, consumo, auditoria o relacion usuario-brazalete |
 | [backlog-criterios-aceptacion.md](backlog-criterios-aceptacion.md) | Historias clave y criterios de aceptacion vigentes | Al crear, cerrar o redefinir historias importantes del backlog |
@@ -30,6 +31,7 @@ Esto incluye:
 - modelos, migraciones o relaciones importantes;
 - variables de entorno y configuracion operativa;
 - flujos de compra, sesion, administracion o consumo;
+- relaciones principales, secuencias o navegacion que esten resumidas en los diagramas;
 - decisiones de dominio o arquitectura;
 - limitaciones aceptadas temporalmente;
 - historias del backlog que cambian de alcance o quedan cerradas.

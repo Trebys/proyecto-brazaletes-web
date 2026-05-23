@@ -14,6 +14,32 @@ Este archivo funciona como una version liviana de ADR. No busca documentar todo,
 
 ## Decisiones vigentes
 
+### 2026-05-12 - Diagramas de arquitectura versionados en Mermaid
+
+Estado: vigente
+
+Contexto:
+
+- El proyecto necesita presentarse rapido como portafolio desde el repositorio.
+- Los diagramas en imagen o documentos binarios son mas dificiles de revisar en Git y suelen quedar desactualizados.
+- El sistema ya tiene documentacion viva para backend, frontend, modelo transaccional y criterios de aceptacion.
+
+Decision:
+
+- Mantener los diagramas clave en [diagramas-sistema.md](diagramas-sistema.md) usando Mermaid.
+- Enlazar los diagramas desde el README como entrada principal de portafolio.
+- Tratar los diagramas como documentacion viva cuando cambien relaciones principales, flujo de compra/consumo, navegacion o capas del sistema.
+
+Impacto:
+
+- Los diagramas pueden revisarse en pull requests junto con el resto del codigo y documentacion.
+- No se depende de una herramienta externa para entender ER, secuencia de compra o navegacion principal.
+- El README queda como mapa de lectura, no como duplicado exhaustivo de todos los documentos tecnicos.
+
+Seguimiento:
+
+- Si se agrega una herramienta formal de modelado, conservar una fuente versionable o exportable a Markdown para evitar divergencia.
+
 ### 2026-04-25 - Documentacion sincronizada con cambios importantes
 
 Estado: vigente
