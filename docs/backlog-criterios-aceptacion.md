@@ -336,13 +336,15 @@ Resultado:
 
 ### Preparar configuracion de produccion y estrategia de despliegue
 
-Estado: Pendiente
+Estado: Completada
 
 Documentos relacionados:
 
 - [backend-funcionamiento.md](backend-funcionamiento.md)
 - [frontend-funcionamiento.md](frontend-funcionamiento.md)
 - [arranque-servidores.md](arranque-servidores.md)
+- [despliegue-produccion.md](despliegue-produccion.md)
+- [sprint-hosteo-portafolio.md](sprint-hosteo-portafolio.md)
 
 Criterios de aceptacion:
 
@@ -351,6 +353,15 @@ Criterios de aceptacion:
 - El backend expone al menos una ruta de health check o verificacion simple para el entorno desplegado.
 - La aplicacion puede construirse y arrancar con comandos documentados para despliegue.
 - La documentacion deja claro que partes quedan en hosting gratuito y que partes podrian requerir plan pago.
+
+Resultado:
+
+- Se eligio `Vercel Hobby + Render Free + Neon Free + Cloudinary Free` como estrategia inicial.
+- Se dejo `Railway Hobby` como alternativa para migrar solo el backend si Render Free no convence.
+- El backend quedo preparado para `DATABASE_URL`, WhiteNoise, Cloudinary, hosts, CORS, CSRF y flags de seguridad por entorno.
+- El backend expone `GET /health/`.
+- Se agrego `render.yaml` como configuracion base para Render desde el monorepo.
+- Se documentaron comandos, variables y pasos manuales de Vercel, Render, Neon, Cloudinary, PayPal y SMTP.
 
 ### Desplegar el frontend publico en un hosting accesible por internet
 

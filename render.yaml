@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: fantasy-land-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn backend_django.wsgi:application
+    healthCheckPath: /health/
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_USE_CLOUDINARY
+        value: "True"
+      - key: DJANGO_CORS_ALLOW_CREDENTIALS
+        value: "True"
+      - key: DJANGO_SECURE_SSL_REDIRECT
+        value: "True"
+      - key: DJANGO_SESSION_COOKIE_SECURE
+        value: "True"
+      - key: DJANGO_CSRF_COOKIE_SECURE
+        value: "True"
+      - key: DJANGO_SECURE_HSTS_SECONDS
+        value: "31536000"

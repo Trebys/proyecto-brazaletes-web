@@ -73,6 +73,10 @@ Puntos importantes:
 - define la expiracion de sesion con `SESSION_IDLE_TIMEOUT_MINUTES`, alineada con [docs/politica-sesion.md](politica-sesion.md);
 - define `PASSWORD_RESET_CODE_EXPIRATION_MINUTES`, `PASSWORD_RESET_MAX_ATTEMPTS` y la configuracion `DJANGO_EMAIL_*` para recuperacion de contrasena por correo;
 - configura PostgreSQL como base de datos principal usando variables de entorno;
+- permite usar `DATABASE_URL` para bases administradas como Neon, manteniendo `DB_*` para desarrollo local;
+- configura `STATIC_ROOT` y WhiteNoise para servir archivos estaticos en despliegues WSGI como Render;
+- permite activar Cloudinary con `DJANGO_USE_CLOUDINARY=True` y `CLOUDINARY_URL` para no depender de `backend/media/` en produccion;
+- define `SECURE_PROXY_SSL_HEADER` y banderas `DJANGO_SECURE_*` para endurecer HTTPS/cookies/HSTS por entorno;
 - habilita `ExpiringTokenAuthentication` y `SessionAuthentication`;
 - permite CORS para los hosts configurados por entorno, manteniendo valores locales razonables para desarrollo.
 
@@ -84,6 +88,7 @@ Observaciones del estado actual:
 - si no existe configuracion `DB_*` y `DEBUG=True`, el backend cae a SQLite local para evitar errores 500 durante desarrollo;
 - `ALLOWED_HOSTS`, CORS y CSRF confiables tambien salen de variables de entorno;
 - existe `backend/.env.example` como base para desarrollo local;
+- existe [despliegue-produccion.md](despliegue-produccion.md) como guia de variables, servicios externos y comandos de despliegue;
 - `TIME_ZONE` esta en `UTC`.
 
 Con esto, el backend ya quedo preparado para mantener una configuracion local simple sin acoplar secretos reales al codigo versionado. Si se quiere usar PostgreSQL local con datos reales, se debe crear `backend/.env` a partir de `backend/.env.example`.
@@ -92,6 +97,7 @@ Con esto, el backend ya quedo preparado para mantener una configuracion local si
 
 Centraliza las rutas:
 
+- `/health/`
 - `/admin/`
 - `/docs/`
 - `/api/` -> app `login`
@@ -100,6 +106,8 @@ Centraliza las rutas:
 - `/api/atracciones-comidas/` -> app `atracciones_comidas`
 
 Observacion importante: el catalogo de atracciones y comidas ya quedo alineado con el mismo prefijo `/api/` del resto del backend.
+
+`/health/` devuelve una respuesta JSON simple `{ "status": "ok" }` para validar arranque del backend en Render o cualquier hosting equivalente.
 
 ## App `login`
 
@@ -1173,6 +1181,7 @@ Notas practicas:
 ### Riesgos y deuda tecnica visible
 
 - la seguridad final depende de que cada entorno productivo defina correctamente sus variables y no reutilice valores de desarrollo;
+- en produccion, las imagenes y archivos subidos deben usar Cloudinary porque Render Free no conserva media en disco de forma persistente;
 - aun depende de la semantica de eventos que entregue PayPal;
 - el flujo de consumo actual ya persiste historial transaccional para atracciones y comidas.
 

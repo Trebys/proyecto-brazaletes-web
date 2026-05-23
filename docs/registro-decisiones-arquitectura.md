@@ -344,6 +344,34 @@ Seguimiento:
 
 - Si se requiere cumplimiento de privacidad mas estricto, revisar politicas de retencion y anonimizar otros campos derivados que se agreguen en el futuro.
 
+### 2026-05-23 - Estrategia inicial de despliegue
+
+Estado: vigente
+
+Contexto:
+
+- El proyecto entra a etapa de hosteo y portafolio sin separar el monorepo.
+- El backend maneja imagenes y archivos, por lo que Render Free no puede ser la fuente persistente de media.
+- Se prioriza una demo publica de bajo costo antes de contratar infraestructura mas estable.
+
+Decision:
+
+- Frontend en `Vercel Hobby`.
+- Backend en `Render Free`.
+- Base de datos PostgreSQL en `Neon Free`.
+- Media persistente en `Cloudinary Free`.
+- Mantener `Railway Hobby` como alternativa para migrar solo el backend si Render Free no convence.
+
+Impacto:
+
+- La configuracion productiva depende de variables de entorno y no de valores locales hardcodeados.
+- El backend usa `DATABASE_URL` para Neon y `DJANGO_USE_CLOUDINARY=True` con `CLOUDINARY_URL` para media en produccion.
+- Render Free puede tener cold starts; esto se acepta para portafolio, no como decision de produccion comercial.
+
+Seguimiento:
+
+- Validar URLs publicas, PayPal, SMTP y carga de media cuando se ejecuten las historias de despliegue real.
+
 ## Limitaciones y seguimiento
 
 ### Historial de movimientos visible para usuarios
