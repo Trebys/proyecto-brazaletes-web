@@ -8,6 +8,8 @@ services:
     startCommand: gunicorn backend_django.wsgi:application
     healthCheckPath: /health/
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_USE_CLOUDINARY
