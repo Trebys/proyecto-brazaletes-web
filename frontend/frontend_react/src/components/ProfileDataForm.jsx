@@ -9,6 +9,29 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import ModalMessage from './ModalMessage';
 
+const formatApiError = (error) => {
+  const data = error?.response?.data;
+
+  if (!data) {
+    return 'No se pudieron actualizar tus datos. Intenta de nuevo.';
+  }
+
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  if (data.message || data.detail || data.error) {
+    return data.message || data.detail || data.error;
+  }
+
+  return Object.entries(data)
+    .map(([field, messages]) => {
+      const text = Array.isArray(messages) ? messages.join(' ') : String(messages);
+      return `${field}: ${text}`;
+    })
+    .join(' ');
+};
+
 export function ProfileDataForm() {
   const navigate = useNavigate();
   const { updateUser, clearAuth } = useAuth();
@@ -23,6 +46,8 @@ export function ProfileDataForm() {
   });
   const [profileImagePreview, setProfileImagePreview] = useState('');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -41,6 +66,9 @@ export function ProfileDataForm() {
         updateUser(data);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
+        toast.error('No se pudieron cargar tus datos. Recarga la pagina.');
+      } finally {
+        setLoading(false);
       }
     };
     loadUserData();
@@ -66,6 +94,11 @@ export function ProfileDataForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading || saving) {
+      return;
+    }
+
+    setSaving(true);
     try {
       const updatedUser = await submitClientData(userData);
       if (updatedUser) {
@@ -74,7 +107,9 @@ export function ProfileDataForm() {
       toast.success('Datos actualizados correctamente.');
     } catch (error) {
       console.error('Error updating user data:', error);
-      toast.error('No se pudieron actualizar tus datos.');
+      toast.error(formatApiError(error));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -147,6 +182,7 @@ export function ProfileDataForm() {
               name="profile_image"
               accept="image/*"
               onChange={handleChange}
+              disabled={loading || saving}
               className="sr-only"
             />
           </div>
@@ -161,6 +197,7 @@ export function ProfileDataForm() {
               name={field.name}
               value={userData[field.name] ?? ''}
               onChange={handleChange}
+              disabled={loading || saving}
               className="form-input"
             />
           </div>
@@ -169,12 +206,14 @@ export function ProfileDataForm() {
         <div className="flex flex-col justify-between gap-3 sm:flex-row">
           <button
             type="submit"
+            disabled={loading || saving}
             className="btn-primary"
           >
-            Editar Informacion
+            {loading ? 'Cargando datos...' : saving ? 'Guardando...' : 'Editar Informacion'}
           </button>
           <button
             type="button"
+            disabled={loading || saving}
             className="inline-flex min-h-11 items-center justify-center rounded-md bg-red-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-red-800"
             onClick={() => setDeleteModalVisible(true)}
           >
