@@ -159,6 +159,7 @@ export function RegistroForm() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="form-input-dark"
+                    autoComplete="given-name"
                     required
                   />
                 </label>
@@ -172,6 +173,7 @@ export function RegistroForm() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="form-input-dark"
+                    autoComplete="family-name"
                     required
                   />
                 </label>
@@ -186,6 +188,7 @@ export function RegistroForm() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="form-input-dark"
+                  autoComplete="username"
                   required
                 />
               </label>
@@ -199,6 +202,7 @@ export function RegistroForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="form-input-dark"
+                  autoComplete="email"
                   required
                 />
               </label>
@@ -212,6 +216,7 @@ export function RegistroForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="form-input-dark"
+                  autoComplete="new-password"
                   minLength={8}
                   required
                 />

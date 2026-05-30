@@ -146,6 +146,7 @@ export function LoginForm() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="form-input-dark"
+                  autoComplete="username"
                   required
                 />
               </label>
@@ -159,6 +160,7 @@ export function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="form-input-dark"
+                  autoComplete="current-password"
                   required
                 />
               </label>

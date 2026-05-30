@@ -58,7 +58,7 @@ export function ProfileDataForm() {
           first_name: data.first_name,
           last_name: data.last_name,
           email: data.email,
-          password: '******',
+          password: '',
           account_balance: data.account_balance,
           profile_image: null,
         });
@@ -75,12 +75,12 @@ export function ProfileDataForm() {
   }, [updateUser]);
 
   const fields = [
-    { name: 'username', label: 'Usuario', type: 'text' },
-    { name: 'first_name', label: 'Nombre', type: 'text' },
-    { name: 'last_name', label: 'Apellido', type: 'text' },
-    { name: 'email', label: 'Email', type: 'email' },
-    { name: 'password', label: 'Contrasena', type: 'password' },
-    { name: 'account_balance', label: 'Saldo de Cuenta', type: 'text' },
+    { name: 'username', label: 'Usuario', type: 'text', autoComplete: 'username' },
+    { name: 'first_name', label: 'Nombre', type: 'text', autoComplete: 'given-name' },
+    { name: 'last_name', label: 'Apellido', type: 'text', autoComplete: 'family-name' },
+    { name: 'email', label: 'Email', type: 'email', autoComplete: 'email' },
+    { name: 'password', label: 'Nueva contrasena (opcional)', type: 'password', autoComplete: 'new-password' },
+    { name: 'account_balance', label: 'Saldo de Cuenta', type: 'text', autoComplete: 'off' },
   ];
 
   const handleChange = (e) => {
@@ -198,6 +198,7 @@ export function ProfileDataForm() {
               value={userData[field.name] ?? ''}
               onChange={handleChange}
               disabled={loading || saving}
+              autoComplete={field.autoComplete}
               className="form-input"
             />
           </div>

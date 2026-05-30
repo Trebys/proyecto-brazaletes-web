@@ -236,6 +236,7 @@ export function PasswordResetPage() {
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                   className="form-input-dark"
+                  autoComplete="new-password"
                   minLength={8}
                   required
                 />
@@ -250,6 +251,7 @@ export function PasswordResetPage() {
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   className="form-input-dark"
+                  autoComplete="new-password"
                   minLength={8}
                   required
                 />

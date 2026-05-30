@@ -193,7 +193,7 @@ function AdminButton({ children, variant = 'primary', ...props }) {
   );
 }
 
-function TextField({ label, name, value, onChange, type = 'text', required = false }) {
+function TextField({ label, name, value, onChange, type = 'text', required = false, autoComplete }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/75">
@@ -205,6 +205,7 @@ function TextField({ label, name, value, onChange, type = 'text', required = fal
         value={value}
         required={required}
         onChange={onChange}
+        autoComplete={autoComplete}
         className="w-full rounded-md border border-white/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-300"
       />
     </label>
@@ -1242,12 +1243,12 @@ export function AdministradorPage() {
                     {selectedClientId ? 'Editar cliente' : 'Registrar cliente'}
                   </h2>
                   <div className="mt-4 space-y-2.5">
-                    <TextField label="Usuario" name="username" value={clientForm.username} onChange={handleClientChange} required />
+                    <TextField label="Usuario" name="username" value={clientForm.username} onChange={handleClientChange} autoComplete="off" required />
                     <TextField label="Nombre" name="first_name" value={clientForm.first_name} onChange={handleClientChange} required />
                     <TextField label="Apellido" name="last_name" value={clientForm.last_name} onChange={handleClientChange} required />
                     <TextField label="Correo" name="email" type="email" value={clientForm.email} onChange={handleClientChange} required />
                     {!selectedClientId ? (
-                      <TextField label="Contrasena" name="password" type="password" value={clientForm.password} onChange={handleClientChange} required />
+                      <TextField label="Contrasena" name="password" type="password" value={clientForm.password} onChange={handleClientChange} autoComplete="new-password" required />
                     ) : null}
                     <TextField label="Saldo de cuenta" name="account_balance" type="number" value={clientForm.account_balance} onChange={handleClientChange} />
                   </div>
