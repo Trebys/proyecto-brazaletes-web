@@ -78,11 +78,13 @@ export function PayPalButton({
             return await handleCreateOrder();
           } catch (error) {
             console.error('PayPal createOrder error:', error);
+            throw error;
           }
         }}
         onApprove={handleApprove}
         onError={(err) => {
           console.error('Error en PayPal:', err);
+          onError?.(err);
         }}
       />
     </PayPalScriptProvider>

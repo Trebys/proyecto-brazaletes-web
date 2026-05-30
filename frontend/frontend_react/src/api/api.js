@@ -516,7 +516,9 @@ export const createPayPalOrder = async (amount, currency, description) => {
     return response.data;
   } catch (error) {
     console.error('Error creating PayPal order:', error);
-    throw new Error('Error creating PayPal order');
+    throw new Error(
+      error?.response?.data?.detail || 'No se pudo crear la orden de PayPal.'
+    );
   }
 };
 
@@ -529,7 +531,9 @@ export const capturePayPalOrder = async (orderID, braceletTypeId) => {
     return response.data;
   } catch (error) {
     console.error('Error capturing PayPal order:', error);
-    throw new Error('Error capturing PayPal order');
+    throw new Error(
+      error?.response?.data?.detail || 'No se pudo capturar la orden de PayPal.'
+    );
   }
 };
 

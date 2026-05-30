@@ -243,8 +243,10 @@ export function ComprarBrazaletesPage() {
               onSuccess={(receiptId) => {
                 toast.success(`Pago completado. Recibo: ${receiptId}`);
               }}
-              onError={() => {
-                toast.error('Hubo un error al capturar la orden de PayPal.');
+              onError={(error) => {
+                toast.error(
+                  error?.message || 'Hubo un error al procesar la orden de PayPal.'
+                );
               }}
             />
           )}
