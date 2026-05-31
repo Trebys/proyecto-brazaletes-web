@@ -51,6 +51,17 @@ npm install
 npm run build
 ```
 
+Catalogo demo local desde `backend/`:
+
+```cmd
+venv\Scripts\activate
+python manage.py seed_atracciones_comidas
+```
+
+El comando puede repetirse: actualiza las tres atracciones y tres comidas base
+sin duplicarlas. En produccion con Cloudinary, las imagenes deben subirse desde
+el panel administrativo o mediante una migracion explicita de media.
+
 Para Vercel:
 
 - Root Directory: `frontend/frontend_react`

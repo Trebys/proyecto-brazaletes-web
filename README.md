@@ -134,14 +134,20 @@ Notas:
 - PayPal real depende de credenciales consistentes con `PAYPAL_ENV`.
 - En desarrollo, el correo de recuperacion puede salir por consola si se usa `django.core.mail.backends.console.EmailBackend`.
 
-## Estrategia de despliegue preparada
+## Despliegue publico
 
-La estrategia elegida para el primer despliegue publico es:
+La aplicacion ya fue publicada con:
 
 - Frontend: `Vercel Hobby`
 - Backend: `Render Free`
 - Base de datos: `Neon Free`
 - Media: `Cloudinary Free`
+
+URLs publicas:
+
+- Frontend: `https://proyecto-brazaletes-web.vercel.app`
+- Backend: `https://fantasy-land-backend.onrender.com`
+- Health check: `https://fantasy-land-backend.onrender.com/health/`
 
 El monorepo se mantiene con `backend/` y `frontend/`. Si Render Free no convence por cold starts, latencia o limites, se deja abierta la migracion solo del backend a `Railway Hobby`.
 

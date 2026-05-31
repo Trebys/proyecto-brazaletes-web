@@ -122,3 +122,63 @@ Cambios:
 Estado: go para entrega local/portafolio con cautelas menores.
 
 La aplicacion arranca, compila, pasa pruebas backend, permite recorrer los flujos criticos por API con usuarios de distintos roles y deja corregido el hallazgo visual principal de modales inconsistentes. Antes de un hosteo publico conviene agregar una suite E2E minima y hacer una pasada visual real en navegador con DevTools mobile.
+
+## Validacion posterior al despliegue publico
+
+Fecha de ejecucion: 2026-05-31.
+
+Entorno validado:
+
+- frontend: `https://proyecto-brazaletes-web.vercel.app`;
+- backend: `https://fantasy-land-backend.onrender.com`;
+- base de datos: Neon Free;
+- media: Cloudinary Free;
+- correo transaccional: Brevo SMTP;
+- pagos externos: PayPal Sandbox.
+
+Smoke tests manuales completados:
+
+| Validacion | Resultado |
+| --- | --- |
+| `GET /health/` en Render | OK |
+| Abrir y recargar rutas SPA directas en Vercel | OK despues de agregar rewrite hacia `/index.html` |
+| Registro, login y edicion de perfil | OK |
+| Recuperacion de contrasena por correo real | OK con Brevo SMTP por puerto `2525` |
+| Alta administrativa de brazaletes, atracciones y comidas | OK |
+| Subida de imagen desde admin hacia Cloudinary | OK |
+| Compra con saldo interno | OK |
+| Compra PayPal Sandbox | OK |
+| Persistencia de datos desde Neon | OK |
+
+Validacion local complementaria:
+
+```powershell
+python manage.py seed_atracciones_comidas
+python manage.py seed_atracciones_comidas
+python manage.py check
+```
+
+Resultado: el seed actualizo las tres atracciones y tres comidas en ambas
+ejecuciones sin duplicados. `python manage.py check` termino sin issues.
+
+Hallazgos corregidos durante el despliegue:
+
+- faltaba fallback SPA de Vercel para rutas abiertas directamente;
+- el perfil permitia guardar antes de terminar su carga inicial;
+- el gestor de contrasenas del navegador podia completar campos fuera del
+  login por falta de atributos `autocomplete`;
+- los errores PayPal del backend quedaban ocultos por mensajes genericos del
+  frontend;
+- Render Free bloquea SMTP saliente por `587`; Brevo quedo configurado por
+  `2525`;
+- se agrego `DJANGO_EMAIL_TIMEOUT` para evitar que una falla SMTP congele el
+  worker hasta alcanzar el timeout de Gunicorn.
+
+Nota sobre datos demo: `seed_atracciones_comidas` carga referencias a imagenes
+locales y no transfiere archivos hacia Cloudinary. Para produccion, las imagenes
+de catalogo deben subirse desde admin o mediante una migracion explicita de
+media.
+
+Estado: go para continuar con preparacion y publicacion en portafolio. Queda
+pendiente medir el cold start percibido de Render Free y registrar si se acepta
+para la demo o si se planifica una migracion futura del backend a Railway Hobby.

@@ -101,3 +101,28 @@ El sprint se considera bien cerrado cuando:
 - login, registro, compra, recibos, perfil, testimonios y administracion funcionan en el entorno desplegado;
 - el proyecto aparece en el portafolio con enlace vivo y descripcion clara;
 - el README explica como esta hosteado y que limitaciones tiene el entorno elegido.
+
+## Avance validado al 2026-05-31
+
+Completado:
+
+- configuracion de produccion y estrategia de despliegue;
+- backend publico en Render Free con health check;
+- base de datos persistente en Neon Free;
+- media persistente en Cloudinary Free;
+- frontend publico en Vercel Hobby con soporte para rutas SPA directas;
+- registro, login, perfil, recuperacion de contrasena por Brevo SMTP, panel
+  administrativo, compra interna y PayPal Sandbox;
+- comprobacion local de idempotencia de `seed_atracciones_comidas`.
+
+Pendiente para cerrar la validacion de la demo:
+
+- medir el cold start percibido de Render Free despues de al menos 15 minutos
+  sin trafico;
+- decidir si se mantiene Render Free para portafolio o se planifica migracion
+  futura de solo el backend a Railway Hobby;
+- actualizar el portafolio y publicar el enlace vivo.
+
+Nota SMTP: Render Free bloquea conexiones salientes por `25`, `465` y `587`.
+Con Brevo se usa `smtp-relay.brevo.com`, puerto `2525`, TLS activo y timeout
+configurable.

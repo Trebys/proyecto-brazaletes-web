@@ -365,7 +365,7 @@ Resultado:
 
 ### Desplegar el frontend publico en un hosting accesible por internet
 
-Estado: Pendiente
+Estado: Completada
 
 Documentos relacionados:
 
@@ -379,9 +379,16 @@ Criterios de aceptacion:
 - Las rutas publicas y protegidas cargan correctamente en el entorno desplegado.
 - El despliegue queda documentado para poder repetirse o actualizarse.
 
+Resultado:
+
+- El frontend esta publicado en `https://proyecto-brazaletes-web.vercel.app`.
+- Vercel usa `frontend/frontend_react` como root directory del monorepo.
+- `VITE_API_BASE_URL` apunta al backend publico.
+- `vercel.json` agrega fallback SPA para abrir y recargar rutas directas.
+
 ### Desplegar backend, base de datos y almacenamiento multimedia para entorno publico
 
-Estado: Pendiente
+Estado: Completada
 
 Documentos relacionados:
 
@@ -395,6 +402,39 @@ Criterios de aceptacion:
 - Las imagenes y archivos subidos por usuarios o catalogo se almacenan en una solucion persistente compatible con el hosting elegido.
 - Login, registro, perfil, testimonios, compras y panel administrativo funcionan contra el entorno desplegado.
 - La configuracion del backend ya no depende de filesystem efimero para conservar medios relevantes.
+
+Resultado:
+
+- El backend esta publicado en `https://fantasy-land-backend.onrender.com`.
+- Neon Free conserva los datos productivos.
+- Cloudinary Free conserva imagenes fuera del filesystem efimero de Render.
+- Se validaron registro, login, perfil, admin, compra interna, PayPal Sandbox y
+  recuperacion de contrasena por Brevo SMTP usando puerto `2525`.
+
+### Validar la aplicacion desplegada y prepararla para portafolio
+
+Estado: En curso
+
+Documentos relacionados:
+
+- [revision-qa-final.md](revision-qa-final.md)
+- [despliegue-produccion.md](despliegue-produccion.md)
+- [sprint-hosteo-portafolio.md](sprint-hosteo-portafolio.md)
+
+Criterios de aceptacion:
+
+- Se ejecuta una validacion funcional basica sobre la app desplegada.
+- Existe una lista de smoke checks del entorno real.
+- Se documentan limitaciones del entorno gratuito.
+- Se decide si Render Free es suficiente para demo o si conviene migrar solo
+  el backend a Railway Hobby.
+
+Avance:
+
+- Los flujos principales desplegados fueron validados.
+- `seed_atracciones_comidas` fue ejecutado dos veces localmente sin duplicar
+  registros.
+- Queda medir el cold start percibido de Render Free y registrar la decision.
 
 ### Publicar la aplicacion en el portafolio con enlace real y validacion final
 

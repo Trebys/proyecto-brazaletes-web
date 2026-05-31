@@ -801,6 +801,21 @@ La interfaz ya consume el estado actual del brazalete, muestra el numero de tran
 - la entrega real de correos de recuperacion depende de configurar `DJANGO_EMAIL_*` por entorno; en desarrollo se usa backend de consola si no se configura SMTP;
 - el modulo de atracciones y comidas esta completo como MVP y ya existen vistas de historial transaccional para cliente y administrador.
 
+### Ajustes validados durante el despliegue publico
+
+- `frontend/frontend_react/vercel.json` reescribe rutas directas hacia
+  `/index.html`, permitiendo recargar rutas SPA como `/inicio` y
+  `/atracciones-comidas` sin recibir `404` de Vercel;
+- el formulario de perfil bloquea sus controles mientras carga o guarda para
+  evitar enviar un estado inicial incompleto;
+- login, registro, perfil, recuperacion y alta administrativa de clientes usan
+  atributos `autocomplete` explicitos;
+- el campo de cambio de contrasena del perfil queda vacio y opcional, evitando
+  que el gestor del navegador intente cambiar la clave al editar nombre o
+  apellido;
+- la compra PayPal muestra el detalle seguro enviado por el backend cuando no
+  se puede crear o capturar una orden.
+
 ### Requerimiento completado: refactor frontend de autenticacion y rutas
 
 El requerimiento "Refactorizar frontend de autenticacion y rutas para mejorar mantenibilidad" quedo resuelto desde frontend.

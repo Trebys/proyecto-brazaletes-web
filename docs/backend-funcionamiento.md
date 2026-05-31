@@ -927,6 +927,12 @@ python manage.py seed_atracciones_comidas
 
 Este comando es idempotente: crea o actualiza las 3 atracciones y 3 comidas base usando las imagenes existentes en `media`.
 
+En produccion con Cloudinary, el seed conserva su utilidad para cargar los
+datos textuales, pero no sube los archivos locales a la nube. Las imagenes de
+la demo publica deben cargarse desde el panel administrativo o mediante una
+estrategia explicita de migracion de media. El flujo manual desde admin hacia
+Cloudinary fue validado durante el despliegue.
+
 ### Serializadores
 
 Archivo: `atracciones_comidas/serializers.py`

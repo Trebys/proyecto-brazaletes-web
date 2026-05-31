@@ -4,7 +4,9 @@
 
 Este documento deja preparada la estrategia de despliegue para publicar Fantasy Land sin depender de valores locales ni de filesystem efimero.
 
-La tarea actual no despliega la aplicacion. Solo deja el repositorio listo para conectar servicios externos y repetir el proceso con variables de entorno.
+La preparacion inicial ya fue aplicada y validada sobre servicios publicos. El
+documento conserva los pasos para repetir el despliegue y registra los ajustes
+descubiertos durante los smoke tests.
 
 ## Estrategia elegida
 
@@ -77,6 +79,12 @@ VITE_API_BASE_URL=https://your-render-backend.onrender.com/api/
 
 El sufijo `/api/` es importante porque los helpers de Axios construyen rutas relativas desde esa base.
 
+El archivo `frontend/frontend_react/vercel.json` agrega un rewrite hacia
+`/index.html`. Es necesario porque React Router resuelve las rutas de la SPA:
+sin este fallback, abrir directamente `/inicio`, `/login` o
+`/atracciones-comidas` devolvia `404: NOT_FOUND` desde Vercel aunque la
+navegacion interna funcionara.
+
 ## Variables de entorno backend
 
 Produccion en Render:
@@ -133,6 +141,10 @@ DJANGO_EMAIL_USE_TLS=True
 DJANGO_EMAIL_USE_SSL=False
 ```
 
+`DJANGO_DEFAULT_FROM_EMAIL` debe usar un remitente verificado por el proveedor
+SMTP. En Brevo, `DJANGO_EMAIL_HOST_USER` corresponde al SMTP login y
+`DJANGO_EMAIL_HOST_PASSWORD` a una SMTP key, no a una API key.
+
 ## Variables de entorno frontend
 
 Produccion en Vercel:
@@ -157,6 +169,31 @@ En produccion, `DJANGO_USE_CLOUDINARY=True` activa Cloudinary como storage de ar
 - fotos de comidas.
 
 No se debe depender de `backend/media/` en Render Free porque el filesystem no es persistente.
+
+## Catalogo base y datos demo
+
+El comando local:
+
+```cmd
+cd backend
+venv\Scripts\activate
+python manage.py seed_atracciones_comidas
+```
+
+carga o actualiza tres atracciones y tres comidas. Usa `update_or_create`, por
+lo que es idempotente y puede repetirse sin duplicar registros.
+
+En produccion se debe tener presente que las rutas de imagen incluidas por el
+seed apuntan al catalogo local de ejemplo. El comando no sube automaticamente
+los archivos a Cloudinary. Para una demo publica se puede:
+
+1. crear o actualizar los registros desde el panel administrativo;
+2. subir cada imagen desde el formulario correspondiente;
+3. confirmar que el archivo aparece en Cloudinary;
+4. verificar que la imagen carga desde el frontend publico.
+
+Este flujo ya fue validado con una atraccion creada desde el admin y almacenada
+en Cloudinary.
 
 ## Validaciones antes de desplegar
 
@@ -216,3 +253,32 @@ Cuando existan URLs publicas:
 8. ejecutar compra interna;
 9. probar PayPal con credenciales sandbox;
 10. entrar al panel administrativo con un usuario `is_staff=True`.
+
+## Estado validado del entorno publico
+
+Servicios publicados:
+
+- frontend: `https://proyecto-brazaletes-web.vercel.app`;
+- backend: `https://fantasy-land-backend.onrender.com`;
+- health check: `https://fantasy-land-backend.onrender.com/health/`.
+
+Smoke tests completados:
+
+- health check del backend;
+- rutas directas y navegacion SPA en Vercel;
+- registro, login, perfil y edicion de datos;
+- recuperacion de contrasena con Brevo SMTP por puerto `2525`;
+- alta administrativa de brazaletes, atracciones y comidas;
+- carga persistente de imagenes hacia Cloudinary;
+- compra con saldo interno;
+- compra PayPal Sandbox;
+- consulta de datos desde Neon.
+
+Hallazgos corregidos durante la validacion:
+
+- rewrite SPA de Vercel para rutas directas;
+- bloqueo del formulario de perfil mientras carga o guarda;
+- atributos `autocomplete` explicitos para evitar que el navegador inserte una
+  contrasena guardada en formularios que no corresponden;
+- propagacion de mensajes seguros del backend cuando PayPal falla;
+- puerto SMTP alternativo `2525` y timeout configurable para Render Free.
