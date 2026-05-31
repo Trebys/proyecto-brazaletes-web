@@ -440,6 +440,34 @@ Avance:
   para portafolio. Railway Hobby queda como alternativa futura para migrar solo
   el backend.
 
+### Preparar datos demo con tipos Estándar, Especial y Premium
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [backend-funcionamiento.md](backend-funcionamiento.md)
+- [arranque-servidores.md](arranque-servidores.md)
+- [despliegue-produccion.md](despliegue-produccion.md)
+
+Criterios de aceptacion:
+
+- Existe un mecanismo reproducible para cargar tipos base `Estándar`,
+  `Especial` y `Premium`.
+- El proyecto puede arrancar con datos minimos de demostracion sin editar
+  manualmente la base de datos.
+- La documentacion explica como cargar o restaurar los datos demo.
+- La solucion no rompe la gestion administrativa actual.
+
+Resultado:
+
+- `seed_atracciones_comidas` crea o actualiza atracciones, comidas y los tres
+  tipos base usando `update_or_create`.
+- `--preserve-images` conserva archivos existentes de Cloudinary al ejecutar
+  el seed contra Neon.
+- Los precios, usos y saldos demo quedan documentados y siguen siendo
+  editables desde el panel administrativo.
+
 ### Publicar la aplicacion en el portafolio con enlace real y validacion final
 
 Estado: Pendiente

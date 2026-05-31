@@ -184,8 +184,9 @@ venv\Scripts\activate
 python manage.py seed_atracciones_comidas
 ```
 
-carga o actualiza tres atracciones y tres comidas. Usa `update_or_create`, por
-lo que es idempotente y puede repetirse sin duplicar registros.
+carga o actualiza tres atracciones, tres comidas y los tipos de brazalete
+`Estándar`, `Especial` y `Premium`. Usa `update_or_create`, por lo que es
+idempotente y puede repetirse sin duplicar registros.
 
 Para cargar los textos demo en Neon desde PowerShell local sin sobrescribir
 imagenes Cloudinary existentes:

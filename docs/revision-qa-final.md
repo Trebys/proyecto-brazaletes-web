@@ -158,8 +158,9 @@ python manage.py seed_atracciones_comidas
 python manage.py check
 ```
 
-Resultado: el seed actualizo las tres atracciones y tres comidas en ambas
-ejecuciones sin duplicados. `python manage.py check` termino sin issues.
+Resultado: el seed actualizo las tres atracciones, tres comidas y los tipos de
+brazalete `Estándar`, `Especial` y `Premium` en ambas ejecuciones sin
+duplicados. `python manage.py check` termino sin issues.
 
 Hallazgos corregidos durante el despliegue:
 

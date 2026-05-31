@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 
 from atracciones_comidas.models import Attractions, Food
+from compra_brazaletes.models import BraceletType
 
 
 ATTRACTIONS = [
@@ -59,6 +60,42 @@ FOODS = [
     },
 ]
 
+BRACELET_TYPES = [
+    {
+        'name': 'Estándar',
+        'price': Decimal('25.00'),
+        'attraction_uses': 5,
+        'food_balance': Decimal('10.00'),
+        'description': (
+            'Acceso inicial para disfrutar atracciones y alimentos durante '
+            'una visita breve al parque.'
+        ),
+        'image': 'bracelets/brazalete_estandar.jpg',
+    },
+    {
+        'name': 'Especial',
+        'price': Decimal('40.00'),
+        'attraction_uses': 8,
+        'food_balance': Decimal('20.00'),
+        'description': (
+            'Una opcion equilibrada para recorrer mas atracciones y contar '
+            'con mayor saldo para alimentos.'
+        ),
+        'image': 'bracelets/brazalete_especial.jpg',
+    },
+    {
+        'name': 'Premium',
+        'price': Decimal('60.00'),
+        'attraction_uses': 12,
+        'food_balance': Decimal('35.00'),
+        'description': (
+            'La experiencia mas completa para aprovechar una jornada amplia '
+            'con mas atracciones y saldo disponible.'
+        ),
+        'image': 'bracelets/brazalete_premium.jpg',
+    },
+]
+
 
 class Command(BaseCommand):
     help = 'Carga o actualiza el catalogo base de atracciones y comidas.'
@@ -107,5 +144,27 @@ class Command(BaseCommand):
             )
             action = 'creada' if created else 'actualizada'
             self.stdout.write(self.style.SUCCESS(f'Comida {action}: {food.name}'))
+
+        for bracelet_type_data in BRACELET_TYPES:
+            defaults = {
+                'price': bracelet_type_data['price'],
+                'attraction_uses': bracelet_type_data['attraction_uses'],
+                'food_balance': bracelet_type_data['food_balance'],
+                'description': bracelet_type_data['description'],
+                'is_active': True,
+            }
+            if not preserve_images:
+                defaults['image'] = bracelet_type_data['image']
+
+            bracelet_type, created = BraceletType.objects.update_or_create(
+                name=bracelet_type_data['name'],
+                defaults=defaults,
+            )
+            action = 'creado' if created else 'actualizado'
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'Tipo de brazalete {action}: {bracelet_type.name}'
+                )
+            )
 
         self.stdout.write(self.style.SUCCESS('Catalogo base cargado correctamente.'))

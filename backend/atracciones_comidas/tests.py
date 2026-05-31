@@ -39,14 +39,25 @@ class SeedAtraccionesComidasTests(TestCase):
         food.photo = 'cloudinary/foods/pizza.jpg'
         food.save(update_fields=['photo'])
 
+        bracelet_type = BraceletType.objects.get(name='Premium')
+        bracelet_type.image = 'cloudinary/bracelets/premium.jpg'
+        bracelet_type.save(update_fields=['image'])
+
         call_command('seed_atracciones_comidas', '--preserve-images', verbosity=0)
 
         self.assertEqual(Attractions.objects.count(), 3)
         self.assertEqual(Food.objects.count(), 3)
+        self.assertEqual(BraceletType.objects.count(), 3)
         attraction.refresh_from_db()
         food.refresh_from_db()
+        bracelet_type.refresh_from_db()
         self.assertEqual(attraction.photo.name, 'cloudinary/attractions/carrusel.jpg')
         self.assertEqual(food.photo.name, 'cloudinary/foods/pizza.jpg')
+        self.assertEqual(bracelet_type.image.name, 'cloudinary/bracelets/premium.jpg')
+        self.assertEqual(
+            set(BraceletType.objects.values_list('name', flat=True)),
+            {'Estándar', 'Especial', 'Premium'},
+        )
 
 
 class AtraccionesComidasApiTests(APITestCase):

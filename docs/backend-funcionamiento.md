@@ -925,7 +925,17 @@ Para cargar el catalogo base usado en el mockup, existe el comando:
 python manage.py seed_atracciones_comidas
 ```
 
-Este comando es idempotente: crea o actualiza las 3 atracciones y 3 comidas base usando las imagenes existentes en `media`.
+Este comando es idempotente: crea o actualiza las 3 atracciones, 3 comidas y
+los tipos de brazalete `Estándar`, `Especial` y `Premium` usando las imagenes
+existentes en `media`.
+
+Valores demo de tipos de brazalete:
+
+| Tipo | Precio | Usos de atraccion | Saldo comida |
+| --- | --- | --- | --- |
+| `Estándar` | `$25.00` | `5` | `$10.00` |
+| `Especial` | `$40.00` | `8` | `$20.00` |
+| `Premium` | `$60.00` | `12` | `$35.00` |
 
 En produccion con Cloudinary, usar:
 

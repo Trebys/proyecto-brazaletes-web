@@ -58,10 +58,11 @@ venv\Scripts\activate
 python manage.py seed_atracciones_comidas
 ```
 
-El comando puede repetirse: actualiza las tres atracciones y tres comidas base
-sin duplicarlas. En produccion con Cloudinary, las imagenes deben subirse desde
-el panel administrativo o mediante una migracion explicita de media. Para
-cargar textos en Neon sin sobrescribir imagenes existentes, usar:
+El comando puede repetirse: actualiza las tres atracciones, tres comidas y los
+tipos de brazalete `Estándar`, `Especial` y `Premium` sin duplicarlos. En
+produccion con Cloudinary, las imagenes deben subirse desde el panel
+administrativo o mediante una migracion explicita de media. Para cargar textos
+en Neon sin sobrescribir imagenes existentes, usar:
 
 ```cmd
 python manage.py seed_atracciones_comidas --preserve-images

@@ -113,7 +113,8 @@ Completado:
 - frontend publico en Vercel Hobby con soporte para rutas SPA directas;
 - registro, login, perfil, recuperacion de contrasena por Brevo SMTP, panel
   administrativo, compra interna y PayPal Sandbox;
-- comprobacion local de idempotencia de `seed_atracciones_comidas`.
+- comprobacion local de idempotencia de `seed_atracciones_comidas`, incluyendo
+  atracciones, comidas y tipos base `Estándar`, `Especial` y `Premium`.
 
 Pendiente para cerrar la validacion de la demo:
 
