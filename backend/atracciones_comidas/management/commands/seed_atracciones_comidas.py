@@ -63,15 +63,30 @@ FOODS = [
 class Command(BaseCommand):
     help = 'Carga o actualiza el catalogo base de atracciones y comidas.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--preserve-images',
+            action='store_true',
+            help=(
+                'Conserva las imagenes existentes y no asigna rutas locales. '
+                'Usar al cargar datos en produccion con Cloudinary.'
+            ),
+        )
+
     def handle(self, *args, **options):
+        preserve_images = options['preserve_images']
+
         for attraction_data in ATTRACTIONS:
+            defaults = {
+                'description': attraction_data['description'],
+                'usage_points': attraction_data['usage_points'],
+            }
+            if not preserve_images:
+                defaults['photo'] = attraction_data['photo']
+
             attraction, created = Attractions.objects.update_or_create(
                 name=attraction_data['name'],
-                defaults={
-                    'description': attraction_data['description'],
-                    'photo': attraction_data['photo'],
-                    'usage_points': attraction_data['usage_points'],
-                },
+                defaults=defaults,
             )
             action = 'creada' if created else 'actualizada'
             self.stdout.write(
@@ -79,13 +94,16 @@ class Command(BaseCommand):
             )
 
         for food_data in FOODS:
+            defaults = {
+                'description': food_data['description'],
+                'price': food_data['price'],
+            }
+            if not preserve_images:
+                defaults['photo'] = food_data['photo']
+
             food, created = Food.objects.update_or_create(
                 name=food_data['name'],
-                defaults={
-                    'description': food_data['description'],
-                    'photo': food_data['photo'],
-                    'price': food_data['price'],
-                },
+                defaults=defaults,
             )
             action = 'creada' if created else 'actualizada'
             self.stdout.write(self.style.SUCCESS(f'Comida {action}: {food.name}'))

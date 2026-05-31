@@ -2,6 +2,8 @@ import base64
 from decimal import Decimal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
+from django.test import TestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
@@ -23,6 +25,28 @@ PNG_BYTES = base64.b64decode(
 
 def build_test_image(name):
     return SimpleUploadedFile(name, PNG_BYTES, content_type='image/png')
+
+
+class SeedAtraccionesComidasTests(TestCase):
+    def test_seed_is_idempotent_and_can_preserve_existing_images(self):
+        call_command('seed_atracciones_comidas', verbosity=0)
+
+        attraction = Attractions.objects.get(name='Carrusel Encantado')
+        attraction.photo = 'cloudinary/attractions/carrusel.jpg'
+        attraction.save(update_fields=['photo'])
+
+        food = Food.objects.get(name='Pizza Aventura')
+        food.photo = 'cloudinary/foods/pizza.jpg'
+        food.save(update_fields=['photo'])
+
+        call_command('seed_atracciones_comidas', '--preserve-images', verbosity=0)
+
+        self.assertEqual(Attractions.objects.count(), 3)
+        self.assertEqual(Food.objects.count(), 3)
+        attraction.refresh_from_db()
+        food.refresh_from_db()
+        self.assertEqual(attraction.photo.name, 'cloudinary/attractions/carrusel.jpg')
+        self.assertEqual(food.photo.name, 'cloudinary/foods/pizza.jpg')
 
 
 class AtraccionesComidasApiTests(APITestCase):

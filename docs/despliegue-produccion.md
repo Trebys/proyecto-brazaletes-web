@@ -19,6 +19,10 @@ descubiertos durante los smoke tests.
 
 Alternativa prevista: si Render Free produce cold starts, latencia o limites incomodos para una demo, migrar solo el backend a Railway Hobby. El monorepo se conserva.
 
+Decision despues de smoke testing: el cold start de Render Free fue probado y
+se considera tolerable para la demo de portafolio. Se mantiene Render Free y se
+conserva Railway Hobby como alternativa futura.
+
 ## Que puede hacer la IA y que queda manual
 
 La IA puede preparar en el repositorio:
@@ -183,9 +187,24 @@ python manage.py seed_atracciones_comidas
 carga o actualiza tres atracciones y tres comidas. Usa `update_or_create`, por
 lo que es idempotente y puede repetirse sin duplicar registros.
 
+Para cargar los textos demo en Neon desde PowerShell local sin sobrescribir
+imagenes Cloudinary existentes:
+
+```powershell
+cd backend
+$env:DATABASE_URL = '<pegar-temporalmente-el-string-de-Neon>'
+.\venv\Scripts\python.exe manage.py seed_atracciones_comidas --preserve-images
+Remove-Item Env:DATABASE_URL
+```
+
+No guardar ni versionar el string de Neon. Render Free no ofrece shell o SSH,
+por lo que el comando se ejecuta localmente apuntando temporalmente a la base
+productiva.
+
 En produccion se debe tener presente que las rutas de imagen incluidas por el
-seed apuntan al catalogo local de ejemplo. El comando no sube automaticamente
-los archivos a Cloudinary. Para una demo publica se puede:
+seed normal apuntan al catalogo local de ejemplo. La opcion `--preserve-images`
+evita asignar esas rutas locales, pero no sube archivos automaticamente a
+Cloudinary. Para una demo publica se puede:
 
 1. crear o actualizar los registros desde el panel administrativo;
 2. subir cada imagen desde el formulario correspondiente;

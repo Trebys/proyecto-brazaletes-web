@@ -413,7 +413,7 @@ Resultado:
 
 ### Validar la aplicacion desplegada y prepararla para portafolio
 
-Estado: En curso
+Estado: Completada
 
 Documentos relacionados:
 
@@ -434,7 +434,11 @@ Avance:
 - Los flujos principales desplegados fueron validados.
 - `seed_atracciones_comidas` fue ejecutado dos veces localmente sin duplicar
   registros.
-- Queda medir el cold start percibido de Render Free y registrar la decision.
+- Se agrego `--preserve-images` para cargar textos demo en Neon sin reemplazar
+  imagenes existentes de Cloudinary por rutas locales.
+- El cold start percibido de Render Free fue probado y se considera tolerable
+  para portafolio. Railway Hobby queda como alternativa futura para migrar solo
+  el backend.
 
 ### Publicar la aplicacion en el portafolio con enlace real y validacion final
 

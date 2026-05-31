@@ -117,11 +117,12 @@ Completado:
 
 Pendiente para cerrar la validacion de la demo:
 
-- medir el cold start percibido de Render Free despues de al menos 15 minutos
-  sin trafico;
-- decidir si se mantiene Render Free para portafolio o se planifica migracion
-  futura de solo el backend a Railway Hobby;
 - actualizar el portafolio y publicar el enlace vivo.
+
+Decision operativa: el cold start de Render Free fue probado manualmente y es
+tolerable para la demo de portafolio. Se mantiene Render Free. Railway Hobby
+queda como alternativa futura para migrar solo el backend si la experiencia
+deja de ser suficiente.
 
 Nota SMTP: Render Free bloquea conexiones salientes por `25`, `465` y `587`.
 Con Brevo se usa `smtp-relay.brevo.com`, puerto `2525`, TLS activo y timeout

@@ -179,6 +179,7 @@ locales y no transfiere archivos hacia Cloudinary. Para produccion, las imagenes
 de catalogo deben subirse desde admin o mediante una migracion explicita de
 media.
 
-Estado: go para continuar con preparacion y publicacion en portafolio. Queda
-pendiente medir el cold start percibido de Render Free y registrar si se acepta
-para la demo o si se planifica una migracion futura del backend a Railway Hobby.
+Estado: go para continuar con preparacion y publicacion en portafolio. El cold
+start de Render Free fue probado manualmente y se considera tolerable para esta
+demo. Se mantiene Render Free; Railway Hobby queda documentado como alternativa
+futura si la experiencia deja de ser suficiente.
