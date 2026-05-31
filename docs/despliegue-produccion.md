@@ -117,9 +117,21 @@ DJANGO_EMAIL_HOST_USER=replace-with-email-user
 DJANGO_EMAIL_HOST_PASSWORD=replace-with-email-password
 DJANGO_EMAIL_USE_TLS=True
 DJANGO_EMAIL_USE_SSL=False
+DJANGO_EMAIL_TIMEOUT=10
 ```
 
 Para entorno local se puede seguir usando `backend/.env` con `DB_*` y `DJANGO_DEBUG=True`.
+
+En Render Free no se pueden abrir conexiones SMTP salientes por los puertos
+`25`, `465` o `587`. Si el proveedor lo admite, usar un puerto alternativo como
+`2525`. Por ejemplo, con Brevo:
+
+```env
+DJANGO_EMAIL_HOST=smtp-relay.brevo.com
+DJANGO_EMAIL_PORT=2525
+DJANGO_EMAIL_USE_TLS=True
+DJANGO_EMAIL_USE_SSL=False
+```
 
 ## Variables de entorno frontend
 
