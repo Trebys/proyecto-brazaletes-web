@@ -372,6 +372,34 @@ Seguimiento:
 
 - Validar URLs publicas, PayPal, SMTP y carga de media cuando se ejecuten las historias de despliegue real.
 
+### 2026-06-07 - Resumen administrativo compacto en mobile
+
+Estado: vigente
+
+Contexto:
+
+- En mobile, el panel administrativo mostraba las metricas operativas completas antes de cualquier seccion.
+- Al cambiar de `Resumen` a secciones como `Comidas`, `Movimientos` o `Atracciones`, el usuario podia sentir que la pantalla no habia cambiado porque el contenido nuevo quedaba debajo del resumen.
+- El requerimiento pide mejorar claridad y reducir scroll sin rehacer el panel administrativo completo.
+
+Decision:
+
+- Mantener el resumen completo de metricas como contenido principal de la seccion `Resumen`.
+- Ocultar el resumen completo en mobile cuando el administrador entra a secciones internas.
+- Mostrar una cabecera compacta con titulo y descripcion de la seccion activa antes de la tabla o formulario.
+- Hacer scroll automatico al inicio del contenido activo solo en mobile al cambiar de seccion interna.
+- Conservar en desktop el resumen de metricas visible antes del contenido para no alterar la lectura operativa existente.
+
+Impacto:
+
+- El cambio de seccion es mas evidente en pantallas pequenas.
+- El administrador ve antes el contenido accionable de cada seccion.
+- No se modifican endpoints, permisos, modelos ni contratos de datos.
+
+Seguimiento:
+
+- Si se implementa un menu hamburguesa administrativo, reutilizar esta separacion entre navegacion, resumen y contenido activo.
+
 ## Limitaciones y seguimiento
 
 ### Historial de movimientos visible para usuarios
