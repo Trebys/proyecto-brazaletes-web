@@ -433,3 +433,27 @@ Criterios de aceptacion:
 - Se validan las secciones `Resumen`, `Clientes`, `Brazaletes`, `Ventas`, `Movimientos`, `Testimonios`, `Comidas` y `Atracciones`.
 - El build frontend se ejecuta correctamente.
 - La decision UX queda documentada.
+
+### Implementar menu hamburguesa mobile para navegacion de Fantasy Land
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
+
+Criterios de aceptacion:
+
+- En mobile, la navegacion publica/cliente muestra una barra compacta con logo, nombre del sitio y boton hamburguesa.
+- En mobile y tablet, el panel administrativo muestra una barra compacta con logo, nombre del sitio y boton hamburguesa.
+- Al tocar el boton hamburguesa, el menu abre y cierra.
+- Las opciones principales de navegacion quedan dentro del menu mobile.
+- Las acciones de sesion quedan dentro del menu mobile: iniciar sesion, perfil y cerrar sesion segun corresponda.
+- El menu mobile se cierra al seleccionar una ruta, seccion o accion de sesion.
+- La seccion activa se marca visualmente dentro del menu.
+- La navegacion desktop conserva el patron visible anterior.
+- El navbar ocupa menos espacio vertical en mobile.
+- Se validan vista publica, vista cliente autenticado y vista admin.
+- El build frontend se ejecuta correctamente.
+- La documentacion frontend describe el nuevo comportamiento responsive.

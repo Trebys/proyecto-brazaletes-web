@@ -400,6 +400,34 @@ Seguimiento:
 
 - Si se implementa un menu hamburguesa administrativo, reutilizar esta separacion entre navegacion, resumen y contenido activo.
 
+### 2026-06-07 - Navegacion colapsable en mobile
+
+Estado: vigente
+
+Contexto:
+
+- La navegacion publica y administrativa de Fantasy Land crecio con varias rutas, secciones y acciones de sesion.
+- En pantallas pequenas, mostrar todas las opciones visibles consumia demasiado alto de pantalla y empujaba el contenido principal.
+- El requerimiento pide reducir el espacio ocupado por el navbar sin rehacer la navegacion desktop.
+
+Decision:
+
+- Usar una barra compacta en mobile con logo, nombre del sitio y boton hamburguesa.
+- Mover rutas principales, secciones administrativas y acciones de sesion a un menu desplegable en mobile.
+- Cerrar el menu al seleccionar una ruta, seccion o accion de sesion.
+- Mantener la navegacion visible en desktop para conservar velocidad operativa.
+- Usar el mismo lenguaje visual de estado activo: fondo blanco y texto `fondoLogin`.
+
+Impacto:
+
+- La vista mobile deja mas espacio disponible para el contenido.
+- La navegacion publica, cliente autenticado y administrativa comparten un patron responsive reconocible.
+- No se modifican rutas, permisos, endpoints ni contratos de API.
+
+Seguimiento:
+
+- Si se extrae un componente de navegacion reutilizable, conservar soporte para enlaces de React Router y botones internos de seccion administrativa.
+
 ## Limitaciones y seguimiento
 
 ### Historial de movimientos visible para usuarios

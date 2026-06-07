@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import perfilIcon from '/images/perfil.svg';
@@ -37,10 +37,21 @@ const navLinkClass = ({ isActive }) =>
 export function MasterPageCliente() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  const navigateAndClose = (path) => {
+    closeMobileMenu();
+    navigate(path);
+  };
 
   const handleLogout = async () => {
     try {
       await logout();
+      closeMobileMenu();
       navigate('/login');
     } catch (error) {
       console.error('Error al cerrar sesion:', error);
@@ -54,57 +65,126 @@ export function MasterPageCliente() {
   return (
     <div className="app-shell flex flex-col">
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <button
-          type="button"
-          className="flex cursor-pointer items-center gap-3"
-          onClick={() => navigate('/inicio')}
-        >
-          <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white shadow-sm">
-            <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-9" />
-          </span>
-          <span className="font-montserrat text-xl font-extrabold tracking-wide">
-            Fantasy Land
-          </span>
-        </button>
-
-        <div className="flex flex-wrap justify-center gap-x-1 gap-y-2 text-sm font-extrabold lg:text-[0.95rem]">
-          {NAV_LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} className={navLinkClass}>
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-center gap-2">
-          {user ? (
-            <>
-              <button
-                type="button"
-                onClick={() => navigate('/mi-perfil')}
-                className="flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
-              >
-                <img src={perfilIcon} alt="Perfil" className="mr-2 h-5 w-5" />
-                <span>{user.username}</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="min-h-10 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white transition hover:bg-red-800"
-              >
-                Cerrar Sesion
-              </button>
-            </>
-          ) : (
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => navigate('/login')}
-              className="min-h-10 rounded-md bg-white px-4 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
+              className="flex cursor-pointer items-center gap-3"
+              onClick={() => navigateAndClose('/inicio')}
             >
-              Iniciar Sesion
+              <span className="flex h-11 w-11 items-center justify-center rounded-md bg-white shadow-sm lg:h-12 lg:w-12">
+                <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-8 lg:h-9" />
+              </span>
+              <span className="font-montserrat text-lg font-extrabold tracking-wide sm:text-xl">
+                Fantasy Land
+              </span>
             </button>
-          )}
-        </div>
+
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-white/30 text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60 lg:hidden"
+              aria-label={isMobileMenuOpen ? 'Cerrar menu de navegacion' : 'Abrir menu de navegacion'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="client-mobile-menu"
+              onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+            >
+              <span className="flex flex-col gap-1.5">
+                <span className="block h-0.5 w-6 rounded bg-current" />
+                <span className="block h-0.5 w-6 rounded bg-current" />
+                <span className="block h-0.5 w-6 rounded bg-current" />
+              </span>
+            </button>
+          </div>
+
+          <div className="hidden flex-wrap justify-center gap-x-1 gap-y-2 text-sm font-extrabold lg:flex lg:text-[0.95rem]">
+            {NAV_LINKS.map((link) => (
+              <NavLink key={link.to} to={link.to} className={navLinkClass}>
+                {link.label}
+              </NavLink>
+            ))}
+          </div>
+
+          <div className="hidden items-center justify-center gap-2 lg:flex">
+            {user ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate('/mi-perfil')}
+                  className="flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
+                >
+                  <img src={perfilIcon} alt="Perfil" className="mr-2 h-5 w-5" />
+                  <span>{user.username}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="min-h-10 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white transition hover:bg-red-800"
+                >
+                  Cerrar Sesion
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="min-h-10 rounded-md bg-white px-4 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
+              >
+                Iniciar Sesion
+              </button>
+            )}
+          </div>
+
+          <div
+            id="client-mobile-menu"
+            className={`${isMobileMenuOpen ? 'grid' : 'hidden'} gap-2 rounded-lg border border-white/15 bg-teal-950/60 p-3 text-sm font-extrabold shadow-lg lg:hidden`}
+          >
+            {NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={closeMobileMenu}
+                className={({ isActive }) =>
+                  `rounded-md px-3 py-3 transition ${
+                    isActive
+                      ? 'bg-white text-fondoLogin shadow-sm'
+                      : 'text-white hover:bg-white/10'
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+
+            <div className="mt-2 grid gap-2 border-t border-white/15 pt-3">
+              {user ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => navigateAndClose('/mi-perfil')}
+                    className="flex min-h-11 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
+                  >
+                    <img src={perfilIcon} alt="Perfil" className="mr-2 h-5 w-5" />
+                    <span>{user.username}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="min-h-11 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white transition hover:bg-red-800"
+                  >
+                    Cerrar Sesion
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigateAndClose('/login')}
+                  className="min-h-11 rounded-md bg-white px-4 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
+                >
+                  Iniciar Sesion
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </nav>
 
