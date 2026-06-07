@@ -64,7 +64,7 @@ export function MasterPageCliente() {
 
   return (
     <div className="app-shell flex flex-col">
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8">
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8 relative">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center justify-between gap-3">
             <button
@@ -136,7 +136,7 @@ export function MasterPageCliente() {
 
           <div
             id="client-mobile-menu"
-            className={`${isMobileMenuOpen ? 'grid' : 'hidden'} gap-2 rounded-lg border border-white/15 bg-teal-950/60 p-3 text-sm font-extrabold shadow-lg lg:hidden`}
+            className={`${isMobileMenuOpen ? 'grid' : 'hidden'} absolute right-4 top-[calc(100%+0.5rem)] w-[min(82vw,20rem)] gap-1 rounded-lg border border-white/20 bg-fondoLogin/95 p-2 text-sm font-extrabold shadow-[0_20px_50px_rgba(0,0,0,0.28)] backdrop-blur lg:hidden`}
           >
             {NAV_LINKS.map((link) => (
               <NavLink
@@ -144,7 +144,7 @@ export function MasterPageCliente() {
                 to={link.to}
                 onClick={closeMobileMenu}
                 className={({ isActive }) =>
-                  `rounded-md px-3 py-3 transition ${
+                  `rounded-md px-4 py-3 text-left transition ${
                     isActive
                       ? 'bg-white text-fondoLogin shadow-sm'
                       : 'text-white hover:bg-white/10'

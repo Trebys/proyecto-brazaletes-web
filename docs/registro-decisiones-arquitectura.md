@@ -413,7 +413,7 @@ Contexto:
 Decision:
 
 - Usar una barra compacta en mobile con logo, nombre del sitio y boton hamburguesa.
-- Mover rutas principales, secciones administrativas y acciones de sesion a un menu desplegable en mobile.
+- Mover rutas principales, secciones administrativas y acciones de sesion a un menu desplegable flotante alineado a la derecha en mobile.
 - Cerrar el menu al seleccionar una ruta, seccion o accion de sesion.
 - Mantener la navegacion visible en desktop para conservar velocidad operativa.
 - Usar el mismo lenguaje visual de estado activo: fondo blanco y texto `fondoLogin`.
