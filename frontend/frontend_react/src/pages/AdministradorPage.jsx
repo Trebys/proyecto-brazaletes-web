@@ -495,6 +495,7 @@ export function AdministradorPage() {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
   const [activeSection, setActiveSection] = useState('resumen');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const activeContentRef = useRef(null);
   const didMountRef = useRef(false);
   const [clients, setClients] = useState([]);
@@ -594,10 +595,12 @@ export function AdministradorPage() {
 
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
+    setIsMobileMenuOpen(false);
   };
 
   const handleLogout = async () => {
     await Logout();
+    setIsMobileMenuOpen(false);
     navigate('/login');
   };
 
@@ -938,21 +941,38 @@ export function AdministradorPage() {
         onConfirm={confirmDelete}
       />
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <button
-            type="button"
-            onClick={() => handleSectionChange('resumen')}
-            className="flex items-center gap-3 self-start"
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white shadow-sm">
-              <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-9" />
-            </span>
-            <span className="font-montserrat text-xl font-extrabold tracking-wide">
-              Fantasy Land
-            </span>
-          </button>
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => handleSectionChange('resumen')}
+              className="flex items-center gap-3"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-md bg-white shadow-sm xl:h-12 xl:w-12">
+                <img src="/images/logo.svg" alt="Fantasy Land Logo" className="h-8 xl:h-9" />
+              </span>
+              <span className="font-montserrat text-lg font-extrabold tracking-wide sm:text-xl">
+                Fantasy Land
+              </span>
+            </button>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-sm font-extrabold lg:text-[0.95rem] xl:flex-1">
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-white/30 text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60 xl:hidden"
+              aria-label={isMobileMenuOpen ? 'Cerrar menu administrativo' : 'Abrir menu administrativo'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="admin-mobile-menu"
+              onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+            >
+              <span className="flex flex-col gap-1.5">
+                <span className="block h-0.5 w-6 rounded bg-current" />
+                <span className="block h-0.5 w-6 rounded bg-current" />
+                <span className="block h-0.5 w-6 rounded bg-current" />
+              </span>
+            </button>
+          </div>
+
+          <div className="hidden flex-wrap items-center justify-center gap-x-1 gap-y-2 text-sm font-extrabold lg:text-[0.95rem] xl:flex xl:flex-1">
             {ADMIN_SECTIONS.map((section) => (
               <button
                 key={section.id}
@@ -969,7 +989,7 @@ export function AdministradorPage() {
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-2 xl:justify-end">
+          <div className="hidden items-center justify-center gap-2 xl:flex xl:justify-end">
             <button
               type="button"
               onClick={() => navigate('/mi-perfil')}
@@ -985,6 +1005,47 @@ export function AdministradorPage() {
             >
               Cerrar Sesion
             </button>
+          </div>
+
+          <div
+            id="admin-mobile-menu"
+            className={`${isMobileMenuOpen ? 'grid' : 'hidden'} gap-2 rounded-lg border border-white/15 bg-teal-950/60 p-3 text-sm font-extrabold shadow-lg xl:hidden`}
+          >
+            {ADMIN_SECTIONS.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => handleSectionChange(section.id)}
+                className={`rounded-md px-3 py-3 text-left transition ${
+                  activeSection === section.id
+                    ? 'bg-white text-fondoLogin shadow-sm'
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                {section.label}
+              </button>
+            ))}
+
+            <div className="mt-2 grid gap-2 border-t border-white/15 pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  navigate('/mi-perfil');
+                }}
+                className="flex min-h-11 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-extrabold text-fondoLogin shadow-sm transition hover:bg-teal-50"
+              >
+                <img src="/images/perfil.svg" alt="Perfil" className="mr-2 h-5 w-5" />
+                {adminUser?.username || 'Admin'}
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="min-h-11 rounded-md bg-red-700 px-3 py-2 text-sm font-extrabold text-white transition hover:bg-red-800"
+              >
+                Cerrar Sesion
+              </button>
+            </div>
           </div>
         </div>
       </nav>
