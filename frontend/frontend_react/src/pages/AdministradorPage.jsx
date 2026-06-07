@@ -940,7 +940,7 @@ export function AdministradorPage() {
         onClose={() => setPendingDelete(null)}
         onConfirm={confirmDelete}
       />
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8">
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-fondoLogin/95 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur lg:px-8 relative">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center justify-between gap-3">
             <button
@@ -1009,14 +1009,14 @@ export function AdministradorPage() {
 
           <div
             id="admin-mobile-menu"
-            className={`${isMobileMenuOpen ? 'grid' : 'hidden'} gap-2 rounded-lg border border-white/15 bg-teal-950/60 p-3 text-sm font-extrabold shadow-lg xl:hidden`}
+            className={`${isMobileMenuOpen ? 'grid' : 'hidden'} absolute right-4 top-[calc(100%+0.5rem)] w-[min(82vw,20rem)] gap-1 rounded-lg border border-white/20 bg-fondoLogin/95 p-2 text-sm font-extrabold shadow-[0_20px_50px_rgba(0,0,0,0.28)] backdrop-blur xl:hidden`}
           >
             {ADMIN_SECTIONS.map((section) => (
               <button
                 key={section.id}
                 type="button"
                 onClick={() => handleSectionChange(section.id)}
-                className={`rounded-md px-3 py-3 text-left transition ${
+                className={`rounded-md px-4 py-3 text-left transition ${
                   activeSection === section.id
                     ? 'bg-white text-fondoLogin shadow-sm'
                     : 'text-white hover:bg-white/10'

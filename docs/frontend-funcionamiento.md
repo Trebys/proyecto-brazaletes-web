@@ -320,7 +320,7 @@ Incluye:
 - el navbar y footer incorporan mejor jerarquia, estados hover, sombras sutiles y controles con alto minimo estable para funcionar en desktop y mobile.
 - el logo se muestra dentro de un contenedor blanco reutilizado como referencia visual tambien por el panel administrativo.
 - los enlaces principales usan estado activo con fondo blanco y texto `fondoLogin`, evitando resaltados de color no alineados con la identidad visual.
-- en mobile, el navbar publico/cliente usa una barra compacta con logo, nombre y boton hamburguesa; las rutas principales y acciones de sesion quedan dentro de un menu desplegable que se cierra al seleccionar una opcion.
+- en mobile, el navbar publico/cliente usa una barra compacta con logo, nombre y boton hamburguesa; las rutas principales y acciones de sesion quedan dentro de un menu desplegable flotante alineado a la derecha que se cierra al seleccionar una opcion.
 
 Detalles practicos:
 
@@ -622,7 +622,7 @@ Detalle practico:
 - el header administrativo usa el mismo tratamiento de logo y patron responsive del layout cliente, separando marca, secciones y acciones de usuario cuando el ancho no permite una sola fila.
 - en mobile, el resumen completo de metricas se mantiene solo en la seccion `Resumen`; al entrar a secciones internas, la interfaz muestra una cabecera compacta con el titulo y descripcion de la seccion activa para que el cambio sea evidente sin obligar a scrollear por todas las metricas.
 - al cambiar de seccion interna en mobile, la pagina desplaza el viewport hacia el inicio del contenido activo para reducir friccion y hacer visible rapidamente la tabla o formulario correspondiente.
-- en mobile y tablet, el header administrativo usa una barra compacta con logo, nombre y boton hamburguesa; las secciones del panel, perfil y cierre de sesion quedan dentro del menu desplegable, mientras que en desktop amplio se mantiene la navegacion visible.
+- en mobile y tablet, el header administrativo usa una barra compacta con logo, nombre y boton hamburguesa; las secciones del panel, perfil y cierre de sesion quedan dentro de un menu desplegable flotante alineado a la derecha, mientras que en desktop amplio se mantiene la navegacion visible.
 
 ### Requerimiento completado: gestion administrativa de tipos de brazalete
 
