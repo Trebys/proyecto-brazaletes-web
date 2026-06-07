@@ -619,6 +619,8 @@ Detalle practico:
 - los formularios laterales de creacion/edicion del panel no se estiran al alto de la tabla para mantener una lectura mas compacta;
 - los roles administrativos no se editan desde este panel por seguridad; `is_staff` e `is_superuser` siguen siendo de solo lectura desde la API publica del backoffice.
 - el header administrativo usa el mismo tratamiento de logo y patron responsive del layout cliente, separando marca, secciones y acciones de usuario cuando el ancho no permite una sola fila.
+- en mobile, el resumen completo de metricas se mantiene solo en la seccion `Resumen`; al entrar a secciones internas, la interfaz muestra una cabecera compacta con el titulo y descripcion de la seccion activa para que el cambio sea evidente sin obligar a scrollear por todas las metricas.
+- al cambiar de seccion interna en mobile, la pagina desplaza el viewport hacia el inicio del contenido activo para reducir friccion y hacer visible rapidamente la tabla o formulario correspondiente.
 
 ### Requerimiento completado: gestion administrativa de tipos de brazalete
 

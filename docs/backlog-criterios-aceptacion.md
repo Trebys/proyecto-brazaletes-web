@@ -412,3 +412,24 @@ Criterios de aceptacion:
 - Existe una descripcion breve del proyecto, stack real, decisiones clave y funcionalidades principales.
 - El README y la documentacion principal enlazan la URL publicada y explican cualquier limitacion del entorno gratuito.
 - Se ejecuta una validacion final sobre la version hosteada antes de considerarla lista para mostrar.
+
+### Mejorar experiencia mobile del panel admin al cambiar de secciones
+
+Estado: Completada
+
+Documentos relacionados:
+
+- [frontend-funcionamiento.md](frontend-funcionamiento.md)
+- [registro-decisiones-arquitectura.md](registro-decisiones-arquitectura.md)
+
+Criterios de aceptacion:
+
+- El panel administrativo revisa el comportamiento mobile al cambiar entre secciones.
+- En mobile, el resumen completo de metricas permanece visible en la seccion `Resumen`.
+- En secciones internas, el resumen completo se oculta en mobile para que el contenido principal aparezca antes.
+- En mobile, las secciones internas muestran una cabecera clara con titulo y descripcion de la seccion activa.
+- Al cambiar de seccion interna en mobile, el viewport se desplaza hacia el inicio del contenido activo.
+- La experiencia desktop conserva el resumen de metricas visible antes del contenido, manteniendo la lectura operativa existente.
+- Se validan las secciones `Resumen`, `Clientes`, `Brazaletes`, `Ventas`, `Movimientos`, `Testimonios`, `Comidas` y `Atracciones`.
+- El build frontend se ejecuta correctamente.
+- La decision UX queda documentada.

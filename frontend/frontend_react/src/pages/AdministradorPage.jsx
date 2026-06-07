@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -45,6 +45,17 @@ const ADMIN_SECTIONS = [
   { id: 'comidas', label: 'Comidas' },
   { id: 'atracciones', label: 'Atracciones' },
 ];
+
+const ADMIN_SECTION_DESCRIPTIONS = {
+  resumen: 'Vista general de indicadores y accesos rapidos del backoffice.',
+  clientes: 'Consulta, alta, edicion y baja logica de clientes.',
+  brazaletes: 'Gestion de tipos de brazalete y brazaletes emitidos.',
+  ventas: 'Revision de recibos, metodos de pago, montos y estados.',
+  movimientos: 'Historial operativo de activaciones, consumos, ajustes y reversos.',
+  testimonios: 'Moderacion de comentarios enviados por clientes.',
+  comidas: 'Alta, edicion, precios e imagenes del catalogo de comidas.',
+  atracciones: 'Alta, edicion, usos requeridos e imagenes del catalogo de atracciones.',
+};
 
 const RECEIPT_STATUSES = ['PENDING', 'APPROVED', 'CAPTURED', 'REFUNDED'];
 const TESTIMONIAL_STATUS_LABELS = {
@@ -484,6 +495,8 @@ export function AdministradorPage() {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
   const [activeSection, setActiveSection] = useState('resumen');
+  const activeContentRef = useRef(null);
+  const didMountRef = useRef(false);
   const [clients, setClients] = useState([]);
   const [bracelets, setBracelets] = useState([]);
   const [receipts, setReceipts] = useState([]);
@@ -553,6 +566,35 @@ export function AdministradorPage() {
   useEffect(() => {
     loadAdminData();
   }, []);
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    if (activeSection === 'resumen' || !activeContentRef.current) {
+      return;
+    }
+
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+
+    if (!isMobile) {
+      return;
+    }
+
+    const targetTop =
+      activeContentRef.current.getBoundingClientRect().top + window.scrollY - 88;
+
+    window.scrollTo({
+      top: Math.max(targetTop, 0),
+      behavior: 'smooth',
+    });
+  }, [activeSection]);
+
+  const handleSectionChange = (sectionId) => {
+    setActiveSection(sectionId);
+  };
 
   const handleLogout = async () => {
     await Logout();
@@ -878,6 +920,10 @@ export function AdministradorPage() {
     pendingTestimonials: testimonials.filter((testimonial) => testimonial.status === 'PENDING').length,
     income: receipts.reduce((sum, receipt) => sum + Number(receipt.amount_paid || 0), 0),
   };
+  const activeSectionMeta = ADMIN_SECTIONS.find((section) => section.id === activeSection);
+  const activeSectionLabel = activeSectionMeta?.label || 'Resumen';
+  const activeSectionDescription =
+    ADMIN_SECTION_DESCRIPTIONS[activeSection] || ADMIN_SECTION_DESCRIPTIONS.resumen;
 
   return (
     <div className="app-shell flex flex-col">
@@ -895,7 +941,7 @@ export function AdministradorPage() {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <button
             type="button"
-            onClick={() => setActiveSection('resumen')}
+            onClick={() => handleSectionChange('resumen')}
             className="flex items-center gap-3 self-start"
           >
             <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white shadow-sm">
@@ -911,7 +957,7 @@ export function AdministradorPage() {
               <button
                 key={section.id}
                 type="button"
-                onClick={() => setActiveSection(section.id)}
+                onClick={() => handleSectionChange(section.id)}
                 className={`rounded-md px-3 py-2 transition ${
                   activeSection === section.id
                     ? 'bg-white text-fondoLogin shadow-sm'
@@ -957,7 +1003,27 @@ export function AdministradorPage() {
           <div className="py-24 text-center text-lg font-bold">Cargando panel...</div>
         ) : (
           <>
-            <section className="mb-8 grid gap-4 md:grid-cols-4">
+            <div ref={activeContentRef} className="scroll-mt-24">
+              {activeSection !== 'resumen' ? (
+                <section className="mb-5 rounded-lg border border-white/15 bg-teal-950/45 p-4 text-left shadow-lg md:hidden">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-teal-100">
+                    Seccion activa
+                  </p>
+                  <h2 className="mt-2 font-montserrat text-2xl font-extrabold text-white md:text-3xl">
+                    {activeSectionLabel}
+                  </h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75 md:text-base">
+                    {activeSectionDescription}
+                  </p>
+                </section>
+              ) : null}
+            </div>
+
+            <section
+              className={`mb-8 gap-4 md:grid md:grid-cols-4 ${
+                activeSection === 'resumen' ? 'grid' : 'hidden'
+              }`}
+            >
               <div className="rounded bg-teal-950/70 p-5">
                 <p className="text-sm text-white/70">Clientes</p>
                 <p className="mt-2 text-3xl font-extrabold">{totals.clients}</p>
@@ -994,7 +1060,7 @@ export function AdministradorPage() {
               <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <button
                   type="button"
-                  onClick={() => setActiveSection('clientes')}
+                  onClick={() => handleSectionChange('clientes')}
                   className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
                 >
                   <span className="text-2xl font-extrabold">Gestionar clientes</span>
@@ -1004,7 +1070,7 @@ export function AdministradorPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('brazaletes')}
+                  onClick={() => handleSectionChange('brazaletes')}
                   className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
                 >
                   <span className="text-2xl font-extrabold">Gestionar brazaletes</span>
@@ -1014,7 +1080,7 @@ export function AdministradorPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('ventas')}
+                  onClick={() => handleSectionChange('ventas')}
                   className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
                 >
                   <span className="text-2xl font-extrabold">Gestionar ventas</span>
@@ -1024,7 +1090,7 @@ export function AdministradorPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('movimientos')}
+                  onClick={() => handleSectionChange('movimientos')}
                   className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
                 >
                   <span className="text-2xl font-extrabold">Ver movimientos</span>
@@ -1034,7 +1100,7 @@ export function AdministradorPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('testimonios')}
+                  onClick={() => handleSectionChange('testimonios')}
                   className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
                 >
                   <span className="text-2xl font-extrabold">Moderar testimonios</span>
@@ -1044,7 +1110,7 @@ export function AdministradorPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('comidas')}
+                  onClick={() => handleSectionChange('comidas')}
                   className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
                 >
                   <span className="text-2xl font-extrabold">Gestionar comidas</span>
@@ -1054,7 +1120,7 @@ export function AdministradorPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('atracciones')}
+                  onClick={() => handleSectionChange('atracciones')}
                   className="rounded bg-neutral-900 p-8 text-left shadow-lg transition hover:bg-black"
                 >
                   <span className="text-2xl font-extrabold">Gestionar atracciones</span>
